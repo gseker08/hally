@@ -507,6 +507,131 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("invitations", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Messaging.FamilyMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("body");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<Guid>("SenderUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sender_user_id");
+
+                    b.Property<Guid?>("TaskId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("task_id");
+
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("thread_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_family_messages");
+
+                    b.HasIndex("EventId")
+                        .HasDatabaseName("ix_family_messages_event_id");
+
+                    b.HasIndex("SenderUserId")
+                        .HasDatabaseName("ix_family_messages_sender_user_id");
+
+                    b.HasIndex("TaskId")
+                        .HasDatabaseName("ix_family_messages_task_id");
+
+                    b.HasIndex("ThreadId", "CreatedAt")
+                        .HasDatabaseName("ix_family_messages_thread_id_created_at");
+
+                    b.ToTable("family_messages", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Messaging.MessageReadState", b =>
+                {
+                    b.Property<Guid>("ThreadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("thread_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<DateTimeOffset>("LastReadAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_read_at");
+
+                    b.HasKey("ThreadId", "UserId")
+                        .HasName("pk_message_read_states");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_message_read_states_user_id");
+
+                    b.ToTable("message_read_states", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Messaging.MessageThread", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTimeOffset?>("LastMessageAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_message_at");
+
+                    b.Property<Guid?>("UserA")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_a");
+
+                    b.Property<Guid?>("UserB")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_b");
+
+                    b.HasKey("Id")
+                        .HasName("pk_message_threads");
+
+                    b.HasIndex("FamilyId", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_message_threads_family_id_key");
+
+                    b.ToTable("message_threads", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Notifications.Device", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1258,6 +1383,62 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_invitations_families_family_id");
 
                     b.Navigation("Family");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Messaging.FamilyMessage", b =>
+                {
+                    b.HasOne("Hally.Domain.Planning.CalendarEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_family_messages_events_event_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("SenderUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_family_messages_users_sender_user_id");
+
+                    b.HasOne("Hally.Domain.Planning.FamilyTask", null)
+                        .WithMany()
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_family_messages_tasks_task_id");
+
+                    b.HasOne("Hally.Domain.Messaging.MessageThread", null)
+                        .WithMany()
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_family_messages_message_threads_thread_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Messaging.MessageReadState", b =>
+                {
+                    b.HasOne("Hally.Domain.Messaging.MessageThread", null)
+                        .WithMany()
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_message_read_states_message_threads_thread_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_message_read_states_users_user_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Messaging.MessageThread", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_message_threads_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Notifications.Device", b =>

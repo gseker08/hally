@@ -9,6 +9,7 @@ public static class JobScheduling
     public static IServiceCollection AddHallyJobs(this IServiceCollection services, IConfiguration config, string connectionString)
     {
         services.AddScoped<NotificationPublisher>();
+        services.AddScoped<Messages.MessagePush>();
         services.AddScoped<ReminderDispatcher>();
         services.AddScoped<EveningPrepJob>();
         services.AddScoped<RetentionJob>();

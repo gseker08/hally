@@ -10,7 +10,7 @@ namespace Hally.Api.Features.Privacy;
 /// <summary>Leaving a family and deleting an account (KVKK/GDPR right to erasure).
 /// A family the user is alone in is deleted with everything in it, including stored photos.
 /// In a shared family the family's plan stays (it belongs to the other adults too), but the user's
-/// personal traces go: assignments, personal reminders, pending invitations and open helper links.</summary>
+/// personal traces go: assignments, personal reminders, pending invitations, open helper links and direct chats.</summary>
 public class AccountService(HallyDbContext db, IDocumentStore store, TimeProvider clock, ILogger<AccountService> logger)
 {
     public async Task LeaveFamilyAsync(Guid userId, Guid familyId, CancellationToken ct)
@@ -75,6 +75,9 @@ public class AccountService(HallyDbContext db, IDocumentStore store, TimeProvide
         }
 
         await db.Conversations.Where(c => c.FamilyId == familyId && c.UserId == userId).ExecuteDeleteAsync(ct);
+        // Direct chats with the leaver go (with their messages); in the family chat their messages stay, shown without a name.
+        await db.MessageThreads.Where(t => t.FamilyId == familyId && (t.UserA == userId || t.UserB == userId)).ExecuteDeleteAsync(ct);
+        await db.MessageReadStates.Where(r => r.UserId == userId && db.MessageThreads.Any(t => t.Id == r.ThreadId && t.FamilyId == familyId)).ExecuteDeleteAsync(ct);
         await db.Notifications.Where(n => n.FamilyId == familyId && n.UserId == userId).ExecuteDeleteAsync(ct);
         return [];
     }

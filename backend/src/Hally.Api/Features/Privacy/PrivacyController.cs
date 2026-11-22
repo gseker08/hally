@@ -139,6 +139,10 @@ public class PrivacyController(
                 c.CreatedAt,
                 Messages = messages.Where(m => m.ConversationId == c.Id).Select(m => new { m.Role, m.Content, m.CreatedAt }),
             }),
+            // Messages this person wrote to other adults (family chat and direct chats).
+            SentMessages = await db.FamilyMessages.AsNoTracking().Where(m => m.SenderUserId == userId).OrderBy(m => m.CreatedAt)
+                .Join(db.MessageThreads, m => m.ThreadId, t => t.Id, (m, t) => new { Chat = t.Kind.ToString(), m.Body, m.CreatedAt })
+                .ToListAsync(ct),
             Notifications = await db.Notifications.AsNoTracking().Where(n => n.UserId == userId).OrderBy(n => n.CreatedAt)
                 .Select(n => new { n.Kind, n.Title, n.Body, n.CreatedAt, n.ReadAt }).ToListAsync(ct),
             Devices = await db.Devices.AsNoTracking().Where(d => d.UserId == userId).Select(d => new { d.Platform, d.LastSeenAt }).ToListAsync(ct),
