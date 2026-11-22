@@ -538,5 +538,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "languageTitle": "Dil",
+  "languageSystem": "Telefonun dili",
+  "languageSystemBody": "Telefon Türkçe ya da İngilizce değilse Türkçe"
 }

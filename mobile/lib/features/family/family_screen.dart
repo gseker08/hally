@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
+import '../../core/locale/app_language.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/billing_repository.dart';
 import '../messages/messages_repository.dart';
 import 'children.dart';
+import 'language_sheet.dart';
 import 'family_repository.dart';
 
 class FamilyScreen extends ConsumerWidget {
@@ -165,6 +167,14 @@ class FamilyScreen extends ConsumerWidget {
                       subtitle: Text(l10n.familyPrivacyBody),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () => context.push('/privacy'),
+                    ),
+                    ListTile(
+                      key: const Key('family.language'),
+                      leading: const HallyIconBadge(icon: Icons.translate_rounded, color: HallyColors.apricot),
+                      title: Text(l10n.languageTitle),
+                      subtitle: Text(languageLabel(l10n, ref.watch(languageProvider))),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () => showLanguageSheet(context),
                     ),
                   ],
                 ),

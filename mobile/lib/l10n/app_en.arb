@@ -287,5 +287,8 @@
   "chatOlder": "Older messages",
   "chatsAlone": "Invite someone to start chatting",
   "chatsAloneBody": "Once your partner joins, the family chat and direct messages open up.",
-  "familyChatsBody": "Family chat and direct messages"
+  "familyChatsBody": "Family chat and direct messages",
+  "languageTitle": "Language",
+  "languageSystem": "Phone language",
+  "languageSystemBody": "Turkish when the phone is in neither Turkish nor English"
 }
