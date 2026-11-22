@@ -37,7 +37,7 @@ public class SendMessageRequestValidator : AbstractValidator<SendMessageRequest>
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
 [Route("api/v1/families/{familyId:guid}/chats")]
-public class MessagesController(HallyDbContext db, MessagePush push, TimeProvider clock) : ControllerBase
+public class MessagesController(HallyDbContext db, MessagePush push, ChatRealtime realtime, TimeProvider clock) : ControllerBase
 {
     public const int MaxPage = 100;
 
@@ -153,7 +153,9 @@ public class MessagesController(HallyDbContext db, MessagePush push, TimeProvide
 
         var names = members.ToDictionary(m => m.UserId, m => m.DisplayName);
         var dto = ToDto(saved, names, await LinkTitles(familyId, [saved], ct));
-        var recipients = members.Where(m => m.UserId != me && thread.Includes(m.UserId)).Select(m => m.UserId).ToList();
+        var participants = members.Where(m => thread.Includes(m.UserId)).Select(m => m.UserId).ToList();
+        await realtime.MessageSentAsync(familyId, thread, dto, participants);
+        var recipients = participants.Where(id => id != me).ToList();
         await push.SendAsync(familyId, thread, names.GetValueOrDefault(me, ""), saved.Body, recipients, me, ct);
         return StatusCode(201, dto);
     }

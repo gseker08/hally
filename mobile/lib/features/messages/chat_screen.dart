@@ -7,6 +7,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import 'chat_realtime.dart';
 import 'chats_screen.dart';
 import 'messages_repository.dart';
 
@@ -26,6 +27,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scroll = ScrollController();
   final _messages = <FamilyChatMessage>[];
   Timer? _timer;
+  StreamSubscription<ChatMessageEvent>? _live;
+  int _ticks = 0;
   bool _loading = true;
   bool _failed = false;
   bool _sending = false;
@@ -39,12 +42,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void initState() {
     super.initState();
     _load();
-    _timer = Timer.periodic(chatPollInterval, (_) => _poll());
+    _live = ref.read(chatRealtimeProvider).events.listen(_onLive);
+    _timer = Timer.periodic(chatPollInterval, (_) {
+      // With a live connection a slow safety poll is enough; without one, poll every tick.
+      if (!ref.read(chatRealtimeProvider).isConnected || ++_ticks % 6 == 0) _poll();
+    });
+  }
+
+  void _onLive(ChatMessageEvent e) {
+    if (e.chatKey != widget.chatKey || e.familyId != _familyId || _loading) return;
+    if (_messages.any((m) => m.id == e.message.id)) return;
+    setState(() => _messages.add(e.message));
+    _markRead();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _live?.cancel();
     _input.dispose();
     _scroll.dispose();
     super.dispose();

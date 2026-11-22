@@ -9,6 +9,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import 'chat_realtime.dart';
 import 'messages_repository.dart';
 
 /// How often an open chat list or chat checks for new messages.
@@ -27,19 +28,26 @@ class ChatsScreen extends ConsumerStatefulWidget {
 
 class _ChatsScreenState extends ConsumerState<ChatsScreen> {
   Timer? _timer;
+  StreamSubscription<ChatMessageEvent>? _live;
+
+  void _refresh() {
+    final familyId = ref.read(meProvider).valueOrNull?.primaryFamily?.id;
+    if (familyId != null) ref.invalidate(chatListProvider(familyId));
+  }
 
   @override
   void initState() {
     super.initState();
+    _live = ref.read(chatRealtimeProvider).events.listen((_) => _refresh());
     _timer = Timer.periodic(chatPollInterval, (_) {
-      final familyId = ref.read(meProvider).valueOrNull?.primaryFamily?.id;
-      if (familyId != null) ref.invalidate(chatListProvider(familyId));
+      if (!ref.read(chatRealtimeProvider).isConnected) _refresh();
     });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _live?.cancel();
     super.dispose();
   }
 
@@ -146,7 +154,7 @@ String chatTime(BuildContext context, DateTime utc) {
   return DateUtils.isSameDay(local, DateTime.now()) ? DateFormat.Hm(locale).format(local) : DateFormat.MMMd(locale).format(local);
 }
 
-/// Chat icon with the unread count, for the Today header. Refreshes every [chatBadgeInterval].
+/// Chat icon with the unread count, for the Today header. Updates on live events, and every [chatBadgeInterval] as a fallback.
 class ChatsButton extends ConsumerStatefulWidget {
   const ChatsButton({super.key, this.color = Colors.white});
 
@@ -158,24 +166,37 @@ class ChatsButton extends ConsumerStatefulWidget {
 
 class _ChatsButtonState extends ConsumerState<ChatsButton> {
   Timer? _timer;
+  StreamSubscription<ChatMessageEvent>? _live;
+
+  void _refresh() {
+    final familyId = ref.read(meProvider).valueOrNull?.primaryFamily?.id;
+    if (familyId != null) ref.invalidate(chatListProvider(familyId));
+  }
+
+  void _listen(ChatRealtime realtime) {
+    _live?.cancel();
+    _live = realtime.events.listen((_) => _refresh());
+  }
 
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(chatBadgeInterval, (_) {
-      final familyId = ref.read(meProvider).valueOrNull?.primaryFamily?.id;
-      if (familyId != null) ref.invalidate(chatListProvider(familyId));
-    });
+    // Reading the provider here also opens the live connection once the user is signed in.
+    _listen(ref.read(chatRealtimeProvider));
+    _timer = Timer.periodic(chatBadgeInterval, (_) => _refresh());
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _live?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // A new sign-in replaces the connection: follow it.
+    ref.listen(chatRealtimeProvider, (_, next) => _listen(next));
     final familyId = ref.watch(meProvider).valueOrNull?.primaryFamily?.id;
     final unread = familyId == null ? 0 : ref.watch(chatListProvider(familyId)).valueOrNull?.totalUnread ?? 0;
     return IconButton(
