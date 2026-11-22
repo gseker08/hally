@@ -90,6 +90,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         NameClaimType = "sub",
         ClockSkew = TimeSpan.FromSeconds(30),
     };
+    // SignalR over WebSockets cannot send an Authorization header, so the hub takes the token from the query string.
+    // Only for hub paths; request logging records the path without the query string.
+    o.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = ctx =>
+        {
+            if (ctx.HttpContext.Request.Path.StartsWithSegments("/hubs") && ctx.Request.Query["access_token"] is { Count: > 0 } token)
+            {
+                ctx.Token = token;
+            }
+
+            return Task.CompletedTask;
+        },
+    };
 });
 builder.Services.AddScoped<IAuthorizationHandler, FamilyMemberHandler>();
 builder.Services.AddAuthorizationBuilder()
@@ -97,6 +111,8 @@ builder.Services.AddAuthorizationBuilder()
 
 builder.Services.AddControllers().AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddSignalR().AddJsonProtocol(o => o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+builder.Services.AddScoped<Hally.Api.Features.Messages.ChatRealtime>();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ProblemExceptionHandler>();
@@ -149,6 +165,7 @@ app.UseAuthentication();
 app.UseRateLimiter(); // after authentication so the assistant limit is per user
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<Hally.Api.Features.Messages.ChatHub>(Hally.Api.Features.Messages.ChatHub.Path);
 app.UseHallyJobs();
 app.MapHealthChecks("/health/live", new() { Predicate = _ => false });
 app.MapHealthChecks("/health/ready", new() { Predicate = c => c.Tags.Contains("ready") });

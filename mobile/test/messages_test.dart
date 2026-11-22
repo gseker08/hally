@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hally/core/auth/auth_repository.dart';
 import 'package:hally/core/design/theme.dart';
+import 'dart:async';
+
+import 'package:hally/features/messages/chat_realtime.dart';
 import 'package:hally/features/messages/chat_screen.dart';
 import 'package:hally/features/messages/chats_screen.dart';
 import 'package:hally/features/messages/messages_repository.dart';
@@ -51,8 +54,24 @@ class _FakeMessages implements MessagesRepository {
   Future<void> markRead(String familyId, String key) async => read.add(key);
 }
 
-Widget _app(Widget child, _FakeMessages repo) => ProviderScope(
-      overrides: [meProvider.overrideWith((ref) async => _me), messagesRepositoryProvider.overrideWithValue(repo)],
+class _FakeRealtime implements ChatRealtime {
+  final controller = StreamController<ChatMessageEvent>.broadcast();
+  @override
+  bool isConnected = false;
+
+  @override
+  Stream<ChatMessageEvent> get events => controller.stream;
+
+  @override
+  Future<void> dispose() => controller.close();
+}
+
+Widget _app(Widget child, _FakeMessages repo, {ChatRealtime? realtime}) => ProviderScope(
+      overrides: [
+        meProvider.overrideWith((ref) async => _me),
+        messagesRepositoryProvider.overrideWithValue(repo),
+        chatRealtimeProvider.overrideWithValue(realtime ?? NoChatRealtime()),
+      ],
       child: MaterialApp(
         theme: buildHallyTheme(Brightness.light),
         locale: const Locale('tr'),
@@ -108,6 +127,26 @@ void main() {
     await tester.pump(chatPollInterval);
     await tester.pumpAndSettle();
     expect(find.text('Teşekkürler!'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a live event shows up at once, without waiting for a poll', (tester) async {
+    _phone(tester);
+    final repo = _FakeMessages()..add('u2', 'u2', 'Merhaba', name: 'Mehmet');
+    final live = _FakeRealtime()..isConnected = true;
+    await tester.pumpWidget(_app(const ChatScreen(chatKey: 'u2', title: 'Mehmet'), repo, realtime: live));
+    await tester.pumpAndSettle();
+    repo.read.clear();
+
+    final message = repo.add('u2', 'u2', 'Yoldayım', name: 'Mehmet');
+    live.controller.add(ChatMessageEvent(familyId: 'f1', chatKey: 'u2', message: message));
+    // Another chat's event is ignored.
+    live.controller.add(ChatMessageEvent(familyId: 'f1', chatKey: familyChatKey, message: repo.add(familyChatKey, 'u3', 'Başka sohbet')));
+    await tester.pump(); // deliver the stream events
+    await tester.pump(); // rebuild
+    expect(find.text('Yoldayım'), findsOneWidget);
+    expect(find.text('Başka sohbet'), findsNothing);
+    expect(repo.read, ['u2']);
     await tester.pumpWidget(const SizedBox());
   });
 
