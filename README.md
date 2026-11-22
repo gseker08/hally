@@ -22,6 +22,8 @@ cp .env.example .env        # fill in POSTGRES_PASSWORD and JWT_SIGNING_KEY
 docker compose up --build   # PostgreSQL + API on http://localhost:8080
 ```
 
+Port 8080 or 5432 already taken by another app? Set `API_PORT` / `POSTGRES_PORT` in `.env` (e.g. `API_PORT=8081`), update `PUBLIC_BASE_URL`, and point the app at that port.
+
 Swagger: http://localhost:8080/swagger · Health: `/health/live`, `/health/ready`.
 
 Without Docker: start PostgreSQL locally and run `dotnet run --project backend/src/Hally.Api` (uses `appsettings.Development.json`, migrates on startup).
