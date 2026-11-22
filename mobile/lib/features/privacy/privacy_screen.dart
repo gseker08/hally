@@ -39,7 +39,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
         final bytes = await ref.read(privacyRepositoryProvider).export();
         final name = 'hally-export-${DateFormat('yyyy-MM-dd').format(DateTime.now())}.json';
         // ignore: deprecated_member_use
-        await Share.shareXFiles([XFile.fromData(bytes, mimeType: 'application/json', name: name)]);
+        await SharePlus.instance.share(ShareParams(files: [XFile.fromData(bytes, mimeType: 'application/json', name: name)]));
       });
 
   Future<void> _leave(String familyId, bool alone) async {

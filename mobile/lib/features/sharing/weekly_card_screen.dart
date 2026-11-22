@@ -45,7 +45,7 @@ class _WeeklyCardScreenState extends ConsumerState<WeeklyCardScreen> {
               ? null
               : () async {
                   ref.read(analyticsProvider).track(AnalyticsEvent.summaryCardShared, {'offset': _offset, 'children': _children});
-                  await Share.shareXFiles([XFile.fromData(card.value!, mimeType: 'image/png', name: 'hally-week.png')]);
+                  await SharePlus.instance.share(ShareParams(files: [XFile.fromData(card.value!, mimeType: 'image/png', name: 'hally-week.png')]));
                 },
           icon: const Icon(Icons.ios_share_rounded),
           label: Text(l10n.weeklyCardShare),
