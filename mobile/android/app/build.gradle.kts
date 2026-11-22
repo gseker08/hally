@@ -66,3 +66,9 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// Firebase settings for push. The file comes from the Firebase console and is kept out of git (public repo);
+// without it the app builds and runs, only without push.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}

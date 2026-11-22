@@ -7,6 +7,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../core/locale/app_language.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../notifications/push.dart';
 import '../billing/billing_repository.dart';
 import '../messages/messages_repository.dart';
 import 'children.dart';
@@ -31,6 +32,7 @@ class FamilyScreen extends ConsumerWidget {
             tooltip: l10n.signOut,
             icon: const Icon(Icons.logout_rounded),
             onPressed: () async {
+              await ref.read(pushControllerProvider)?.unregister();
               await ref.read(authRepositoryProvider).signOut();
               ref.invalidate(meProvider);
             },

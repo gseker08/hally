@@ -24,8 +24,17 @@ Every job is safe to rerun: each inbox entry has a unique dedup key. Set `Jobs:E
 
 ## App
 
-After `flutter create` adds the native folders:
-1. Add `firebase_core` and `firebase_messaging`, then run `flutterfire configure`. The generated `google-services.json` and `GoogleService-Info.plist` are not secrets, but keep them out of public repos.
-2. After sign-in and on every token refresh, call `PUT /api/v1/me/devices` with `{ "platform": "android" | "ios", "token": "<fcm token>" }`.
-3. On sign-out, call `DELETE /api/v1/me/devices?token=<fcm token>`.
-4. Tapping a push carries `kind`, `targetKind` and `targetId` in `data`: open `/tasks` or `/calendar`.
+`lib/features/notifications/push.dart` (firebase_core + firebase_messaging):
+- `PushController` starts once someone is signed in. It asks for permission (Android 13+, iOS), registers the FCM token with `PUT /api/v1/me/devices`, and registers again on every token refresh.
+- Sign-out calls `DELETE /api/v1/me/devices?token=...` first, while the session is still valid.
+- Tapping a push opens `pushRoute(data)`: `kind=Message` → `/chats/{chatKey}`, `targetKind=Task` → `/tasks`, `Event` → `/calendar`, else `/notifications`.
+- A push that arrives while the app is open is shown as a snack bar (chat messages only refresh the badge; SignalR already shows them).
+- Without Firebase config the app runs as before, just without push.
+
+### Setting up Firebase (once)
+1. Firebase console → create a project, then Project settings → Service accounts → *Generate new private key*. Put the project id and the JSON (one line) into `.env` as `FCM_PROJECT_ID` and `FCM_SERVICE_ACCOUNT_JSON`, then `docker compose up -d`.
+2. Project Overview → add an Android app with package name `app.hally` and download `google-services.json` to `mobile/android/app/`. It is git-ignored because this repo is public; the Gradle build applies the google-services plugin only when the file is there. CI builds with a placeholder file.
+3. iOS later: `GoogleService-Info.plist` in `ios/Runner/`, plus an APNs key in Firebase (needs the Apple Developer account).
+
+### Testing on the emulator
+Use an emulator image with Google Play services ("Google APIs" or "Google Play"). Sign in, allow notifications, then send the app to the background and let the other adult send a chat message, or create a reminder one or two minutes ahead. `docker compose logs api` shows `FCM send failed` if Firebase rejects a send.
