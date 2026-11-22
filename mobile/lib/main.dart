@@ -4,10 +4,15 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'app.dart';
 import 'core/config/app_config.dart';
+import 'core/locale/app_language.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  void run() => runApp(const ProviderScope(child: HallyApp()));
+  final language = await SecureLanguageStorage().read();
+  void run() => runApp(ProviderScope(
+        overrides: [initialLanguageProvider.overrideWithValue(language)],
+        child: const HallyApp(),
+      ));
 
   // Crash and error reports only when a DSN is passed (--dart-define=SENTRY_DSN=...). No PII is sent:
   // no user identity, IP or request bodies, and no screenshots or view hierarchy.

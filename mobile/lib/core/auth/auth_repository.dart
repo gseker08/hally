@@ -105,6 +105,15 @@ class AuthRepository {
     }
   }
 
+  /// The server uses the profile language for push notifications and share texts.
+  Future<void> updateLocale(String displayName, String locale) async {
+    try {
+      await _api.dio.put<Map<String, dynamic>>('/api/v1/me', data: {'displayName': displayName, 'locale': locale});
+    } catch (e) {
+      throw ApiClient.toApiException(e);
+    }
+  }
+
   Future<void> signOut() => _storage.clear();
 
   static final _anonymous = Options(extra: {'anonymous': true});
