@@ -17,7 +17,7 @@ public class ProblemExceptionHandler(IProblemDetailsService problems, ILogger<Pr
             Features.Billing.PlanLimitException l => (StatusCodes.Status402PaymentRequired, l.Code, l.Message),
             Features.Billing.BillingUnavailableException b => (StatusCodes.Status503ServiceUnavailable, "billing.store_unavailable", b.Message),
             Infrastructure.Ai.AiUnavailableException => (StatusCodes.Status503ServiceUnavailable, "ai.unavailable", "The AI assistant is temporarily unavailable."),
-            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "auth.unauthorized", "Unauthorized."),
+            AuthRequiredException => (StatusCodes.Status401Unauthorized, "auth.unauthorized", "Unauthorized."),
             _ => (StatusCodes.Status500InternalServerError, "server.error", "An unexpected error occurred."),
         };
 

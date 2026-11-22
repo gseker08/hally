@@ -12,5 +12,8 @@ WORKDIR /app
 COPY --from=build /app .
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
+# Captured photos are stored here (a named volume in docker-compose). Create it owned by the non-root
+# app user, or writes fail with permission denied.
+RUN mkdir -p /data/documents && chown app:app /data/documents
 USER app
 ENTRYPOINT ["dotnet", "Hally.Api.dll"]

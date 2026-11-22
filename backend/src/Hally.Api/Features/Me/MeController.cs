@@ -41,7 +41,7 @@ public class MeController(HallyDbContext db) : ControllerBase
     private async Task<MeResponse> Load(Guid userId, CancellationToken ct)
     {
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId, ct)
-                   ?? throw new UnauthorizedAccessException();
+                   ?? throw new AuthRequiredException();
         var families = await db.FamilyMembers.AsNoTracking()
             .Where(m => m.UserId == userId)
             .Join(db.Families, m => m.FamilyId, f => f.Id, (m, f) => new { f.Id, f.Name, m.Role })
