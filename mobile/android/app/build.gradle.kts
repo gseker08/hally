@@ -14,7 +14,8 @@ val keyProperties = Properties().apply {
 
 android {
     namespace = "app.hally.hally"
-    compileSdk = flutter.compileSdkVersion
+    // Plugins such as receive_sharing_intent need API 37 to compile; minSdk and targetSdk stay on Flutter's defaults.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
