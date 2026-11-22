@@ -42,6 +42,13 @@ class _RecordingFamilyRepository implements FamilyRepository {
   Future<Invitation> invite(String familyId) => throw UnimplementedError();
   @override
   Future<InvitationPreview> preview(String token) => throw UnimplementedError();
+  @override
+  Future<ChildProfile> addChild(String familyId, {required String firstName, int? birthYear, String? color}) => throw UnimplementedError();
+  @override
+  Future<ChildProfile> updateChild(String familyId, String childId, {required String firstName, int? birthYear, required String color}) =>
+      throw UnimplementedError();
+  @override
+  Future<void> deleteChild(String familyId, String childId) => throw UnimplementedError();
 }
 
 void main() {

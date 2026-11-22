@@ -16,12 +16,12 @@ public class FamilyTask : Entity
     private FamilyTask() { }
 
     public FamilyTask(Guid familyId, Guid createdByUserId, string title, string? notes, DateTimeOffset? dueAt, bool allDay,
-        Guid? assigneeUserId, Guid? childId, Guid? sourceProposalId = null)
+        Guid? assigneeUserId, IEnumerable<Guid>? childIds, Guid? sourceProposalId = null)
     {
         FamilyId = familyId;
         CreatedByUserId = createdByUserId;
         SourceProposalId = sourceProposalId;
-        Update(title, notes, dueAt, allDay, childId);
+        Update(title, notes, dueAt, allDay, childIds);
         AssigneeUserId = assigneeUserId;
     }
 
@@ -32,13 +32,15 @@ public class FamilyTask : Entity
     public DateTimeOffset? DueAt { get; private set; }
     public bool AllDay { get; private set; }
     public Guid? AssigneeUserId { get; private set; }
-    public Guid? ChildId { get; private set; }
+
+    /// <summary>The children this task is about. Empty means the whole family.</summary>
+    public List<Guid> ChildIds { get; private set; } = [];
     public TaskState State { get; private set; } = TaskState.Open;
     public DateTimeOffset? CompletedAt { get; private set; }
     public Guid? CompletedByUserId { get; private set; }
     public Guid? SourceProposalId { get; private set; }
 
-    public void Update(string title, string? notes, DateTimeOffset? dueAt, bool allDay, Guid? childId)
+    public void Update(string title, string? notes, DateTimeOffset? dueAt, bool allDay, IEnumerable<Guid>? childIds)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Trim().Length > 200)
         {
@@ -49,7 +51,7 @@ public class FamilyTask : Entity
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         DueAt = dueAt?.ToUniversalTime(); // PostgreSQL timestamptz accepts UTC only
         AllDay = dueAt is not null && allDay;
-        ChildId = childId;
+        ChildIds = ChildTags.Normalize(childIds);
     }
 
     public void Assign(Guid? userId) => AssigneeUserId = userId;

@@ -7,6 +7,7 @@ import 'package:hally/core/design/theme.dart';
 import 'package:hally/features/capture/capture_models.dart';
 import 'package:hally/features/demo/demo_repository.dart';
 import 'package:hally/features/demo/demo_scan_screen.dart';
+import 'package:hally/features/family/family_repository.dart';
 import 'package:hally/features/planning/calendar_screen.dart';
 import 'package:hally/features/planning/planning_repository.dart';
 import 'package:hally/features/planning/tasks_screen.dart';
@@ -40,8 +41,8 @@ class _FakePlanning implements PlanningRepository {
   Future<List<TaskItem>> tasks(String familyId, {required String state}) async => List.of(state == 'Done' ? done : open);
 
   @override
-  Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate}) async {
-    final t = TaskItem(id: 'n${open.length}', title: title, allDay: dueDate != null, dueAt: dueDate, state: 'Open');
+  Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate, List<String> childIds = const []}) async {
+    final t = TaskItem(id: 'n${open.length}', title: title, allDay: dueDate != null, dueAt: dueDate, state: 'Open', childIds: childIds);
     open.add(t);
     return t;
   }
@@ -51,8 +52,9 @@ class _FakePlanning implements PlanningRepository {
       saved.where((e) => !e.startsAt.isBefore(from) && e.startsAt.isBefore(to)).toList();
 
   @override
-  Future<SavedEvent> createEvent(String familyId, {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none}) async {
-    final e = EventItem(id: 'e${saved.length}', title: title, startsAt: startsAt, allDay: allDay, repeat: repeat);
+  Future<SavedEvent> createEvent(String familyId,
+      {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none, List<String> childIds = const []}) async {
+    final e = EventItem(id: 'e${saved.length}', title: title, startsAt: startsAt, allDay: allDay, repeat: repeat, childIds: childIds);
     final conflicts = saved.where((x) => x.startsAt == startsAt).toList();
     saved.add(e);
     return SavedEvent(event: e, conflicts: conflicts);
@@ -73,8 +75,14 @@ class _FakeDemo implements DemoRepository {
   Future<List<DemoItem>> scanImage(List<int> bytes, String fileName, String contentType, String locale) => throw UnimplementedError();
 }
 
-Widget _app(Widget child, List<Override> overrides) => ProviderScope(
-      overrides: [meProvider.overrideWith((ref) async => _me), ...overrides],
+const _kids = FamilyDetails(id: 'f1', name: 'Yılmaz', timeZoneId: 'Europe/Istanbul', members: [], children: [
+  ChildProfile(id: 'c1', firstName: 'Ela', color: 'sky'),
+  ChildProfile(id: 'c2', firstName: 'Can', color: 'mint'),
+]);
+
+Widget _app(Widget child, List<Override> overrides, {FamilyDetails family = const FamilyDetails(id: 'f1', name: 'Yılmaz', timeZoneId: 'Europe/Istanbul', members: [])}) =>
+    ProviderScope(
+      overrides: [meProvider.overrideWith((ref) async => _me), familyProvider.overrideWith((ref, id) async => family), ...overrides],
       child: MaterialApp(
         theme: buildHallyTheme(Brightness.light),
         locale: const Locale('tr'),
@@ -90,6 +98,51 @@ Widget _app(Widget child, List<Override> overrides) => ProviderScope(
     );
 
 void main() {
+  testWidgets('tasks: the child filter keeps that child and whole-family tasks', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final repo = _FakePlanning()
+      ..open.addAll(const [
+        TaskItem(id: 't2', title: 'Ela ödev', allDay: false, state: 'Open', childIds: ['c1']),
+        TaskItem(id: 't3', title: 'Can yüzme', allDay: false, state: 'Open', childIds: ['c2']),
+      ]);
+    await tester.pumpWidget(_app(const TasksScreen(), [planningRepositoryProvider.overrideWithValue(repo)], family: _kids));
+    await tester.pumpAndSettle();
+    expect(find.text('Ela ödev'), findsOneWidget);
+    expect(find.text('Can yüzme'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('childFilter.c1')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ela ödev'), findsOneWidget);
+    expect(find.text('Beslenme çantası'), findsOneWidget, reason: 'untagged tasks belong to the whole family');
+    expect(find.text('Can yüzme'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('childFilter.all')));
+    await tester.pumpAndSettle();
+    expect(find.text('Can yüzme'), findsOneWidget);
+  });
+
+  testWidgets('tasks: a new task can be tagged with several children', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final repo = _FakePlanning();
+    await tester.pumpWidget(_app(const TasksScreen(), [planningRepositoryProvider.overrideWithValue(repo)], family: _kids));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('tasks.add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('task.title')), 'Veli toplantısı formu');
+    await tester.tap(find.byKey(const Key('childPicker.c1')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('childPicker.c2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kaydet'));
+    await tester.pumpAndSettle();
+    expect(repo.open.last.childIds, unorderedEquals(['c1', 'c2']));
+  });
+
   testWidgets('tasks: completing an open task moves it to done', (tester) async {
     final repo = _FakePlanning();
     await tester.pumpWidget(_app(const TasksScreen(), [planningRepositoryProvider.overrideWithValue(repo)]));

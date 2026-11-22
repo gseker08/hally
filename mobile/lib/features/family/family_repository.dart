@@ -10,8 +10,25 @@ class FamilyMember {
   final String role;
 }
 
+/// A child profile: first name only, an optional birth year and a colour key (see `childColor`).
+class ChildProfile {
+  const ChildProfile({required this.id, required this.firstName, this.birthYear, this.color = 'sky'});
+
+  factory ChildProfile.fromJson(Map<String, dynamic> j) => ChildProfile(
+        id: j['id'] as String,
+        firstName: j['firstName'] as String,
+        birthYear: j['birthYear'] as int?,
+        color: j['color'] as String? ?? 'sky',
+      );
+
+  final String id;
+  final String firstName;
+  final int? birthYear;
+  final String color;
+}
+
 class FamilyDetails {
-  const FamilyDetails({required this.id, required this.name, required this.timeZoneId, required this.members});
+  const FamilyDetails({required this.id, required this.name, required this.timeZoneId, required this.members, this.children = const []});
 
   factory FamilyDetails.fromJson(Map<String, dynamic> json) => FamilyDetails(
         id: json['id'] as String,
@@ -21,12 +38,14 @@ class FamilyDetails {
           for (final m in json['members'] as List)
             FamilyMember(userId: m['userId'] as String, displayName: m['displayName'] as String, role: m['role'] as String),
         ],
+        children: [for (final c in json['children'] as List? ?? const []) ChildProfile.fromJson(c as Map<String, dynamic>)],
       );
 
   final String id;
   final String name;
   final String timeZoneId;
   final List<FamilyMember> members;
+  final List<ChildProfile> children;
 }
 
 class Invitation {
@@ -53,6 +72,9 @@ abstract interface class FamilyRepository {
   Future<Invitation> invite(String familyId);
   Future<InvitationPreview> preview(String token);
   Future<String> accept(String token);
+  Future<ChildProfile> addChild(String familyId, {required String firstName, int? birthYear, String? color});
+  Future<ChildProfile> updateChild(String familyId, String childId, {required String firstName, int? birthYear, required String color});
+  Future<void> deleteChild(String familyId, String childId);
 }
 
 class ApiFamilyRepository implements FamilyRepository {
@@ -99,6 +121,25 @@ class ApiFamilyRepository implements FamilyRepository {
         final res = await _api.dio.post<Map<String, dynamic>>('/api/v1/invitations/$token/accept');
         return res.data!['familyId'] as String;
       });
+
+  @override
+  Future<ChildProfile> addChild(String familyId, {required String firstName, int? birthYear, String? color}) => _call(() async {
+        final res = await _api.dio.post<Map<String, dynamic>>('/api/v1/families/$familyId/children',
+            data: {'firstName': firstName, 'birthYear': birthYear, 'color': color});
+        return ChildProfile.fromJson(res.data!);
+      });
+
+  @override
+  Future<ChildProfile> updateChild(String familyId, String childId, {required String firstName, int? birthYear, required String color}) =>
+      _call(() async {
+        final res = await _api.dio.put<Map<String, dynamic>>('/api/v1/families/$familyId/children/$childId',
+            data: {'firstName': firstName, 'birthYear': birthYear, 'color': color});
+        return ChildProfile.fromJson(res.data!);
+      });
+
+  @override
+  Future<void> deleteChild(String familyId, String childId) =>
+      _call(() => _api.dio.delete<dynamic>('/api/v1/families/$familyId/children/$childId'));
 }
 
 final familyRepositoryProvider = Provider<FamilyRepository>((ref) => ApiFamilyRepository(ref.watch(apiClientProvider)));

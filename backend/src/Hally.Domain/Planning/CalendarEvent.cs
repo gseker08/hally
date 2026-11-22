@@ -16,12 +16,12 @@ public class CalendarEvent : Entity
     private CalendarEvent() { }
 
     public CalendarEvent(Guid familyId, Guid createdByUserId, string title, DateTimeOffset startsAt, DateTimeOffset? endsAt,
-        bool allDay, string? location, Guid? childId, Guid? sourceProposalId = null)
+        bool allDay, string? location, IEnumerable<Guid>? childIds, Guid? sourceProposalId = null)
     {
         FamilyId = familyId;
         CreatedByUserId = createdByUserId;
         SourceProposalId = sourceProposalId;
-        Update(title, startsAt, endsAt, allDay, location, childId);
+        Update(title, startsAt, endsAt, allDay, location, childIds);
     }
 
     public Guid FamilyId { get; private set; }
@@ -31,7 +31,9 @@ public class CalendarEvent : Entity
     public DateTimeOffset? EndsAt { get; private set; }
     public bool AllDay { get; private set; }
     public string? Location { get; private set; }
-    public Guid? ChildId { get; private set; }
+
+    /// <summary>The children this event is about. Empty means the whole family.</summary>
+    public List<Guid> ChildIds { get; private set; } = [];
     public Guid? SourceProposalId { get; private set; }
     public EventRepeat Repeat { get; private set; }
 
@@ -46,7 +48,7 @@ public class CalendarEvent : Entity
     /// <summary>Safety cap for expanding a series within one query window.</summary>
     private const int MaxOccurrences = 1000;
 
-    public void Update(string title, DateTimeOffset startsAt, DateTimeOffset? endsAt, bool allDay, string? location, Guid? childId)
+    public void Update(string title, DateTimeOffset startsAt, DateTimeOffset? endsAt, bool allDay, string? location, IEnumerable<Guid>? childIds)
     {
         if (string.IsNullOrWhiteSpace(title) || title.Trim().Length > 200)
         {
@@ -63,7 +65,7 @@ public class CalendarEvent : Entity
         EndsAt = endsAt?.ToUniversalTime();
         AllDay = allDay;
         Location = string.IsNullOrWhiteSpace(location) ? null : location.Trim();
-        ChildId = childId;
+        ChildIds = ChildTags.Normalize(childIds);
     }
 
     public void SetRepeat(EventRepeat repeat, DateOnly? until)

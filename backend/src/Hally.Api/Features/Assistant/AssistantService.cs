@@ -207,7 +207,7 @@ public class AssistantTools(HallyDbContext db, Guid familyId, FamilyContext ctx,
         }
 
         var tasks = await query.OrderBy(t => t.DueAt == null).ThenBy(t => t.DueAt).Take(50).ToListAsync(ct);
-        return Json(new { tasks = tasks.Select(t => new { title = t.Title, due = Local(t.DueAt, t.AllDay), notes = t.Notes, child = Child(t.ChildId), assigned = t.AssigneeUserId != null }) });
+        return Json(new { tasks = tasks.Select(t => new { title = t.Title, due = Local(t.DueAt, t.AllDay), notes = t.Notes, child = Children(t.ChildIds), assigned = t.AssigneeUserId != null }) });
     }
 
     private async Task<string> ListEvents(JsonElement args, CancellationToken ct)
@@ -222,7 +222,7 @@ public class AssistantTools(HallyDbContext db, Guid familyId, FamilyContext ctx,
         var start = Utc(from);
         var end = Utc(to.AddDays(1));
         var events = (await db.EventsInRangeAsync(familyId, start, end, ctx.TimeZoneId, ct)).Take(100);
-        return Json(new { events = events.Select(e => new { title = e.Title, starts = Local(e.StartsAt, e.AllDay), location = e.Location, child = Child(e.ChildId) }) });
+        return Json(new { events = events.Select(e => new { title = e.Title, starts = Local(e.StartsAt, e.AllDay), location = e.Location, child = Children(e.ChildIds) }) });
     }
 
     private async Task<string> Propose(JsonElement args, string kind, CancellationToken ct)
@@ -276,7 +276,8 @@ public class AssistantTools(HallyDbContext db, Guid familyId, FamilyContext ctx,
         return Json(new { suggested = true, waitingForApproval = true, title = draft.Payload.Title, date = draft.Payload.Date, time = draft.Payload.Time, needsInfo = draft.Payload.NeedsInfo });
     }
 
-    private string? Child(Guid? id) => id is { } c ? ctx.Children.FirstOrDefault(x => x.Id == c).FirstName : null;
+    private string? Children(IReadOnlyList<Guid> ids) => ids.Count == 0 ? null
+        : string.Join(", ", ids.Select(id => ctx.Children.FirstOrDefault(x => x.Id == id).FirstName).Where(n => n is not null));
 
     private DateTimeOffset Utc(DateOnly day) =>
         ProposalEngine.ToUtc(day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), null, TimeZoneInfo.FindSystemTimeZoneById(ctx.TimeZoneId))!.Value;

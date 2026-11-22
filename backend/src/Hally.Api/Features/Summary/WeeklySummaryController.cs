@@ -53,9 +53,9 @@ public class WeeklySummaryController(HallyDbContext db, TimeProvider clock) : Co
 
         var done = await db.Tasks.AsNoTracking()
             .Where(t => t.FamilyId == familyId && t.State == TaskState.Done && t.CompletedAt >= start && t.CompletedAt < end)
-            .Select(t => new { t.CompletedByUserId, t.CompletedByHelper, t.ChildId }).ToListAsync(ct);
+            .Select(t => new { t.CompletedByUserId, t.CompletedByHelper, t.ChildIds }).ToListAsync(ct);
         var events = (await db.EventsInRangeAsync(familyId, start, end, family.TimeZoneId, ct))
-            .Where(e => e.StartsAt >= start).Select(e => e.ChildId).ToList();
+            .Where(e => e.StartsAt >= start).Select(e => e.ChildIds).ToList();
         var approved = await db.Proposals.AsNoTracking()
             .CountAsync(p => p.FamilyId == familyId && p.Status == ProposalStatus.Approved && p.DecidedAt >= start && p.DecidedAt < end, ct);
 
@@ -65,7 +65,7 @@ public class WeeklySummaryController(HallyDbContext db, TimeProvider clock) : Co
             .Select(id => new AdultShareDto(FirstName(names.GetValueOrDefault(id, "")), done.Count(t => t.CompletedByUserId == id)))
             .OrderByDescending(a => a.Completed).ToList();
         var children = includeChildNames
-            ? family.Children.Select(c => new ChildCountDto(c.FirstName, done.Count(t => t.ChildId == c.Id) + events.Count(e => e == c.Id)))
+            ? family.Children.Select(c => new ChildCountDto(c.FirstName, done.Count(t => t.ChildIds.Contains(c.Id)) + events.Count(e => e.Contains(c.Id))))
                 .Where(c => c.Items > 0).OrderByDescending(c => c.Items).ToList()
             : [];
 

@@ -6,6 +6,8 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../family/children.dart';
+import '../family/family_repository.dart';
 import '../notifications/reminder_sheet.dart';
 import '../sharing/helper_share_sheet.dart';
 import '../sharing/sharing_repository.dart';
@@ -29,7 +31,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final familyId = ref.watch(meProvider).valueOrNull?.primaryFamily?.id;
     if (familyId == null) return const Scaffold(body: HallyLoading());
     final args = (familyId, _state);
-    final tasks = ref.watch(tasksProvider(args));
+    final child = ref.watch(childFilterProvider);
+    final tasks = ref.watch(tasksProvider(args)).whenData((all) => filterByChild(all, (t) => t.childIds, child));
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabTasks)),
@@ -55,6 +58,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               onSelectionChanged: (s) => setState(() => _state = s.first),
             ),
           ),
+          ChildFilterBar(familyId: familyId),
           Expanded(
             child: tasks.when(
               loading: () => const HallyLoading(),
@@ -94,7 +98,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                         ],
                                       ),
                                 activeColor: HallyColors.mint,
-                                title: Text(t.title),
+                                title: Row(
+                                  children: [
+                                    Expanded(child: Text(t.title)),
+                                    ChildBadges(familyId: familyId, childIds: t.childIds, size: 20),
+                                  ],
+                                ),
                                 subtitle: Text(t.dueAt == null
                                     ? l10n.taskNoDate
                                     : t.allDay
@@ -148,11 +157,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   Future<void> _addTask(String familyId) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final result = await showDialog<(String, DateTime?)>(context: context, builder: (_) => const _TaskDialog());
+    final children = ref.read(familyProvider(familyId)).valueOrNull?.children ?? const <ChildProfile>[];
+    final filtered = ref.read(childFilterProvider);
+    final result = await showDialog<(String, DateTime?, List<String>)>(
+      context: context,
+      builder: (_) => _TaskDialog(children: children, initialChildIds: {if (filtered != null) filtered}),
+    );
     if (result == null) return;
-    final (title, due) = result;
+    final (title, due, childIds) = result;
     try {
-      await ref.read(planningRepositoryProvider).createTask(familyId, title: title, dueDate: due);
+      await ref.read(planningRepositoryProvider).createTask(familyId, title: title, dueDate: due, childIds: childIds);
       ref.invalidate(tasksProvider((familyId, 'Open')));
       ref.invalidate(todayProvider(familyId));
     } catch (_) {
@@ -163,7 +177,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
 /// Owns its controller so it is disposed only after the dialog's exit animation.
 class _TaskDialog extends StatefulWidget {
-  const _TaskDialog();
+  const _TaskDialog({required this.children, required this.initialChildIds});
+
+  final List<ChildProfile> children;
+  final Set<String> initialChildIds;
 
   @override
   State<_TaskDialog> createState() => _TaskDialogState();
@@ -172,6 +189,7 @@ class _TaskDialog extends StatefulWidget {
 class _TaskDialogState extends State<_TaskDialog> {
   final _title = TextEditingController();
   DateTime? _due;
+  late Set<String> _childIds = widget.initialChildIds;
 
   @override
   void dispose() {
@@ -203,6 +221,7 @@ class _TaskDialogState extends State<_TaskDialog> {
               if (picked != null) setState(() => _due = picked);
             },
           ),
+          ChildPicker(children: widget.children, selected: _childIds, onChanged: (ids) => setState(() => _childIds = ids)),
         ],
       ),
       actions: [
@@ -212,7 +231,7 @@ class _TaskDialogState extends State<_TaskDialog> {
           onPressed: () {
             final title = _title.text.trim();
             if (title.isEmpty) return;
-            Navigator.pop(context, (title, _due));
+            Navigator.pop(context, (title, _due, _childIds.toList()));
           },
           child: Text(l10n.eventSave),
         ),

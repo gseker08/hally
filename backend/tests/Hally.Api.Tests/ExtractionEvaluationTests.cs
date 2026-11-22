@@ -81,6 +81,23 @@ public class ExtractionEvaluationTests
     }
 
     [Fact]
+    public void Several_children_named_in_one_item_are_all_tagged()
+    {
+        var d = Run(Item("Veli toplantısı", "yarın", "2026-11-08", child: "Elif ve can", quote: "yarın veli toplantısı")).Drafts.Single();
+        d.Payload.ChildIds.Should().Equal(Elif, Can);
+        d.Payload.ChildId.Should().Be(Elif);
+        d.Payload.NeedsInfo.Should().NotContain("child");
+    }
+
+    [Fact]
+    public void One_unknown_name_among_several_tags_nobody()
+    {
+        var d = Run(Item("Gezi", "yarın", child: "Elif, Zeynep")).Drafts.Single();
+        d.Payload.EffectiveChildIds.Should().BeEmpty();
+        d.Payload.NeedsInfo.Should().Contain("child");
+    }
+
+    [Fact]
     public void Unknown_child_is_not_guessed()
     {
         var d = Run(Item("Defter al", "yarın", child: "Zeynep")).Drafts.Single();

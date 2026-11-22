@@ -82,7 +82,11 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
-        b.Entity<Child>(e => e.Property(x => x.FirstName).HasMaxLength(40).IsRequired());
+        b.Entity<Child>(e =>
+        {
+            e.Property(x => x.FirstName).HasMaxLength(40).IsRequired();
+            e.Property(x => x.Color).HasMaxLength(16).IsRequired().HasDefaultValue("sky");
+        });
 
         b.Entity<Invitation>(e =>
         {
@@ -114,6 +118,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.Property(x => x.Title).HasMaxLength(200).IsRequired();
             e.Property(x => x.Notes).HasMaxLength(2000);
             e.Property(x => x.State).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ChildIds).HasDefaultValueSql("'{}'::uuid[]");
             e.HasIndex(x => new { x.FamilyId, x.State, x.DueAt });
             e.HasIndex(x => x.SourceProposalId).IsUnique();
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
@@ -127,6 +132,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.Ignore(x => x.EffectiveEnd);
             e.Ignore(x => x.SeriesStartsAt);
             e.Property(x => x.Repeat).HasConversion<string>().HasMaxLength(16);
+            e.Property(x => x.ChildIds).HasDefaultValueSql("'{}'::uuid[]");
             e.HasIndex(x => new { x.FamilyId, x.StartsAt });
             e.HasIndex(x => x.SourceProposalId).IsUnique();
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);

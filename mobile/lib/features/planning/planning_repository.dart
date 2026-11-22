@@ -4,7 +4,15 @@ import '../../core/api/api_client.dart';
 import '../capture/capture_models.dart';
 
 class TaskItem {
-  const TaskItem({required this.id, required this.title, this.dueAt, required this.allDay, this.assigneeUserId, required this.state});
+  const TaskItem({
+    required this.id,
+    required this.title,
+    this.dueAt,
+    required this.allDay,
+    this.assigneeUserId,
+    required this.state,
+    this.childIds = const [],
+  });
 
   factory TaskItem.fromJson(Map<String, dynamic> j) => TaskItem(
         id: j['id'] as String,
@@ -13,6 +21,7 @@ class TaskItem {
         allDay: j['allDay'] as bool? ?? false,
         assigneeUserId: j['assigneeUserId'] as String?,
         state: j['state'] as String,
+        childIds: _childIds(j),
       );
 
   final String id;
@@ -21,11 +30,25 @@ class TaskItem {
   final bool allDay;
   final String? assigneeUserId;
   final String state;
+
+  /// Children this task is about; empty means the whole family.
+  final List<String> childIds;
 }
+
+List<String> _childIds(Map<String, dynamic> j) => [
+      for (final id in j['childIds'] as List? ?? (j['childId'] == null ? const [] : [j['childId']])) id as String,
+    ];
 
 /// An event, or one occurrence of a repeating event (occurrences share the series [id]).
 class EventItem {
-  const EventItem({required this.id, required this.title, required this.startsAt, required this.allDay, this.repeat = EventRepeat.none});
+  const EventItem({
+    required this.id,
+    required this.title,
+    required this.startsAt,
+    required this.allDay,
+    this.repeat = EventRepeat.none,
+    this.childIds = const [],
+  });
 
   factory EventItem.fromJson(Map<String, dynamic> j) => EventItem(
         id: j['id'] as String,
@@ -33,6 +56,7 @@ class EventItem {
         startsAt: DateTime.parse(j['startsAt'] as String).toLocal(),
         allDay: j['allDay'] as bool? ?? false,
         repeat: EventRepeat.fromApi(j['repeat'] as String?),
+        childIds: _childIds(j),
       );
 
   final String id;
@@ -40,6 +64,9 @@ class EventItem {
   final DateTime startsAt;
   final bool allDay;
   final EventRepeat repeat;
+
+  /// Children this event is about; empty means the whole family.
+  final List<String> childIds;
 }
 
 enum EventRepeat {
@@ -85,10 +112,10 @@ abstract interface class PlanningRepository {
   Future<void> completeTask(String familyId, String taskId);
   Future<void> reopenTask(String familyId, String taskId);
   Future<List<TaskItem>> tasks(String familyId, {required String state});
-  Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate});
+  Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate, List<String> childIds = const []});
   Future<List<EventItem>> events(String familyId, DateTime from, DateTime to);
   Future<SavedEvent> createEvent(String familyId,
-      {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none});
+      {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none, List<String> childIds = const []});
 }
 
 class ApiPlanningRepository implements PlanningRepository {
@@ -129,11 +156,13 @@ class ApiPlanningRepository implements PlanningRepository {
       });
 
   @override
-  Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate}) => _guard(() async {
+  Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate, List<String> childIds = const []}) =>
+      _guard(() async {
         final res = await _api.dio.post<Map<String, dynamic>>('/api/v1/families/$familyId/tasks', data: {
           'title': title,
           'dueAt': dueDate == null ? null : DateTime(dueDate.year, dueDate.month, dueDate.day).toUtc().toIso8601String(),
           'allDay': dueDate != null,
+          'childIds': childIds,
         });
         return TaskItem.fromJson(res.data!);
       });
@@ -149,13 +178,14 @@ class ApiPlanningRepository implements PlanningRepository {
 
   @override
   Future<SavedEvent> createEvent(String familyId,
-          {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none}) =>
+          {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none, List<String> childIds = const []}) =>
       _guard(() async {
         final res = await _api.dio.post<Map<String, dynamic>>('/api/v1/families/$familyId/events', data: {
           'title': title,
           'startsAt': startsAt.toUtc().toIso8601String(),
           'allDay': allDay,
           'repeat': repeat.api,
+          'childIds': childIds,
         });
         final d = res.data!;
         return SavedEvent(

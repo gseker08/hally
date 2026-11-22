@@ -486,5 +486,36 @@
         "type": "String"
       }
     }
-  }
+  },
+  "familyChildren": "Çocuklar",
+  "childAdd": "Çocuk ekle",
+  "childEdit": "Çocuğu düzenle",
+  "childAddBody": "Her çocuğa bir renk ver; görevleri ve etkinlikleri çocuğa göre ayır.",
+  "childName": "Adı ya da takma adı",
+  "childNameHelp": "Soyadı gerekmez.",
+  "childNameRequired": "Ad gerekli",
+  "childBirthYear": "Doğum yılı (isteğe bağlı)",
+  "childBirthYearInvalid": "Geçerli bir doğum yılı yaz",
+  "childBorn": "{year} doğumlu",
+  "@childBorn": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      }
+    }
+  },
+  "childColor": "Renk",
+  "childDelete": "Çocuğu sil",
+  "childDeleteTitle": "{name} silinsin mi?",
+  "@childDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childDeleteBody": "Görevler ve etkinlikler silinmez, yalnızca bu çocuğun etiketi kalkar.",
+  "childFilterAll": "Hepsi",
+  "childPickerLabel": "Kimin için?",
+  "childPickerWholeFamily": "Seçilmezse tüm aile için."
 }

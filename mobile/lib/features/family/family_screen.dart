@@ -7,6 +7,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/billing_repository.dart';
+import 'children.dart';
 import 'family_repository.dart';
 
 class FamilyScreen extends ConsumerWidget {
@@ -91,6 +92,28 @@ class FamilyScreen extends ConsumerWidget {
                       const Icon(Icons.chevron_right_rounded, color: HallyColors.mintDeep),
                     ],
                   ),
+                ),
+              ),
+              HallySectionHeader(title: l10n.familyChildren, count: f.children.isEmpty ? null : f.children.length),
+              for (final c in f.children)
+                Card(
+                  child: ListTile(
+                    key: Key('family.child.${c.id}'),
+                    leading: ChildBadge(child: c, size: 40),
+                    title: Text(c.firstName, style: Theme.of(context).textTheme.titleMedium),
+                    subtitle: c.birthYear == null ? null : Text(l10n.childBorn(c.birthYear!)),
+                    trailing: const Icon(Icons.edit_outlined),
+                    onTap: () => showChildSheet(context, ref, familyId: f.id, child: c, siblings: f.children),
+                  ),
+                ),
+              Card(
+                child: ListTile(
+                  key: const Key('family.addChild'),
+                  leading: const HallyIconBadge(icon: Icons.child_care_rounded, color: HallyColors.sky),
+                  title: Text(l10n.childAdd),
+                  subtitle: f.children.isEmpty ? Text(l10n.childAddBody) : null,
+                  trailing: const Icon(Icons.add_rounded),
+                  onTap: () => showChildSheet(context, ref, familyId: f.id, siblings: f.children),
                 ),
               ),
               const SizedBox(height: HallySpace.md),
