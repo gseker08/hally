@@ -44,3 +44,22 @@ jobs:
       # Flutter 3.50 reports material.dart deprecation infos (material_ui split); errors and warnings still fail CI.
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
+
+  # Builds a debug APK so Gradle, plugin and Kotlin/Java problems show up before they reach a phone.
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter build apk --debug
