@@ -12,6 +12,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_repository.dart';
 import '../capture/capture_sheet.dart';
 import '../family/children.dart';
+import '../messages/chats_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../planning/planning_repository.dart';
 
@@ -164,6 +165,7 @@ class TodayHero extends StatelessWidget {
                         onPressed: () => context.push('/tasks'),
                         icon: const Icon(Icons.checklist_rounded, color: Colors.white),
                       ),
+                      const ChatsButton(),
                       const NotificationBell(),
                       const SizedBox(width: HallySpace.xs),
                       HallyAvatar(name: name, size: 40, ring: true),

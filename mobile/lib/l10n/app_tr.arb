@@ -517,5 +517,26 @@
   "childDeleteBody": "Görevler ve etkinlikler silinmez, yalnızca bu çocuğun etiketi kalkar.",
   "childFilterAll": "Hepsi",
   "childPickerLabel": "Kimin için?",
-  "childPickerWholeFamily": "Seçilmezse tüm aile için."
+  "childPickerWholeFamily": "Seçilmezse tüm aile için.",
+  "chatsTitle": "Mesajlar",
+  "chatFamily": "Aile sohbeti",
+  "chatFamilyEmpty": "Henüz mesaj yok",
+  "chatFamilyEmptyBody": "Ailedeki tüm yetişkinler bu sohbeti görür. İlk mesajı sen yaz.",
+  "chatDirectEmpty": "Henüz mesaj yok",
+  "chatDirectEmptyBody": "Bu yazışmayı yalnızca ikiniz görürsünüz.",
+  "chatFormerMember": "Eski üye",
+  "chatYou": "Sen: {text}",
+  "chatHint": "Mesaj yaz",
+  "chatSend": "Gönder",
+  "chatOlder": "Daha eski mesajlar",
+  "chatsAlone": "Mesajlaşmak için birini davet et",
+  "chatsAloneBody": "Eşin ya da partnerin katılınca aile sohbeti ve birebir yazışma açılır.",
+  "familyChatsBody": "Aile sohbeti ve birebir yazışmalar",
+  "@chatYou": {
+    "placeholders": {
+      "text": {
+        "type": "String"
+      }
+    }
+  }
 }

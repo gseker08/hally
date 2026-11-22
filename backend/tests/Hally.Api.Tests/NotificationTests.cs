@@ -78,7 +78,7 @@ public class NotificationTests(HallyApiFactory api)
         ownerInbox.Unread.Should().Be(1);
         var partnerInbox = (await partner.GetFromJsonAsync<InboxBody>("/api/v1/me/notifications"))!;
         partnerInbox.Items.Should().ContainSingle(n => n.TargetId == task.Id).Which.Body.Should().StartWith(sameDay ? "Today" : "Tomorrow");
-        api.Push.Sent.Should().Contain(p => p.Message.Data["targetId"] == task.Id.ToString());
+        api.Push.Sent.Should().Contain(p => p.Message.Data.GetValueOrDefault("targetId") == task.Id.ToString());
 
         var list = (await owner.GetFromJsonAsync<List<ReminderBody>>($"/api/v1/families/{familyId}/reminders?targetId={task.Id}"))!;
         list.Should().NotContain(r => r.Id == reminder.Id, "sent reminders are no longer scheduled");

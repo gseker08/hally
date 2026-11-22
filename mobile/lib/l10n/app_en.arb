@@ -273,5 +273,19 @@
   "childDeleteBody": "Tasks and events stay; only this child's tag is removed.",
   "childFilterAll": "Everyone",
   "childPickerLabel": "Who is it for?",
-  "childPickerWholeFamily": "Leave empty for the whole family."
+  "childPickerWholeFamily": "Leave empty for the whole family.",
+  "chatsTitle": "Messages",
+  "chatFamily": "Family chat",
+  "chatFamilyEmpty": "No messages yet",
+  "chatFamilyEmptyBody": "Every adult in the family sees this chat. Write the first message.",
+  "chatDirectEmpty": "No messages yet",
+  "chatDirectEmptyBody": "Only the two of you see this chat.",
+  "chatFormerMember": "Former member",
+  "chatYou": "You: {text}",
+  "chatHint": "Write a message",
+  "chatSend": "Send",
+  "chatOlder": "Older messages",
+  "chatsAlone": "Invite someone to start chatting",
+  "chatsAloneBody": "Once your partner joins, the family chat and direct messages open up.",
+  "familyChatsBody": "Family chat and direct messages"
 }

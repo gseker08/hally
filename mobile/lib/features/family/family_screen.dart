@@ -7,6 +7,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/billing_repository.dart';
+import '../messages/messages_repository.dart';
 import 'children.dart';
 import 'family_repository.dart';
 
@@ -63,6 +64,26 @@ class FamilyScreen extends ConsumerWidget {
                         ],
                       ),
                     ),
+                  ),
+                ),
+              const SizedBox(height: HallySpace.sm),
+              if (f.members.length > 1)
+                Card(
+                  child: ListTile(
+                    key: const Key('family.chats'),
+                    leading: const HallyIconBadge(icon: Icons.forum_rounded, color: HallyColors.cherry),
+                    title: Text(l10n.chatsTitle),
+                    subtitle: Text(l10n.familyChatsBody),
+                    trailing: Badge(
+                      isLabelVisible: (ref.watch(chatListProvider(f.id)).valueOrNull?.totalUnread ?? 0) > 0,
+                      label: Text('${ref.watch(chatListProvider(f.id)).valueOrNull?.totalUnread ?? 0}'),
+                      backgroundColor: HallyColors.cherry,
+                      child: const Icon(Icons.chevron_right_rounded),
+                    ),
+                    onTap: () async {
+                      await context.push('/chats');
+                      ref.invalidate(chatListProvider(f.id));
+                    },
                   ),
                 ),
               const SizedBox(height: HallySpace.sm),
