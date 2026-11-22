@@ -5,7 +5,7 @@ services:
       POSTGRES_DB: hally
       POSTGRES_USER: ${POSTGRES_USER:-hally}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
-    ports: ["5432:5432"]
+    ports: ["${POSTGRES_PORT:-5432}:5432"]
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hally} -d hally"]
@@ -48,7 +48,7 @@ services:
       Billing__Google__ServiceAccountJson: ${GOOGLE_PLAY_SERVICE_ACCOUNT_JSON:-}
       Billing__Google__NotificationToken: ${GOOGLE_PLAY_NOTIFICATION_TOKEN:-}
       Storage__EncryptionKey: ${STORAGE_ENCRYPTION_KEY:?set STORAGE_ENCRYPTION_KEY in .env}
-    ports: ["8080:8080"]
+    ports: ["${API_PORT:-8080}:8080"]
     volumes: [documents:/data/documents]
     # Readiness: GET http://localhost:8080/health/ready (checks PostgreSQL)
 
