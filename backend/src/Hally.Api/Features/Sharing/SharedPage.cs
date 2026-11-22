@@ -88,8 +88,8 @@ public static class SharedPage
         <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
         <title>{{{title}}} · {{{Html.Encode(appName)}}}</title>
         <style>
-        :root{--bg:#F7F5FF;--card:#fff;--ink:#1F1A3D;--muted:#6B6688;--brand:#7C6BD6;--ok:#23937A;--line:#E7E3F7}
-        @media (prefers-color-scheme:dark){:root{--bg:#14112A;--card:#1E1A3A;--ink:#F3F1FF;--muted:#A9A3C9;--line:#2E2952}}
+        :root{--bg:#FBF5F6;--card:#fff;--ink:#231A1D;--muted:#625A5E;--brand:#A8133C;--ok:#23937A;--line:#F0E4E7;--onbrand:#fff}
+        @media (prefers-color-scheme:dark){:root{--bg:#1A1215;--card:#251B1F;--ink:#F6EEF0;--muted:#B5A9AE;--brand:#E25C7C;--line:#3A2A2F;--onbrand:#1A1215}}
         *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
         main{max-width:560px;margin:0 auto;padding:24px 16px 40px}
         .brand{font-weight:800;color:var(--brand);letter-spacing:.3px}
@@ -97,7 +97,7 @@ public static class SharedPage
         ul{list-style:none;margin:0;padding:0}li{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:10px;display:flex;flex-direction:column;gap:4px}
         .t{font-weight:600}.w{color:var(--muted);font-size:14px}.from{color:var(--muted);margin:16px 0 0}
         li.done .t{text-decoration:line-through;color:var(--muted)}.ok{color:var(--ok);font-weight:600;font-size:14px}
-        form{margin:6px 0 0}button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:10px 16px;background:var(--brand);color:#fff;cursor:pointer;width:100%}
+        form{margin:6px 0 0}button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:10px 16px;background:var(--brand);color:var(--onbrand);cursor:pointer;width:100%}
         .empty,.foot{color:var(--muted)}.foot{font-size:13px;margin-top:28px}
         </style>
         </head>

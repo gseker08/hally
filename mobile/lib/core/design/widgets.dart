@@ -225,7 +225,7 @@ class HallyLogo extends StatelessWidget {
         color: onDark ? Colors.white : null,
         gradient: onDark ? null : HallyGradients.hero,
         borderRadius: BorderRadius.circular(size * 0.3),
-        boxShadow: HallyShadows.glow(onDark ? Colors.black : HallyColors.lavender),
+        boxShadow: HallyShadows.glow(onDark ? Colors.black : HallyColors.cherry),
       ),
       child: Stack(
         alignment: Alignment.center,
@@ -237,7 +237,7 @@ class HallyLogo extends StatelessWidget {
               fontWeight: FontWeight.w800,
               fontSize: size * 0.56,
               height: 1,
-              color: onDark ? HallyColors.lavenderDeep : Colors.white,
+              color: onDark ? HallyColors.cherryStrong : Colors.white,
             ),
           ),
           Positioned(
@@ -299,7 +299,7 @@ class HallyEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = color ?? HallyColors.lavender;
+    final accent = color ?? HallyColors.cherry;
     final brightness = theme.brightness;
     return Center(
       child: SingleChildScrollView(

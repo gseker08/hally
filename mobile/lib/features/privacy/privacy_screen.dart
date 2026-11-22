@@ -97,7 +97,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final theme = Theme.of(context);
 
     final points = [
-      (Icons.verified_user_rounded, HallyColors.lavender, l10n.privacyPointApproval),
+      (Icons.verified_user_rounded, HallyColors.cherry, l10n.privacyPointApproval),
       (
         Icons.psychology_rounded,
         HallyColors.sky,
@@ -106,7 +106,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       (Icons.lock_rounded, HallyColors.mint, l10n.privacyPointPhotos(info?.originalsRetentionDays ?? 30)),
       (Icons.child_care_rounded, HallyColors.apricot, l10n.privacyPointChildren),
       (Icons.link_rounded, HallyColors.rose, l10n.privacyPointLinks),
-      (Icons.analytics_rounded, HallyColors.lavender, l10n.privacyPointAnalytics),
+      (Icons.analytics_rounded, HallyColors.cherry, l10n.privacyPointAnalytics),
     ];
 
     return Scaffold(

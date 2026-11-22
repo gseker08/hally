@@ -229,7 +229,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     final date = e.date ?? p.payload.date;
     final busy = _busy.contains(p.id);
     final theme = Theme.of(context);
-    final accent = p.isEvent ? HallyColors.apricot : HallyColors.lavender;
+    final accent = p.isEvent ? HallyColors.apricot : HallyColors.cherry;
     final assignee = e.assigneeUserId ?? p.payload.assigneeUserId;
     return Card(
       key: Key('review.card.${p.id}'),

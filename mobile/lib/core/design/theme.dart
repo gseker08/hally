@@ -5,17 +5,16 @@ import 'tokens.dart';
 
 ThemeData buildHallyTheme(Brightness brightness) {
   final dark = brightness == Brightness.dark;
-  final ink = dark ? const Color(0xFFF2F0FA) : HallyColors.ink;
-  final muted = dark ? const Color(0xFFA9A4BD) : HallyColors.inkMuted;
+  final ink = dark ? const Color(0xFFF6EEF0) : HallyColors.ink;
+  final muted = dark ? const Color(0xFFB5A9AE) : HallyColors.inkMuted;
   final surface = dark ? HallyColors.surfaceDark : HallyColors.surface;
   final line = dark ? HallyColors.lineDark : HallyColors.line;
 
   final scheme = ColorScheme.fromSeed(
-    seedColor: HallyColors.lavender,
+    seedColor: HallyColors.cherry,
     brightness: brightness,
-    // Light: deep lavender keeps white button text above WCAG AA (6.7:1; plain lavender is 4.3:1).
-    // Dark: the light lavender needs dark text on top (6.5:1; white would be 2.8:1).
-    primary: dark ? const Color(0xFF9C8CF0) : HallyColors.lavenderDeep,
+    // Light: white text on cherry is well above WCAG AA. Dark: the light cherry needs dark text on top.
+    primary: dark ? HallyColors.cherryDark : HallyColors.cherry,
     onPrimary: dark ? HallyColors.canvasDark : Colors.white,
     secondary: HallyColors.mint,
     tertiary: HallyColors.apricot,
@@ -103,7 +102,7 @@ ThemeData buildHallyTheme(Brightness brightness) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: dark ? const Color(0xFF272336) : HallyColors.surface,
+      fillColor: dark ? const Color(0xFF2A1F23) : HallyColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: HallySpace.md),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(HallyRadius.md), borderSide: BorderSide(color: line)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(HallyRadius.md), borderSide: BorderSide(color: line, width: 1.5)),
@@ -118,7 +117,7 @@ ThemeData buildHallyTheme(Brightness brightness) {
       side: BorderSide(color: line),
       labelStyle: TextStyle(fontFamily: HallyFonts.body, fontWeight: FontWeight.w600, color: ink, fontSize: 13),
       backgroundColor: surface,
-      selectedColor: HallyColors.softOf(HallyColors.lavender, brightness),
+      selectedColor: HallyColors.softOf(HallyColors.cherry, brightness),
       checkmarkColor: scheme.primary,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
     ),

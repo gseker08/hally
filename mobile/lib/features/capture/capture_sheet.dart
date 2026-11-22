@@ -42,8 +42,8 @@ Future<void> showCaptureSheet(BuildContext context, WidgetRef ref) {
               CaptureOption(
                 key: const Key('capture.camera'),
                 icon: Icons.photo_camera_rounded,
-                gradient: HallyGradients.lavender,
-                color: HallyColors.lavender,
+                gradient: HallyGradients.cherry,
+                color: HallyColors.cherry,
                 label: l10n.captureCamera,
                 hint: l10n.captureCameraHint,
                 onTap: () => _pick(sheetContext, context, ref, ImageSource.camera, 'Camera'),

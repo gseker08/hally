@@ -86,7 +86,7 @@ class _DemoScanScreenState extends ConsumerState<DemoScanScreen> {
                   child: ListTile(
                     leading: HallyIconBadge(
                       icon: item.isEvent ? Icons.event_rounded : Icons.check_circle_outline_rounded,
-                      color: item.isEvent ? HallyColors.apricot : HallyColors.lavender,
+                      color: item.isEvent ? HallyColors.apricot : HallyColors.cherry,
                     ),
                     title: Text(item.payload.title, style: theme.textTheme.titleSmall),
                     subtitle: Text(

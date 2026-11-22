@@ -88,7 +88,7 @@ class HallyNavBar extends StatelessWidget {
                 borderRadius: BorderRadius.circular(HallyRadius.lg + 4),
                 border: Border.all(color: theme.colorScheme.outlineVariant),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFF2B2160).withValues(alpha: dark ? 0.4 : 0.12), blurRadius: 30, offset: const Offset(0, 12)),
+                  BoxShadow(color: const Color(0xFF3A0E1C).withValues(alpha: dark ? 0.4 : 0.12), blurRadius: 30, offset: const Offset(0, 12)),
                 ],
               ),
               child: Row(
@@ -161,7 +161,7 @@ class _Tab extends StatelessWidget {
               curve: HallyMotion.curve,
               padding: EdgeInsets.symmetric(horizontal: selected ? 18 : 10, vertical: 4),
               decoration: BoxDecoration(
-                color: selected ? HallyColors.softOf(HallyColors.lavender, theme.brightness) : Colors.transparent,
+                color: selected ? HallyColors.softOf(HallyColors.cherry, theme.brightness) : Colors.transparent,
                 borderRadius: BorderRadius.circular(HallyRadius.pill),
               ),
               child: Icon(selected ? item.activeIcon : item.icon, color: color, size: 24),
