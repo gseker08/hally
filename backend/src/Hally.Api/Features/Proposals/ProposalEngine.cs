@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Hally.Api.Common;
+using Hally.Api.Features.Families;
 using Hally.Domain.Capture;
 using Hally.Domain.Common;
 using Hally.Domain.Planning;
@@ -20,7 +21,8 @@ public record ProposalEdits(
     Guid? ChildId,
     Guid? AssigneeUserId,
     bool ClearTime = false,
-    bool ClearChild = false);
+    bool ClearChild = false,
+    IReadOnlyList<Guid>? ChildIds = null);
 
 public record ApprovalResult(Guid ProposalId, ProposalKind Kind, Guid EntityId);
 
@@ -60,7 +62,7 @@ public class ProposalEngine(HallyDbContext db, IAnalytics analytics, TimeProvide
         if (proposal.Kind == ProposalKind.CreateTask)
         {
             var due = ToUtc(payload.Date, payload.Time, zone);
-            var task = new FamilyTask(familyId, userId, payload.Title, payload.Notes, due, payload.Time is null, payload.AssigneeUserId, payload.ChildId, proposal.Id);
+            var task = new FamilyTask(familyId, userId, payload.Title, payload.Notes, due, payload.Time is null, payload.AssigneeUserId, payload.EffectiveChildIds, proposal.Id);
             db.Tasks.Add(task);
             entityId = task.Id;
         }
@@ -69,7 +71,7 @@ public class ProposalEngine(HallyDbContext db, IAnalytics analytics, TimeProvide
             var start = ToUtc(payload.Date, payload.Time, zone)
                         ?? throw new DomainException("proposal.date_required", "An event needs a date before it can be approved.");
             var end = payload.EndTime is null ? (DateTimeOffset?)null : ToUtc(payload.Date, payload.EndTime, zone);
-            var evt = new CalendarEvent(familyId, userId, payload.Title, start, end, payload.Time is null, payload.Location, payload.ChildId, proposal.Id);
+            var evt = new CalendarEvent(familyId, userId, payload.Title, start, end, payload.Time is null, payload.Location, payload.EffectiveChildIds, proposal.Id);
             if (Enum.TryParse<EventRepeat>(payload.Repeat, ignoreCase: true, out var repeat) && Enum.IsDefined(repeat))
             {
                 evt.SetRepeat(repeat, null);
@@ -136,7 +138,7 @@ public class ProposalEngine(HallyDbContext db, IAnalytics analytics, TimeProvide
             throw new DomainException("proposal.assignee_not_member", "The assignee is not a member of this family.");
         }
 
-        if (payload.ChildId is { } child && !await db.Children.AnyAsync(c => c.FamilyId == familyId && c.Id == child, ct))
+        if (!await db.AllChildrenInFamilyAsync(familyId, payload.EffectiveChildIds, ct))
         {
             throw new DomainException("proposal.child_not_in_family", "The child does not belong to this family.");
         }
@@ -157,9 +159,9 @@ public class ProposalEngine(HallyDbContext db, IAnalytics analytics, TimeProvide
             Time = e.ClearTime ? null : e.Time ?? p.Time,
             EndTime = e.ClearTime ? null : e.EndTime ?? p.EndTime,
             Location = e.Location ?? p.Location,
-            ChildId = e.ClearChild ? null : e.ChildId ?? p.ChildId,
             AssigneeUserId = e.AssigneeUserId ?? p.AssigneeUserId,
         };
+        p = p.WithChildren(e.ClearChild ? [] : e.ChildIds ?? (e.ChildId is { } c ? [c] : p.EffectiveChildIds));
 
         if (p.Date is not null && !DateOnly.TryParseExact(p.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
         {

@@ -68,11 +68,16 @@ public class NotificationTests(HallyApiFactory api)
             await Dispatch(); // a rerun must not duplicate
         });
 
+        // The text names the due day relative to when the reminder fires, in the family's zone: late in the
+        // evening the task is due after midnight, so "Tomorrow" is right then.
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Istanbul");
+        var sameDay = TimeZoneInfo.ConvertTime(task.DueAt!.Value, zone).Date
+                      == TimeZoneInfo.ConvertTime(api.Clock.GetUtcNow().AddHours(2).AddMinutes(1), zone).Date;
         var ownerInbox = (await owner.GetFromJsonAsync<InboxBody>("/api/v1/me/notifications"))!;
-        ownerInbox.Items.Should().ContainSingle(n => n.TargetId == task.Id).Which.Body.Should().StartWith("Bugün").And.MatchRegex(@"\d\d:\d\d");
+        ownerInbox.Items.Should().ContainSingle(n => n.TargetId == task.Id).Which.Body.Should().StartWith(sameDay ? "Bugün" : "Yarın").And.MatchRegex(@"\d\d:\d\d");
         ownerInbox.Unread.Should().Be(1);
         var partnerInbox = (await partner.GetFromJsonAsync<InboxBody>("/api/v1/me/notifications"))!;
-        partnerInbox.Items.Should().ContainSingle(n => n.TargetId == task.Id).Which.Body.Should().StartWith("Today");
+        partnerInbox.Items.Should().ContainSingle(n => n.TargetId == task.Id).Which.Body.Should().StartWith(sameDay ? "Today" : "Tomorrow");
         api.Push.Sent.Should().Contain(p => p.Message.Data["targetId"] == task.Id.ToString());
 
         var list = (await owner.GetFromJsonAsync<List<ReminderBody>>($"/api/v1/families/{familyId}/reminders?targetId={task.Id}"))!;

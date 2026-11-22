@@ -256,5 +256,22 @@
   "privacyDeleteWord": "DELETE",
   "privacyDeleteTypeTitle": "Type {word} to confirm",
   "privacyDeleted": "Your account was deleted",
-  "privacyContact": "Questions: {email}"
+  "privacyContact": "Questions: {email}",
+  "familyChildren": "Children",
+  "childAdd": "Add a child",
+  "childEdit": "Edit child",
+  "childAddBody": "Give each child a colour and see tasks and events per child.",
+  "childName": "First name or nickname",
+  "childNameHelp": "No surname needed.",
+  "childNameRequired": "Name is required",
+  "childBirthYear": "Birth year (optional)",
+  "childBirthYearInvalid": "Enter a valid birth year",
+  "childBorn": "Born {year}",
+  "childColor": "Colour",
+  "childDelete": "Remove child",
+  "childDeleteTitle": "Remove {name}?",
+  "childDeleteBody": "Tasks and events stay; only this child's tag is removed.",
+  "childFilterAll": "Everyone",
+  "childPickerLabel": "Who is it for?",
+  "childPickerWholeFamily": "Leave empty for the whole family."
 }

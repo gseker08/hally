@@ -1,6 +1,7 @@
 using FluentValidation;
 using Hally.Api.Auth;
 using Hally.Api.Common;
+using Hally.Api.Features.Families;
 using Hally.Domain.Planning;
 using Hally.Infrastructure.Analytics;
 using Hally.Infrastructure.Persistence;
@@ -10,10 +11,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hally.Api.Features.Tasks;
 
+/// <param name="ChildId">The first of <c>ChildIds</c>, kept for older clients.</param>
 public record TaskDto(Guid Id, string Title, string? Notes, DateTimeOffset? DueAt, bool AllDay, Guid? AssigneeUserId, Guid? ChildId,
-    string State, bool IsOverdue, DateTimeOffset? CompletedAt, Guid? SourceProposalId);
+    string State, bool IsOverdue, DateTimeOffset? CompletedAt, Guid? SourceProposalId, IReadOnlyList<Guid> ChildIds);
 
-public record SaveTaskRequest(string Title, string? Notes, DateTimeOffset? DueAt, bool AllDay, Guid? AssigneeUserId, Guid? ChildId);
+/// <param name="ChildIds">The children the task is about; empty for the whole family. Wins over the older single <c>ChildId</c>.</param>
+public record SaveTaskRequest(string Title, string? Notes, DateTimeOffset? DueAt, bool AllDay, Guid? AssigneeUserId, Guid? ChildId,
+    IReadOnlyList<Guid>? ChildIds = null)
+{
+    public IReadOnlyList<Guid> EffectiveChildIds => ChildIds ?? (ChildId is { } c ? [c] : []);
+}
 
 public class SaveTaskRequestValidator : AbstractValidator<SaveTaskRequest>
 {
@@ -21,6 +28,7 @@ public class SaveTaskRequestValidator : AbstractValidator<SaveTaskRequest>
     {
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Notes).MaximumLength(2000);
+        RuleFor(x => x.ChildIds!.Count).LessThanOrEqualTo(Domain.Planning.ChildTags.Max).When(x => x.ChildIds is not null);
     }
 }
 
@@ -31,7 +39,7 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
 {
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TaskDto>>> List(Guid familyId, [FromQuery] string? state, [FromQuery] Guid? assignee,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken ct = default)
+        [FromQuery] Guid? child, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken ct = default)
     {
         pageSize = Math.Clamp(pageSize, 1, 200);
         var query = db.Tasks.AsNoTracking().Where(t => t.FamilyId == familyId);
@@ -43,6 +51,11 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
         if (assignee is { } a)
         {
             query = query.Where(t => t.AssigneeUserId == a);
+        }
+
+        if (child is { } c)
+        {
+            query = query.Where(t => t.ChildIds.Contains(c));
         }
 
         var items = await query.OrderBy(t => t.DueAt == null).ThenBy(t => t.DueAt).ThenBy(t => t.CreatedAt)
@@ -60,9 +73,9 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
     [ProducesResponseType<TaskDto>(201)]
     public async Task<IActionResult> Create(Guid familyId, SaveTaskRequest request, CancellationToken ct)
     {
-        await EnsureRefs(familyId, request.AssigneeUserId, request.ChildId, ct);
+        await EnsureRefs(familyId, request.AssigneeUserId, request.EffectiveChildIds, ct);
         var userId = User.UserId();
-        var task = new FamilyTask(familyId, userId, request.Title, request.Notes, request.DueAt, request.AllDay, request.AssigneeUserId, request.ChildId);
+        var task = new FamilyTask(familyId, userId, request.Title, request.Notes, request.DueAt, request.AllDay, request.AssigneeUserId, request.EffectiveChildIds);
         db.Tasks.Add(task);
         Audit(familyId, userId, "task.created", task.Id);
         analytics.Track(AnalyticsEvents.TaskCreated, userId, familyId, new Dictionary<string, object?> { ["source"] = "manual" });
@@ -73,9 +86,9 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
     [HttpPut("{taskId:guid}")]
     public async Task<ActionResult<TaskDto>> Update(Guid familyId, Guid taskId, SaveTaskRequest request, CancellationToken ct)
     {
-        await EnsureRefs(familyId, request.AssigneeUserId, request.ChildId, ct);
+        await EnsureRefs(familyId, request.AssigneeUserId, request.EffectiveChildIds, ct);
         var task = await Find(familyId, taskId, ct);
-        task.Update(request.Title, request.Notes, request.DueAt, request.AllDay, request.ChildId);
+        task.Update(request.Title, request.Notes, request.DueAt, request.AllDay, request.EffectiveChildIds);
         task.Assign(request.AssigneeUserId);
         Audit(familyId, User.UserId(), "task.updated", task.Id);
         await db.SaveChangesAsync(ct);
@@ -124,14 +137,14 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
                ?? throw new NotFoundException("task.not_found", "Task not found.");
     }
 
-    private async Task EnsureRefs(Guid familyId, Guid? assignee, Guid? child, CancellationToken ct)
+    private async Task EnsureRefs(Guid familyId, Guid? assignee, IReadOnlyList<Guid> children, CancellationToken ct)
     {
         if (assignee is { } a && !await db.FamilyMembers.AnyAsync(m => m.FamilyId == familyId && m.UserId == a, ct))
         {
             throw new Domain.Common.DomainException("task.assignee_not_member", "The assignee is not a member of this family.");
         }
 
-        if (child is { } c && !await db.Children.AnyAsync(x => x.FamilyId == familyId && x.Id == c, ct))
+        if (!await db.AllChildrenInFamilyAsync(familyId, children, ct))
         {
             throw new Domain.Common.DomainException("task.child_not_in_family", "The child does not belong to this family.");
         }
@@ -141,5 +154,5 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
         db.AuditEntries.Add(new AuditEntry { FamilyId = familyId, ActorUserId = userId, Action = action, EntityType = "task", EntityId = id, At = clock.GetUtcNow() });
 
     public static TaskDto ToDto(FamilyTask t, DateTimeOffset now) =>
-        new(t.Id, t.Title, t.Notes, t.DueAt, t.AllDay, t.AssigneeUserId, t.ChildId, t.State.ToString(), t.IsOverdue(now), t.CompletedAt, t.SourceProposalId);
+        new(t.Id, t.Title, t.Notes, t.DueAt, t.AllDay, t.AssigneeUserId, t.ChildIds.Count > 0 ? t.ChildIds[0] : null, t.State.ToString(), t.IsOverdue(now), t.CompletedAt, t.SourceProposalId, t.ChildIds);
 }

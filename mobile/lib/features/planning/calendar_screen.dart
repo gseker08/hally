@@ -8,6 +8,8 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../family/children.dart';
+import '../family/family_repository.dart';
 import '../notifications/reminder_sheet.dart';
 import '../sharing/helper_share_sheet.dart';
 import '../sharing/sharing_repository.dart';
@@ -46,7 +48,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (familyId == null) return const Scaffold(body: HallyLoading());
 
     final range = _range(familyId);
-    final events = ref.watch(calendarEventsProvider(range));
+    final child = ref.watch(childFilterProvider);
+    final events = ref.watch(calendarEventsProvider(range)).whenData((all) => filterByChild(all, (e) => e.childIds, child));
     bool hasEvents(DateTime d) => events.valueOrNull?.any((e) => DateUtils.isSameDay(e.startsAt, d)) ?? false;
 
     return Scaffold(
@@ -95,6 +98,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
             ),
           ),
+          ChildFilterBar(familyId: familyId),
           if (_view == _CalendarView.week)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: HallySpace.sm),
@@ -139,7 +143,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       Card(
                         child: ListTile(
                           leading: const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.apricot),
-                          title: Text(e.title, style: theme.textTheme.titleSmall),
+                          title: Row(
+                            children: [
+                              Expanded(child: Text(e.title, style: theme.textTheme.titleSmall)),
+                              ChildBadges(familyId: familyId, childIds: e.childIds, size: 20),
+                            ],
+                          ),
                           subtitle: Text([
                             e.allDay ? l10n.reviewAllDay : TimeOfDay.fromDateTime(e.startsAt).format(context),
                             if (e.repeat != EventRepeat.none) repeatLabel(l10n, e.repeat),
@@ -166,15 +175,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Future<void> _addEvent(String familyId) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final result = await showDialog<(String, DateTime, TimeOfDay?, EventRepeat)>(
+    final children = ref.read(familyProvider(familyId)).valueOrNull?.children ?? const <ChildProfile>[];
+    final filtered = ref.read(childFilterProvider);
+    final result = await showDialog<(String, DateTime, TimeOfDay?, EventRepeat, List<String>)>(
       context: context,
-      builder: (_) => _EventDialog(initialDate: _selected),
+      builder: (_) => _EventDialog(initialDate: _selected, children: children, initialChildIds: {if (filtered != null) filtered}),
     );
     if (result == null) return;
-    final (title, date, time, repeat) = result;
+    final (title, date, time, repeat, childIds) = result;
     final startsAt = DateTime(date.year, date.month, date.day, time?.hour ?? 0, time?.minute ?? 0);
     try {
-      final saved = await ref.read(planningRepositoryProvider).createEvent(familyId, title: title, startsAt: startsAt, allDay: time == null, repeat: repeat);
+      final saved = await ref.read(planningRepositoryProvider).createEvent(familyId, title: title, startsAt: startsAt, allDay: time == null, repeat: repeat, childIds: childIds);
       // A series can show up in any window, so refresh every cached range.
       ref.invalidate(calendarEventsProvider);
       if (saved.conflicts.isNotEmpty) {
@@ -351,9 +362,11 @@ class _DayChip extends StatelessWidget {
 }
 
 class _EventDialog extends StatefulWidget {
-  const _EventDialog({required this.initialDate});
+  const _EventDialog({required this.initialDate, required this.children, required this.initialChildIds});
 
   final DateTime initialDate;
+  final List<ChildProfile> children;
+  final Set<String> initialChildIds;
 
   @override
   State<_EventDialog> createState() => _EventDialogState();
@@ -364,6 +377,7 @@ class _EventDialogState extends State<_EventDialog> {
   late DateTime _date = widget.initialDate;
   TimeOfDay? _time;
   EventRepeat _repeat = EventRepeat.none;
+  late Set<String> _childIds = widget.initialChildIds;
 
   @override
   void dispose() {
@@ -411,6 +425,7 @@ class _EventDialogState extends State<_EventDialog> {
             items: [for (final r in EventRepeat.values) DropdownMenuItem(value: r, child: Text(repeatLabel(l10n, r)))],
             onChanged: (r) => setState(() => _repeat = r ?? EventRepeat.none),
           ),
+          ChildPicker(children: widget.children, selected: _childIds, onChanged: (ids) => setState(() => _childIds = ids)),
         ],
       ),
       actions: [
@@ -420,7 +435,7 @@ class _EventDialogState extends State<_EventDialog> {
           onPressed: () {
             final title = _title.text.trim();
             if (title.isEmpty) return;
-            Navigator.pop(context, (title, _date, _time, _repeat));
+            Navigator.pop(context, (title, _date, _time, _repeat, _childIds.toList()));
           },
           child: Text(l10n.eventSave),
         ),

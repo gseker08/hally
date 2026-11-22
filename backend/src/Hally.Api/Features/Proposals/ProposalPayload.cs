@@ -21,7 +21,16 @@ public record ProposalPayload
 
     /// <summary>Events only: None, Daily, Weekly or Monthly (<see cref="Domain.Planning.EventRepeat"/>). Null means a one-off.</summary>
     public string? Repeat { get; init; }
+    /// <summary>Older single-child field; read only when <see cref="ChildIds"/> is missing (stored payloads).</summary>
     public Guid? ChildId { get; init; }
+
+    public IReadOnlyList<Guid>? ChildIds { get; init; }
+
+    public IReadOnlyList<Guid> EffectiveChildIds => ChildIds ?? (ChildId is { } c ? [c] : []);
+
+    /// <summary>Sets the children, keeping <see cref="ChildId"/> as the first one for older clients.</summary>
+    public ProposalPayload WithChildren(IReadOnlyList<Guid> childIds) =>
+        this with { ChildIds = childIds, ChildId = childIds.Count > 0 ? childIds[0] : null };
     public Guid? AssigneeUserId { get; init; }
     public IReadOnlyList<string> NeedsInfo { get; init; } = [];
     public string Confidence { get; init; } = "medium";

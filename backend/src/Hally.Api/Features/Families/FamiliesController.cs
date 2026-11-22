@@ -12,9 +12,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Hally.Api.Features.Families;
 
 public record CreateFamilyRequest(string Name, string? TimeZoneId);
-public record AddChildRequest(string FirstName, int? BirthYear);
+/// <param name="Color">One of <see cref="ChildColors.All"/>; when omitted a colour no sibling uses is picked.</param>
+public record AddChildRequest(string FirstName, int? BirthYear, string? Color = null);
+public record UpdateChildRequest(string FirstName, int? BirthYear, string Color);
 public record MemberDto(Guid UserId, string DisplayName, string Role);
-public record ChildDto(Guid Id, string FirstName, int? BirthYear);
+public record ChildDto(Guid Id, string FirstName, int? BirthYear, string Color)
+{
+    public static ChildDto From(Child c) => new(c.Id, c.FirstName, c.BirthYear, c.Color);
+}
 public record FamilyDto(Guid Id, string Name, string TimeZoneId, IReadOnlyList<MemberDto> Members, IReadOnlyList<ChildDto> Children);
 
 public class CreateFamilyRequestValidator : AbstractValidator<CreateFamilyRequest>
@@ -33,6 +38,18 @@ public class AddChildRequestValidator : AbstractValidator<AddChildRequest>
     {
         RuleFor(x => x.FirstName).NotEmpty().MaximumLength(40);
         RuleFor(x => x.BirthYear).InclusiveBetween(DateTime.UtcNow.Year - 25, DateTime.UtcNow.Year).When(x => x.BirthYear.HasValue);
+        RuleFor(x => x.Color).Must(ChildColors.IsValid).When(x => x.Color is not null)
+            .WithMessage($"Color must be one of: {string.Join(", ", ChildColors.All)}.");
+    }
+}
+
+public class UpdateChildRequestValidator : AbstractValidator<UpdateChildRequest>
+{
+    public UpdateChildRequestValidator()
+    {
+        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(40);
+        RuleFor(x => x.BirthYear).InclusiveBetween(DateTime.UtcNow.Year - 25, DateTime.UtcNow.Year).When(x => x.BirthYear.HasValue);
+        RuleFor(x => x.Color).Must(ChildColors.IsValid).WithMessage($"Color must be one of: {string.Join(", ", ChildColors.All)}.");
     }
 }
 
@@ -73,10 +90,39 @@ public class FamiliesController(HallyDbContext db, IAnalytics analytics) : Contr
     public async Task<IActionResult> AddChild(Guid familyId, AddChildRequest request, CancellationToken ct)
     {
         var family = await db.Families.Include(f => f.Children).FirstAsync(f => f.Id == familyId, ct);
-        var child = family.AddChild(request.FirstName, request.BirthYear);
+        var child = family.AddChild(request.FirstName, request.BirthYear, request.Color);
         analytics.Track(AnalyticsEvents.ChildAdded, User.UserId(), familyId);
         await db.SaveChangesAsync(ct);
-        return StatusCode(201, new ChildDto(child.Id, child.FirstName, child.BirthYear));
+        return StatusCode(201, ChildDto.From(child));
+    }
+
+    [HttpPut("{familyId:guid}/children/{childId:guid}")]
+    [Authorize(Policy = Policies.FamilyMember)]
+    public async Task<ActionResult<ChildDto>> UpdateChild(Guid familyId, Guid childId, UpdateChildRequest request, CancellationToken ct)
+    {
+        var child = await db.Children.FirstOrDefaultAsync(c => c.FamilyId == familyId && c.Id == childId, ct)
+                    ?? throw new NotFoundException("child.not_found", "Child not found.");
+        child.Update(request.FirstName, request.BirthYear, request.Color);
+        await db.SaveChangesAsync(ct);
+        return ChildDto.From(child);
+    }
+
+    /// <summary>Removes a child profile and untags it from every task and event (the items themselves stay).</summary>
+    [HttpDelete("{familyId:guid}/children/{childId:guid}")]
+    [Authorize(Policy = Policies.FamilyMember)]
+    public async Task<IActionResult> DeleteChild(Guid familyId, Guid childId, CancellationToken ct)
+    {
+        var child = await db.Children.FirstOrDefaultAsync(c => c.FamilyId == familyId && c.Id == childId, ct)
+                    ?? throw new NotFoundException("child.not_found", "Child not found.");
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE tasks SET child_ids = array_remove(child_ids, {childId}) WHERE family_id = {familyId} AND {childId} = ANY(child_ids)", ct);
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE events SET child_ids = array_remove(child_ids, {childId}) WHERE family_id = {familyId} AND {childId} = ANY(child_ids)", ct);
+        db.Children.Remove(child);
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+        return NoContent();
     }
 
     private async Task<FamilyDto> LoadDto(Guid familyId, CancellationToken ct)
@@ -92,6 +138,6 @@ public class FamiliesController(HallyDbContext db, IAnalytics analytics) : Contr
 
         return new FamilyDto(family.Id, family.Name, family.TimeZoneId,
             members.Select(m => new MemberDto(m.UserId, m.DisplayName, m.Role.ToString())).ToList(),
-            family.Children.OrderBy(c => c.CreatedAt).Select(c => new ChildDto(c.Id, c.FirstName, c.BirthYear)).ToList());
+            family.Children.OrderBy(c => c.CreatedAt).Select(ChildDto.From).ToList());
     }
 }

@@ -82,12 +82,24 @@ public class Family : Entity
         return true;
     }
 
-    public Child AddChild(string firstName, int? birthYear)
+    public const int MaxChildren = 10;
+
+    /// <summary>Adds a child. Without a colour, the first palette colour no sibling uses yet is picked.</summary>
+    public Child AddChild(string firstName, int? birthYear, string? color = null)
     {
-        var child = new Child(Id, firstName, birthYear);
+        if (_children.Count >= MaxChildren)
+        {
+            throw new DomainException("family.child_limit", $"A family can have at most {MaxChildren} children.");
+        }
+
+        var used = _children.Select(c => c.Color).ToHashSet();
+        var child = new Child(Id, firstName, birthYear,
+            color ?? ChildColors.All.FirstOrDefault(c => !used.Contains(c)) ?? ChildColors.All[_children.Count % ChildColors.All.Count]);
         _children.Add(child);
         return child;
     }
+
+    public bool RemoveChild(Guid childId) => _children.RemoveAll(c => c.Id == childId) > 0;
 }
 
 public enum FamilyRole
@@ -119,7 +131,20 @@ public class Child : Entity
 {
     private Child() { }
 
-    internal Child(Guid familyId, string firstName, int? birthYear)
+    internal Child(Guid familyId, string firstName, int? birthYear, string color)
+    {
+        FamilyId = familyId;
+        Update(firstName, birthYear, color);
+    }
+
+    public Guid FamilyId { get; private set; }
+    public string FirstName { get; private set; } = default!;
+    public int? BirthYear { get; private set; }
+
+    /// <summary>A key from <see cref="ChildColors.All"/>; the app maps it to a colour.</summary>
+    public string Color { get; private set; } = ChildColors.All[0];
+
+    public void Update(string firstName, int? birthYear, string color)
     {
         if (string.IsNullOrWhiteSpace(firstName) || firstName.Trim().Length > 40)
         {
@@ -131,12 +156,22 @@ public class Child : Entity
             throw new DomainException("child.birth_year_invalid", "Birth year is out of range.");
         }
 
-        FamilyId = familyId;
+        if (!ChildColors.IsValid(color))
+        {
+            throw new DomainException("child.color_invalid", $"Color must be one of: {string.Join(", ", ChildColors.All)}.");
+        }
+
         FirstName = firstName.Trim();
         BirthYear = birthYear;
+        Color = color;
     }
+}
 
-    public Guid FamilyId { get; private set; }
-    public string FirstName { get; private set; } = default!;
-    public int? BirthYear { get; private set; }
+/// <summary>Colour keys for children. Red and orange are left out on purpose: red is the brand colour and
+/// orange marks delays, so neither may be mistaken for a child.</summary>
+public static class ChildColors
+{
+    public static readonly IReadOnlyList<string> All = ["sky", "mint", "lavender", "sun", "teal", "indigo"];
+
+    public static bool IsValid(string? color) => color is not null && All.Contains(color);
 }

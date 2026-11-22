@@ -11,6 +11,7 @@ import '../../core/text/locale_case.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_repository.dart';
 import '../capture/capture_sheet.dart';
+import '../family/children.dart';
 import '../notifications/notifications_screen.dart';
 import '../planning/planning_repository.dart';
 
@@ -53,11 +54,22 @@ class TodayScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _body(BuildContext context, WidgetRef ref, TodayData d, String familyId) {
+  List<Widget> _body(BuildContext context, WidgetRef ref, TodayData all, String familyId) {
     final l10n = AppLocalizations.of(context);
+    final child = ref.watch(childFilterProvider);
+    final d = TodayData(
+      overdue: filterByChild(all.overdue, (t) => t.childIds, child),
+      dueToday: filterByChild(all.dueToday, (t) => t.childIds, child),
+      events: filterByChild(all.events, (e) => e.childIds, child),
+      waiting: all.waiting,
+    );
     var i = 0;
     return [
       HallyEntrance(index: i++, child: const _QuickCapture()),
+      Padding(
+        padding: const EdgeInsets.only(top: HallySpace.sm),
+        child: ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
+      ),
       if (d.waiting.isNotEmpty)
         HallyEntrance(
           index: i++,
@@ -93,7 +105,7 @@ class TodayScreen extends ConsumerWidget {
       if (d.events.isNotEmpty) ...[
         HallySectionHeader(title: l10n.todayEvents, color: HallyColors.cherry, count: d.events.length),
         for (final (n, e) in d.events.indexed)
-          HallyEntrance(index: i++, child: _EventTile(event: e, last: n == d.events.length - 1)),
+          HallyEntrance(index: i++, child: _EventTile(event: e, familyId: familyId, last: n == d.events.length - 1)),
       ],
     ];
   }
@@ -493,6 +505,10 @@ class _TaskTileState extends ConsumerState<TaskTile> {
                       ],
                     ),
                   ),
+                  if (t.childIds.isNotEmpty) ...[
+                    ChildBadges(familyId: widget.familyId, childIds: t.childIds),
+                    const SizedBox(width: HallySpace.sm),
+                  ],
                   Container(width: 4, height: 28, decoration: BoxDecoration(color: widget.color.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
                 ],
               ),
@@ -506,9 +522,10 @@ class _TaskTileState extends ConsumerState<TaskTile> {
 
 /// Timeline-style event row: time on the left, a coloured rail, then the title.
 class _EventTile extends StatelessWidget {
-  const _EventTile({required this.event, required this.last});
+  const _EventTile({required this.event, required this.familyId, required this.last});
 
   final EventItem event;
+  final String familyId;
   final bool last;
 
   @override
@@ -552,6 +569,10 @@ class _EventTile extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(child: Text(event.title, style: theme.textTheme.titleMedium)),
+                    if (event.childIds.isNotEmpty) ...[
+                      ChildBadges(familyId: familyId, childIds: event.childIds),
+                      const SizedBox(width: HallySpace.sm),
+                    ],
                     const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.cherry, size: 34),
                   ],
                 ),
