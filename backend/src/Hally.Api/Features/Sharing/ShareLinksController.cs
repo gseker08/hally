@@ -2,6 +2,7 @@ using System.Globalization;
 using FluentValidation;
 using Hally.Api.Auth;
 using Hally.Api.Common;
+using Hally.Api.Features.Events;
 using Hally.Api.Features.Proposals;
 using Hally.Domain.Common;
 using Hally.Domain.Planning;
@@ -177,10 +178,7 @@ public class SharedPageController(HallyDbContext db, IAnalytics analytics, IOpti
         var tasks = await db.Tasks.AsNoTracking()
             .Where(t => t.FamilyId == link.FamilyId && t.State != TaskState.Cancelled && t.DueAt >= start && t.DueAt < end)
             .OrderBy(t => t.DueAt).ToListAsync(ct);
-        var events = (await db.Events.AsNoTracking()
-                .Where(e => e.FamilyId == link.FamilyId && e.StartsAt < end && e.StartsAt >= start.AddDays(-2))
-                .OrderBy(e => e.StartsAt).ToListAsync(ct))
-            .Where(e => e.Overlaps(start, end)).ToList();
+        var events = await db.EventsInRangeAsync(link.FamilyId, start, end, timeZoneId, ct);
         return (tasks, events);
     }
 

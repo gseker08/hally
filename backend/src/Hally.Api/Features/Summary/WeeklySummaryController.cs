@@ -1,5 +1,6 @@
 using Hally.Api.Auth;
 using Hally.Api.Common;
+using Hally.Api.Features.Events;
 using Hally.Api.Features.Proposals;
 using Hally.Domain.Capture;
 using Hally.Domain.Common;
@@ -53,8 +54,8 @@ public class WeeklySummaryController(HallyDbContext db, TimeProvider clock) : Co
         var done = await db.Tasks.AsNoTracking()
             .Where(t => t.FamilyId == familyId && t.State == TaskState.Done && t.CompletedAt >= start && t.CompletedAt < end)
             .Select(t => new { t.CompletedByUserId, t.CompletedByHelper, t.ChildId }).ToListAsync(ct);
-        var events = await db.Events.AsNoTracking()
-            .Where(e => e.FamilyId == familyId && e.StartsAt >= start && e.StartsAt < end).Select(e => e.ChildId).ToListAsync(ct);
+        var events = (await db.EventsInRangeAsync(familyId, start, end, family.TimeZoneId, ct))
+            .Where(e => e.StartsAt >= start).Select(e => e.ChildId).ToList();
         var approved = await db.Proposals.AsNoTracking()
             .CountAsync(p => p.FamilyId == familyId && p.Status == ProposalStatus.Approved && p.DecidedAt >= start && p.DecidedAt < end, ct);
 

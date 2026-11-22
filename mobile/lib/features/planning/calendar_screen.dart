@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -11,7 +13,7 @@ import '../sharing/helper_share_sheet.dart';
 import '../sharing/sharing_repository.dart';
 import 'planning_repository.dart';
 
-/// Week strip + the selected day's events. Events come from approved proposals or manual entry.
+/// Week strip or month grid, plus the selected day's events. Events come from approved proposals or manual entry.
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
 
@@ -19,8 +21,21 @@ class CalendarScreen extends ConsumerStatefulWidget {
   ConsumerState<CalendarScreen> createState() => _CalendarScreenState();
 }
 
+enum _CalendarView { week, month }
+
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selected = DateUtils.dateOnly(DateTime.now());
+  _CalendarView _view = _CalendarView.week;
+
+  CalendarRange _range(String familyId) =>
+      _view == _CalendarView.week ? CalendarRange.week(familyId, _selected) : CalendarRange.month(familyId, _selected);
+
+  void _step(int direction) => setState(() {
+        _selected = _view == _CalendarView.week
+            ? DateTime(_selected.year, _selected.month, _selected.day + 7 * direction)
+            // Keep the day where the month has it, otherwise the month's last day (31 Jan → 28 Feb).
+            : DateTime(_selected.year, _selected.month + direction, math.min(_selected.day, DateUtils.getDaysInMonth(_selected.year, _selected.month + direction)));
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -30,18 +45,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final familyId = ref.watch(meProvider).valueOrNull?.primaryFamily?.id;
     if (familyId == null) return const Scaffold(body: HallyLoading());
 
-    final monday = mondayOf(_selected);
-    final key = WeekKey(familyId, monday);
-    final week = ref.watch(weekEventsProvider(key));
-    final days = [for (var i = 0; i < 7; i++) monday.add(Duration(days: i))];
+    final range = _range(familyId);
+    final events = ref.watch(calendarEventsProvider(range));
+    bool hasEvents(DateTime d) => events.valueOrNull?.any((e) => DateUtils.isSameDay(e.startsAt, d)) ?? false;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(DateFormat.yMMMM(locale).format(_selected)),
         actions: [
-          IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => setState(() => _selected = _selected.subtract(const Duration(days: 7)))),
+          IconButton(key: const Key('calendar.previous'), icon: const Icon(Icons.chevron_left), onPressed: () => _step(-1)),
           TextButton(onPressed: () => setState(() => _selected = DateUtils.dateOnly(DateTime.now())), child: Text(l10n.calendarToday)),
-          IconButton(icon: const Icon(Icons.chevron_right), onPressed: () => setState(() => _selected = _selected.add(const Duration(days: 7)))),
+          IconButton(key: const Key('calendar.next'), icon: const Icon(Icons.chevron_right), onPressed: () => _step(1)),
           IconButton(
             key: const Key('calendar.shareDay'),
             tooltip: l10n.calendarShareDay,
@@ -58,7 +72,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         padding: const EdgeInsets.only(bottom: 88),
         child: FloatingActionButton.extended(
           key: const Key('calendar.add'),
-          onPressed: () => _addEvent(familyId, key),
+          onPressed: () => _addEvent(familyId),
           icon: const Icon(Icons.add),
           label: Text(l10n.calendarAdd),
         ),
@@ -66,27 +80,53 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: HallySpace.sm),
-            child: Row(
-              children: [
-                for (final d in days)
-                  Expanded(
-                    child: _DayChip(
-                      day: d,
-                      selected: DateUtils.isSameDay(d, _selected),
-                      hasEvents: week.valueOrNull?.any((e) => DateUtils.isSameDay(e.startsAt, d)) ?? false,
-                      locale: locale,
-                      onTap: () => setState(() => _selected = d),
-                    ),
-                  ),
-              ],
+            padding: const EdgeInsets.fromLTRB(HallySpace.md, 0, HallySpace.md, HallySpace.sm),
+            child: SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<_CalendarView>(
+                key: const Key('calendar.view'),
+                showSelectedIcon: false,
+                segments: [
+                  ButtonSegment(value: _CalendarView.week, label: Text(l10n.calendarWeek, key: const Key('calendar.view.week'))),
+                  ButtonSegment(value: _CalendarView.month, label: Text(l10n.calendarMonth, key: const Key('calendar.view.month'))),
+                ],
+                selected: {_view},
+                onSelectionChanged: (v) => setState(() => _view = v.first),
+              ),
             ),
           ),
+          if (_view == _CalendarView.week)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: HallySpace.sm),
+              child: Row(
+                children: [
+                  for (final d in range.dates)
+                    Expanded(
+                      child: _DayChip(
+                        day: d,
+                        selected: DateUtils.isSameDay(d, _selected),
+                        hasEvents: hasEvents(d),
+                        locale: locale,
+                        onTap: () => setState(() => _selected = d),
+                      ),
+                    ),
+                ],
+              ),
+            )
+          else
+            _MonthGrid(
+              range: range,
+              month: _selected.month,
+              selected: _selected,
+              hasEvents: hasEvents,
+              locale: locale,
+              onTap: (d) => setState(() => _selected = d),
+            ),
           const SizedBox(height: HallySpace.sm),
           Expanded(
-            child: week.when(
+            child: events.when(
               loading: () => const HallyLoading(),
-              error: (_, __) => HallyErrorState(onRetry: () => ref.invalidate(weekEventsProvider(key))),
+              error: (_, __) => HallyErrorState(onRetry: () => ref.invalidate(calendarEventsProvider(range))),
               data: (events) {
                 final today = events.where((e) => DateUtils.isSameDay(e.startsAt, _selected)).toList();
                 if (today.isEmpty) {
@@ -100,7 +140,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         child: ListTile(
                           leading: const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.apricot),
                           title: Text(e.title, style: theme.textTheme.titleSmall),
-                          subtitle: Text(e.allDay ? l10n.reviewAllDay : TimeOfDay.fromDateTime(e.startsAt).format(context)),
+                          subtitle: Text([
+                            e.allDay ? l10n.reviewAllDay : TimeOfDay.fromDateTime(e.startsAt).format(context),
+                            if (e.repeat != EventRepeat.none) repeatLabel(l10n, e.repeat),
+                          ].join(' · ')),
                           trailing: IconButton(
                             key: Key('event.${e.id}.remind'),
                             icon: const Icon(Icons.notification_add_outlined),
@@ -120,19 +163,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  Future<void> _addEvent(String familyId, WeekKey key) async {
+  Future<void> _addEvent(String familyId) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final result = await showDialog<(String, DateTime, TimeOfDay?)>(
+    final result = await showDialog<(String, DateTime, TimeOfDay?, EventRepeat)>(
       context: context,
       builder: (_) => _EventDialog(initialDate: _selected),
     );
     if (result == null) return;
-    final (title, date, time) = result;
+    final (title, date, time, repeat) = result;
     final startsAt = DateTime(date.year, date.month, date.day, time?.hour ?? 0, time?.minute ?? 0);
     try {
-      final saved = await ref.read(planningRepositoryProvider).createEvent(familyId, title: title, startsAt: startsAt, allDay: time == null);
-      ref.invalidate(weekEventsProvider(WeekKey(familyId, mondayOf(startsAt))));
+      final saved = await ref.read(planningRepositoryProvider).createEvent(familyId, title: title, startsAt: startsAt, allDay: time == null, repeat: repeat);
+      // A series can show up in any window, so refresh every cached range.
+      ref.invalidate(calendarEventsProvider);
       if (saved.conflicts.isNotEmpty) {
         messenger.showSnackBar(SnackBar(content: Text(l10n.eventConflict(saved.conflicts.first.title))));
       }
@@ -140,6 +184,127 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     } catch (_) {
       messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
     }
+  }
+}
+
+String repeatLabel(AppLocalizations l10n, EventRepeat repeat) => switch (repeat) {
+      EventRepeat.none => l10n.repeatNone,
+      EventRepeat.daily => l10n.repeatDaily,
+      EventRepeat.weekly => l10n.repeatWeekly,
+      EventRepeat.monthly => l10n.repeatMonthly,
+    };
+
+/// Six Monday-first weeks; days outside the month are dimmed but still tappable.
+class _MonthGrid extends StatelessWidget {
+  const _MonthGrid({
+    required this.range,
+    required this.month,
+    required this.selected,
+    required this.hasEvents,
+    required this.locale,
+    required this.onTap,
+  });
+
+  final CalendarRange range;
+  final int month;
+  final DateTime selected;
+  final bool Function(DateTime) hasEvents;
+  final String locale;
+  final ValueChanged<DateTime> onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dates = range.dates;
+    final today = DateUtils.dateOnly(DateTime.now());
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: HallySpace.sm),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              for (final d in dates.take(7))
+                Expanded(
+                  child: Center(
+                    child: Text(DateFormat.E(locale).format(d), style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: HallySpace.xs),
+          for (var w = 0; w < 6; w++)
+            Row(
+              children: [
+                for (final d in dates.skip(w * 7).take(7))
+                  Expanded(
+                    child: _MonthCell(
+                      day: d,
+                      inMonth: d.month == month,
+                      isToday: d == today,
+                      selected: DateUtils.isSameDay(d, selected),
+                      hasEvents: hasEvents(d),
+                      onTap: () => onTap(d),
+                    ),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MonthCell extends StatelessWidget {
+  const _MonthCell({
+    required this.day,
+    required this.inMonth,
+    required this.isToday,
+    required this.selected,
+    required this.hasEvents,
+    required this.onTap,
+  });
+
+  final DateTime day;
+  final bool inMonth;
+  final bool isToday;
+  final bool selected;
+  final bool hasEvents;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = selected
+        ? Colors.white
+        : inMonth
+            ? theme.colorScheme.onSurface
+            : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
+    return InkWell(
+      key: Key('calendar.day.${day.year}-${day.month}-${day.day}'),
+      borderRadius: BorderRadius.circular(HallyRadius.sm),
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.all(2),
+        height: 44,
+        decoration: BoxDecoration(
+          gradient: selected ? HallyGradients.cherry : null,
+          borderRadius: BorderRadius.circular(HallyRadius.sm),
+          border: isToday && !selected ? Border.all(color: theme.colorScheme.primary) : null,
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('${day.day}', style: theme.textTheme.bodyMedium?.copyWith(color: fg, fontWeight: isToday ? FontWeight.w700 : null)),
+            const SizedBox(height: 2),
+            Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: hasEvents ? (selected ? Colors.white : HallyColors.apricot) : Colors.transparent),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -198,6 +363,7 @@ class _EventDialogState extends State<_EventDialog> {
   final _title = TextEditingController();
   late DateTime _date = widget.initialDate;
   TimeOfDay? _time;
+  EventRepeat _repeat = EventRepeat.none;
 
   @override
   void dispose() {
@@ -238,6 +404,13 @@ class _EventDialogState extends State<_EventDialog> {
               if (picked != null) setState(() => _time = picked);
             },
           ),
+          DropdownButtonFormField<EventRepeat>(
+            key: const Key('event.repeat'),
+            initialValue: _repeat,
+            decoration: InputDecoration(labelText: l10n.eventRepeat, prefixIcon: const Icon(Icons.repeat)),
+            items: [for (final r in EventRepeat.values) DropdownMenuItem(value: r, child: Text(repeatLabel(l10n, r)))],
+            onChanged: (r) => setState(() => _repeat = r ?? EventRepeat.none),
+          ),
         ],
       ),
       actions: [
@@ -247,7 +420,7 @@ class _EventDialogState extends State<_EventDialog> {
           onPressed: () {
             final title = _title.text.trim();
             if (title.isEmpty) return;
-            Navigator.pop(context, (title, _date, _time));
+            Navigator.pop(context, (title, _date, _time, _repeat));
           },
           child: Text(l10n.eventSave),
         ),

@@ -106,6 +106,32 @@ public class AssistantTests(HallyApiFactory api)
     }
 
     [Fact]
+    public async Task A_repeating_suggestion_becomes_a_weekly_series_when_approved()
+    {
+        var (owner, familyId) = await Family();
+        api.Chat.Respond = messages => messages.Any(m => m.Role == "tool")
+            ? new ChatCompletion("Her cumartesi için ekledim, onayını bekliyor.", [], 0, 0)
+            : new ChatCompletion(null,
+                [new ChatToolCall("p1", "propose_event", """{"title":"Yüzme","dateText":"cumartesi","time":"11:30","repeat":"weekly"}""")], 0, 0);
+        try
+        {
+            var reply = (await (await Say(owner, familyId, "her hafta cumartesi yüzme 11:30")).Content.ReadFromJsonAsync<AssistantReplyBody>())!;
+            var proposal = reply.Proposals.Should().ContainSingle().Subject;
+            (await owner.PostIdempotentAsync($"/api/v1/families/{familyId}/proposals/{proposal.Id}/approve", new { })).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var first = DateTimeOffset.Parse($"{proposal.Payload.Date}T11:30:00+03:00");
+            var events = await owner.GetFromJsonAsync<List<RepeatingEventBody>>(
+                $"/api/v1/families/{familyId}/events?from={Uri.EscapeDataString(first.AddMinutes(-1).ToString("O"))}&to={Uri.EscapeDataString(first.AddDays(21).ToString("O"))}");
+            events!.Select(e => e.StartsAt).Should().Equal(first, first.AddDays(7), first.AddDays(14));
+            events.Should().OnlyContain(e => e.Repeat == "Weekly" && e.Title == "Yüzme");
+        }
+        finally
+        {
+            api.Chat.Respond = _ => throw new AiUnavailableException("reset");
+        }
+    }
+
+    [Fact]
     public async Task Without_ai_day_questions_are_answered_from_family_data()
     {
         var (owner, familyId) = await Family();
@@ -120,5 +146,18 @@ public class AssistantTests(HallyApiFactory api)
 
         var other = (await (await Say(owner, familyId, "Bir şiir yaz")).Content.ReadFromJsonAsync<AssistantReplyBody>())!;
         other.Reply.Content.Should().Contain("çevrimdışı");
+    }
+
+    [Theory]
+    [InlineData("her hafta cumartesi yüzme 11:30")]
+    [InlineData("Cuma dişçi randevusu ekle")]
+    public async Task Without_ai_add_requests_are_not_answered_as_day_questions(string text)
+    {
+        var (owner, familyId) = await Family();
+
+        var reply = (await (await Say(owner, familyId, text)).Content.ReadFromJsonAsync<AssistantReplyBody>())!;
+
+        reply.Reply.Fallback.Should().BeTrue();
+        reply.Reply.Content.Should().Contain("ekleyemiyorum").And.NotContain("planlanmış bir şey yok");
     }
 }

@@ -70,6 +70,11 @@ public class ProposalEngine(HallyDbContext db, IAnalytics analytics, TimeProvide
                         ?? throw new DomainException("proposal.date_required", "An event needs a date before it can be approved.");
             var end = payload.EndTime is null ? (DateTimeOffset?)null : ToUtc(payload.Date, payload.EndTime, zone);
             var evt = new CalendarEvent(familyId, userId, payload.Title, start, end, payload.Time is null, payload.Location, payload.ChildId, proposal.Id);
+            if (Enum.TryParse<EventRepeat>(payload.Repeat, ignoreCase: true, out var repeat) && Enum.IsDefined(repeat))
+            {
+                evt.SetRepeat(repeat, null);
+            }
+
             db.Events.Add(evt);
             entityId = evt.Id;
         }

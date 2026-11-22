@@ -51,8 +51,8 @@ class _FakePlanning implements PlanningRepository {
       saved.where((e) => !e.startsAt.isBefore(from) && e.startsAt.isBefore(to)).toList();
 
   @override
-  Future<SavedEvent> createEvent(String familyId, {required String title, required DateTime startsAt, required bool allDay}) async {
-    final e = EventItem(id: 'e${saved.length}', title: title, startsAt: startsAt, allDay: allDay);
+  Future<SavedEvent> createEvent(String familyId, {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none}) async {
+    final e = EventItem(id: 'e${saved.length}', title: title, startsAt: startsAt, allDay: allDay, repeat: repeat);
     final conflicts = saved.where((x) => x.startsAt == startsAt).toList();
     saved.add(e);
     return SavedEvent(event: e, conflicts: conflicts);
@@ -149,6 +149,45 @@ void main() {
     }
     expect(find.text('Yüzme'), findsNWidgets(2));
     expect(find.text('Bu saatte başka bir etkinlik var: Yüzme'), findsOneWidget);
+  });
+
+  testWidgets('calendar: a weekly event is saved as a series and labelled', (tester) async {
+    final repo = _FakePlanning();
+    await tester.pumpWidget(_app(const CalendarScreen(), [planningRepositoryProvider.overrideWithValue(repo)]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('calendar.add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('event.title')), 'Yüzme');
+    await tester.tap(find.byKey(const Key('event.repeat')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Her hafta').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kaydet'));
+    await tester.pumpAndSettle();
+
+    expect(repo.saved.single.repeat, EventRepeat.weekly);
+    expect(find.textContaining('Her hafta'), findsOneWidget);
+  });
+
+  testWidgets('calendar: month view shows the whole month and keeps the selected day', (tester) async {
+    final repo = _FakePlanning();
+    final now = DateTime.now();
+    repo.saved.add(EventItem(id: 'x', title: 'Veli toplantısı', startsAt: DateTime(now.year, now.month, now.day, 18), allDay: false));
+    await tester.pumpWidget(_app(const CalendarScreen(), [planningRepositoryProvider.overrideWithValue(repo)]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('calendar.view.month')));
+    await tester.pumpAndSettle();
+    final last = DateTime(now.year, now.month + 1, 0);
+    expect(find.byKey(Key('calendar.day.${now.year}-${now.month}-1')), findsOneWidget);
+    expect(find.byKey(Key('calendar.day.${last.year}-${last.month}-${last.day}')), findsOneWidget);
+    expect(find.text('Veli toplantısı'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('calendar.next')));
+    await tester.pumpAndSettle();
+    final next = DateTime(now.year, now.month + 1, 1);
+    expect(find.byKey(Key('calendar.day.${next.year}-${next.month}-1')), findsOneWidget);
   });
 
   testWidgets('demo: scanning the sample shows what Hally found', (tester) async {
