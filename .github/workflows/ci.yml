@@ -62,4 +62,14 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get
+      # A placeholder Firebase config, so the build also covers the google-services plugin path.
+      - name: Placeholder google-services.json
+        run: |
+          cat > android/app/google-services.json <<'JSON'
+          {"project_info":{"project_number":"1","project_id":"ci-placeholder","storage_bucket":"ci-placeholder.appspot.com"},
+           "client":[{"client_info":{"mobilesdk_app_id":"1:1:android:0000000000000000","android_client_info":{"package_name":"app.hally"}},
+                      "oauth_client":[],"api_key":[{"current_key":"placeholder"}],
+                      "services":{"appinvite_service":{"other_platform_oauth_client":[]}}}],
+           "configuration_version":"1"}
+          JSON
       - run: flutter build apk --debug

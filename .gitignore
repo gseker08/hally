@@ -8,3 +8,7 @@ obj/
 TestResults/
 *.swp
 .DS_Store
+
+# Firebase app config (not secret, but this repo is public)
+mobile/android/app/google-services.json
+mobile/ios/Runner/GoogleService-Info.plist
