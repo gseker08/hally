@@ -23,20 +23,36 @@ class TaskItem {
   final String state;
 }
 
+/// An event, or one occurrence of a repeating event (occurrences share the series [id]).
 class EventItem {
-  const EventItem({required this.id, required this.title, required this.startsAt, required this.allDay});
+  const EventItem({required this.id, required this.title, required this.startsAt, required this.allDay, this.repeat = EventRepeat.none});
 
   factory EventItem.fromJson(Map<String, dynamic> j) => EventItem(
         id: j['id'] as String,
         title: j['title'] as String,
         startsAt: DateTime.parse(j['startsAt'] as String).toLocal(),
         allDay: j['allDay'] as bool? ?? false,
+        repeat: EventRepeat.fromApi(j['repeat'] as String?),
       );
 
   final String id;
   final String title;
   final DateTime startsAt;
   final bool allDay;
+  final EventRepeat repeat;
+}
+
+enum EventRepeat {
+  none('None'),
+  daily('Daily'),
+  weekly('Weekly'),
+  monthly('Monthly');
+
+  const EventRepeat(this.api);
+
+  final String api;
+
+  static EventRepeat fromApi(String? value) => values.firstWhere((r) => r.api == value, orElse: () => none);
 }
 
 class TodayData {
@@ -71,7 +87,8 @@ abstract interface class PlanningRepository {
   Future<List<TaskItem>> tasks(String familyId, {required String state});
   Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate});
   Future<List<EventItem>> events(String familyId, DateTime from, DateTime to);
-  Future<SavedEvent> createEvent(String familyId, {required String title, required DateTime startsAt, required bool allDay});
+  Future<SavedEvent> createEvent(String familyId,
+      {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none});
 }
 
 class ApiPlanningRepository implements PlanningRepository {
@@ -131,12 +148,14 @@ class ApiPlanningRepository implements PlanningRepository {
       });
 
   @override
-  Future<SavedEvent> createEvent(String familyId, {required String title, required DateTime startsAt, required bool allDay}) =>
+  Future<SavedEvent> createEvent(String familyId,
+          {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none}) =>
       _guard(() async {
         final res = await _api.dio.post<Map<String, dynamic>>('/api/v1/families/$familyId/events', data: {
           'title': title,
           'startsAt': startsAt.toUtc().toIso8601String(),
           'allDay': allDay,
+          'repeat': repeat.api,
         });
         final d = res.data!;
         return SavedEvent(
@@ -150,27 +169,36 @@ final planningRepositoryProvider = Provider<PlanningRepository>((ref) => ApiPlan
 
 final todayProvider = FutureProvider.autoDispose.family<TodayData, String>((ref, familyId) => ref.watch(planningRepositoryProvider).today(familyId));
 
-/// Monday-based week window for the calendar, in device-local time.
-class WeekKey {
-  const WeekKey(this.familyId, this.monday);
+/// A [days]-long calendar window starting at local midnight of [from] (a week or a 6-week month grid).
+class CalendarRange {
+  const CalendarRange(this.familyId, this.from, this.days);
+
+  /// The Monday-based week containing [day].
+  factory CalendarRange.week(String familyId, DateTime day) => CalendarRange(familyId, mondayOf(day), 7);
+
+  /// The 6×7 month grid for [day]'s month, starting on the Monday on or before the 1st.
+  factory CalendarRange.month(String familyId, DateTime day) => CalendarRange(familyId, mondayOf(DateTime(day.year, day.month)), 42);
 
   final String familyId;
-  final DateTime monday;
+  final DateTime from;
+  final int days;
+
+  // Calendar arithmetic (not Duration) so DST days still start at midnight.
+  DateTime get to => DateTime(from.year, from.month, from.day + days);
+
+  List<DateTime> get dates => [for (var i = 0; i < days; i++) DateTime(from.year, from.month, from.day + i)];
 
   @override
-  bool operator ==(Object other) => other is WeekKey && other.familyId == familyId && other.monday == monday;
+  bool operator ==(Object other) => other is CalendarRange && other.familyId == familyId && other.from == from && other.days == days;
 
   @override
-  int get hashCode => Object.hash(familyId, monday);
+  int get hashCode => Object.hash(familyId, from, days);
 }
 
-DateTime mondayOf(DateTime day) {
-  final d = DateTime(day.year, day.month, day.day);
-  return d.subtract(Duration(days: d.weekday - DateTime.monday));
-}
+DateTime mondayOf(DateTime day) => DateTime(day.year, day.month, day.day - (day.weekday - DateTime.monday));
 
-final weekEventsProvider = FutureProvider.autoDispose.family<List<EventItem>, WeekKey>(
-    (ref, key) => ref.watch(planningRepositoryProvider).events(key.familyId, key.monday, key.monday.add(const Duration(days: 7))));
+final calendarEventsProvider = FutureProvider.autoDispose.family<List<EventItem>, CalendarRange>(
+    (ref, range) => ref.watch(planningRepositoryProvider).events(range.familyId, range.from, range.to));
 
 final tasksProvider = FutureProvider.autoDispose.family<List<TaskItem>, (String, String)>(
     (ref, args) => ref.watch(planningRepositoryProvider).tasks(args.$1, state: args.$2));

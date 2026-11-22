@@ -10,8 +10,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Hally.Api.Features.Events;
 
-public record EventDto(Guid Id, string Title, DateTimeOffset StartsAt, DateTimeOffset? EndsAt, bool AllDay, string? Location, Guid? ChildId, Guid? SourceProposalId);
-public record SaveEventRequest(string Title, DateTimeOffset StartsAt, DateTimeOffset? EndsAt, bool AllDay, string? Location, Guid? ChildId);
+/// <summary>An event or, for a series, one occurrence of it (same <c>Id</c>; <c>SeriesStartsAt</c> is the first occurrence).</summary>
+public record EventDto(Guid Id, string Title, DateTimeOffset StartsAt, DateTimeOffset? EndsAt, bool AllDay, string? Location, Guid? ChildId, Guid? SourceProposalId,
+    EventRepeat Repeat, DateOnly? RepeatUntil, DateTimeOffset SeriesStartsAt);
+/// <summary>For a series, <c>StartsAt</c> is the first occurrence. <c>Repeat</c> defaults to <c>None</c>.</summary>
+public record SaveEventRequest(string Title, DateTimeOffset StartsAt, DateTimeOffset? EndsAt, bool AllDay, string? Location, Guid? ChildId,
+    EventRepeat Repeat = EventRepeat.None, DateOnly? RepeatUntil = null);
 public record SavedEventDto(EventDto Event, IReadOnlyList<EventDto> Conflicts);
 
 public class SaveEventRequestValidator : AbstractValidator<SaveEventRequest>
@@ -21,6 +25,7 @@ public class SaveEventRequestValidator : AbstractValidator<SaveEventRequest>
         RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Location).MaximumLength(200);
         RuleFor(x => x.EndsAt).GreaterThanOrEqualTo(x => x.StartsAt).When(x => x.EndsAt.HasValue);
+        RuleFor(x => x.Repeat).IsInEnum();
     }
 }
 
@@ -51,6 +56,7 @@ public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvi
         await EnsureChild(familyId, request.ChildId, ct);
         var userId = User.UserId();
         var evt = new CalendarEvent(familyId, userId, request.Title, request.StartsAt, request.EndsAt, request.AllDay, request.Location, request.ChildId);
+        evt.SetRepeat(request.Repeat, request.RepeatUntil);
         var conflicts = await Conflicts(familyId, evt, ct);
         db.Events.Add(evt);
         db.AuditEntries.Add(new AuditEntry { FamilyId = familyId, ActorUserId = userId, Action = "event.created", EntityType = "event", EntityId = evt.Id, At = clock.GetUtcNow() });
@@ -66,6 +72,7 @@ public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvi
         var evt = await db.Events.FirstOrDefaultAsync(e => e.Id == eventId && e.FamilyId == familyId, ct)
                   ?? throw new NotFoundException("event.not_found", "Event not found.");
         evt.Update(request.Title, request.StartsAt, request.EndsAt, request.AllDay, request.Location, request.ChildId);
+        evt.SetRepeat(request.Repeat, request.RepeatUntil);
         db.AuditEntries.Add(new AuditEntry { FamilyId = familyId, ActorUserId = User.UserId(), Action = "event.updated", EntityType = "event", EntityId = evt.Id, At = clock.GetUtcNow() });
         await db.SaveChangesAsync(ct);
         return new SavedEventDto(ToDto(evt), await Conflicts(familyId, evt, ct));
@@ -82,15 +89,10 @@ public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvi
         return NoContent();
     }
 
-    private async Task<List<CalendarEvent>> InRange(Guid familyId, DateTimeOffset start, DateTimeOffset end, CancellationToken ct)
-    {
-        // Load a slightly wider window and apply the exact overlap rule (with default durations) in memory.
-        var candidates = await db.Events.AsNoTracking()
-            .Where(e => e.FamilyId == familyId && e.StartsAt < end && e.StartsAt >= start.AddDays(-2))
-            .OrderBy(e => e.StartsAt).ToListAsync(ct);
-        return candidates.Where(e => e.Overlaps(start, end)).ToList();
-    }
+    private async Task<List<CalendarEvent>> InRange(Guid familyId, DateTimeOffset start, DateTimeOffset end, CancellationToken ct) =>
+        await db.EventsInRangeAsync(familyId, start, end, await db.FamilyTimeZoneAsync(familyId, ct), ct);
 
+    /// <summary>Overlaps with the event's first occurrence (for a series, later clashes are not checked).</summary>
     private async Task<IReadOnlyList<EventDto>> Conflicts(Guid familyId, CalendarEvent evt, CancellationToken ct) =>
         evt.AllDay ? [] : (await InRange(familyId, evt.StartsAt, evt.EffectiveEnd, ct))
             .Where(e => e.Id != evt.Id && !e.AllDay).Select(ToDto).ToList();
@@ -103,5 +105,6 @@ public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvi
         }
     }
 
-    public static EventDto ToDto(CalendarEvent e) => new(e.Id, e.Title, e.StartsAt, e.EndsAt, e.AllDay, e.Location, e.ChildId, e.SourceProposalId);
+    public static EventDto ToDto(CalendarEvent e) =>
+        new(e.Id, e.Title, e.StartsAt, e.EndsAt, e.AllDay, e.Location, e.ChildId, e.SourceProposalId, e.Repeat, e.RepeatUntil, e.SeriesStartsAt);
 }

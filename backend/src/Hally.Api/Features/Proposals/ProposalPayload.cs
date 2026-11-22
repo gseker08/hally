@@ -18,6 +18,9 @@ public record ProposalPayload
     public string? Time { get; init; }
     public string? EndTime { get; init; }
     public string? Location { get; init; }
+
+    /// <summary>Events only: None, Daily, Weekly or Monthly (<see cref="Domain.Planning.EventRepeat"/>). Null means a one-off.</summary>
+    public string? Repeat { get; init; }
     public Guid? ChildId { get; init; }
     public Guid? AssigneeUserId { get; init; }
     public IReadOnlyList<string> NeedsInfo { get; init; } = [];

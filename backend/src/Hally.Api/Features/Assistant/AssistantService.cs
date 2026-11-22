@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hally.Api.Features.Captures;
+using Hally.Api.Features.Events;
 using Hally.Api.Features.Proposals;
 using Hally.Domain.Assistant;
 using Hally.Domain.Capture;
@@ -155,7 +156,8 @@ public class AssistantTools(HallyDbContext db, Guid familyId, FamilyContext ctx,
         new("propose_event", "Suggest a calendar event for the parent to approve. Copy the user's own date words into dateText.", Params("""
             {"type":"object","additionalProperties":false,"required":["title"],"properties":{
               "title":{"type":"string"},"dateText":{"type":"string"},"date":{"type":"string","description":"yyyy-MM-dd"},
-              "time":{"type":"string","description":"HH:mm"},"location":{"type":"string"},"childName":{"type":"string"}}}
+              "time":{"type":"string","description":"HH:mm"},"location":{"type":"string"},"childName":{"type":"string"},
+              "repeat":{"type":"string","enum":["none","daily","weekly","monthly"],"description":"Only when the user says it repeats (e.g. every Saturday). date is then the first occurrence."}}}
             """)),
     ];
 
@@ -219,10 +221,7 @@ public class AssistantTools(HallyDbContext db, Guid familyId, FamilyContext ctx,
 
         var start = Utc(from);
         var end = Utc(to.AddDays(1));
-        var events = (await db.Events.AsNoTracking()
-                .Where(e => e.FamilyId == familyId && e.StartsAt < end && e.StartsAt >= start.AddDays(-2))
-                .OrderBy(e => e.StartsAt).Take(100).ToListAsync(ct))
-            .Where(e => e.Overlaps(start, end));
+        var events = (await db.EventsInRangeAsync(familyId, start, end, ctx.TimeZoneId, ct)).Take(100);
         return Json(new { events = events.Select(e => new { title = e.Title, starts = Local(e.StartsAt, e.AllDay), location = e.Location, child = Child(e.ChildId) }) });
     }
 
@@ -252,6 +251,12 @@ public class AssistantTools(HallyDbContext db, Guid familyId, FamilyContext ctx,
         if (draft is null)
         {
             return Error("a title is required");
+        }
+
+        if (draft.Kind == ProposalKind.CreateEvent && Enum.TryParse<EventRepeat>(Str(args, "repeat"), ignoreCase: true, out var repeat)
+            && Enum.IsDefined(repeat) && repeat != EventRepeat.None)
+        {
+            draft = draft with { Payload = draft.Payload with { Repeat = repeat.ToString() } };
         }
 
         var fingerprint = ProposalPayload.FingerprintOf(draft.Kind, draft.Payload.Title, draft.Payload.Date);
@@ -301,6 +306,15 @@ public class AssistantFallback(HallyDbContext db, Guid familyId, FamilyContext c
     {
         var en = ctx.Locale == "en";
         var lower = text.ToLower(CultureInfo.GetCultureInfo("tr-TR"));
+        if (LooksLikeAddRequest(lower))
+        {
+            // Without the AI we cannot turn free text into a reviewed suggestion, and answering it as a
+            // day question ("Saturday: nothing planned") would read as if the request had been handled.
+            return en
+                ? "The assistant is offline right now, so I can't add this for you. You can add it yourself from the calendar with +. I can still answer day questions like \"What's on this week?\""
+                : "Asistan şu an çevrimdışı, bu yüzden bunu senin yerine ekleyemiyorum. Takvimdeki + ile kendin ekleyebilirsin. \"Bu hafta ne var?\" gibi gün sorularını yine yanıtlayabilirim.";
+        }
+
         DateOnly from, to;
         string label;
         if (lower.Contains("bu hafta") || lower.Contains("this week"))
@@ -334,10 +348,7 @@ public class AssistantFallback(HallyDbContext db, Guid familyId, FamilyContext c
         var tasks = await db.Tasks.AsNoTracking()
             .Where(t => t.FamilyId == familyId && t.State == TaskState.Open && t.DueAt >= start && t.DueAt < end)
             .OrderBy(t => t.DueAt).Take(20).ToListAsync(ct);
-        var events = (await db.Events.AsNoTracking()
-                .Where(e => e.FamilyId == familyId && e.StartsAt < end && e.StartsAt >= start.AddDays(-2))
-                .OrderBy(e => e.StartsAt).Take(20).ToListAsync(ct))
-            .Where(e => e.Overlaps(start, end)).ToList();
+        var events = (await db.EventsInRangeAsync(familyId, start, end, ctx.TimeZoneId, ct)).Take(20).ToList();
         if (tasks.Count == 0 && events.Count == 0)
         {
             return en ? $"{label}: nothing planned. 🎉" : $"{label}: planlanmış bir şey yok. 🎉";
@@ -377,5 +388,22 @@ public class AssistantFallback(HallyDbContext db, Guid familyId, FamilyContext c
         }
 
         return sb.ToString().TrimEnd();
+    }
+
+    private static readonly string[] AddWords =
+        ["ekle", "her gün", "her hafta", "her ay", "hatırlat", "kaydet", "add ", "every ", "remind", "schedule"];
+
+    private static readonly string[] QuestionWords =
+        ["ne var", "neler", "var mı", "lazım", "ne zaman", "kaçta", "what", "anything", "is there", "do we", "when"];
+
+    /// <summary>"Swimming every Saturday 11:30" or "add dentist": a time or an add/repeat word, and not phrased as a question.</summary>
+    internal static bool LooksLikeAddRequest(string lower)
+    {
+        if (lower.Contains('?') || QuestionWords.Any(lower.Contains))
+        {
+            return false;
+        }
+
+        return AddWords.Any(lower.Contains) || System.Text.RegularExpressions.Regex.IsMatch(lower, @"\b([01]?\d|2[0-3])[:.][0-5]\d\b");
     }
 }

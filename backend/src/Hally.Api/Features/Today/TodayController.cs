@@ -34,9 +34,7 @@ public class TodayController(HallyDbContext db, TimeProvider clock) : Controller
         var open = await db.Tasks.AsNoTracking()
             .Where(t => t.FamilyId == familyId && t.State == TaskState.Open && t.DueAt != null && t.DueAt < dayEnd)
             .OrderBy(t => t.DueAt).ToListAsync(ct);
-        var events = await db.Events.AsNoTracking()
-            .Where(e => e.FamilyId == familyId && e.StartsAt < dayEnd && e.StartsAt >= dayStart.AddDays(-2))
-            .OrderBy(e => e.StartsAt).ToListAsync(ct);
+        var events = await db.EventsInRangeAsync(familyId, dayStart, dayEnd, family.TimeZoneId, ct);
         var pending = await db.Proposals.AsNoTracking()
             .Where(p => p.FamilyId == familyId && p.Status == ProposalStatus.Pending && p.ExpiresAt > now)
             .OrderBy(p => p.CreatedAt).Take(50).ToListAsync(ct);
@@ -46,7 +44,7 @@ public class TodayController(HallyDbContext db, TimeProvider clock) : Controller
             family.TimeZoneId,
             open.Where(t => t.DueAt < dayStart).Select(t => TasksController.ToDto(t, now)).ToList(),
             open.Where(t => t.DueAt >= dayStart).Select(t => TasksController.ToDto(t, now)).ToList(),
-            events.Where(e => e.Overlaps(dayStart, dayEnd)).Select(EventsController.ToDto).ToList(),
+            events.Select(EventsController.ToDto).ToList(),
             pending.Select(p => ProposalsController.ToDto(p, now)).ToList());
     }
 }

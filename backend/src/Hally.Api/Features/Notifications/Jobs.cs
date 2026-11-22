@@ -1,3 +1,4 @@
+using Hally.Api.Features.Events;
 using Hally.Api.Features.Proposals;
 using Hally.Domain.Common;
 using Hally.Domain.Notifications;
@@ -101,10 +102,7 @@ public class EveningPrepJob(HallyDbContext db, NotificationPublisher publisher, 
             var tasks = await db.Tasks.AsNoTracking()
                 .Where(t => t.FamilyId == family.Id && t.State == TaskState.Open && t.DueAt >= start && t.DueAt < end)
                 .OrderBy(t => t.DueAt).ToListAsync(ct);
-            var events = (await db.Events.AsNoTracking()
-                    .Where(e => e.FamilyId == family.Id && e.StartsAt < end && e.StartsAt >= start.AddDays(-2))
-                    .OrderBy(e => e.StartsAt).ToListAsync(ct))
-                .Where(e => e.Overlaps(start, end)).ToList();
+            var events = await db.EventsInRangeAsync(family.Id, start, end, family.TimeZoneId, ct);
             if (tasks.Count == 0 && events.Count == 0)
             {
                 continue;

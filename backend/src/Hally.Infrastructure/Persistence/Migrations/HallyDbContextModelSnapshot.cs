@@ -753,6 +753,16 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("location");
 
+                    b.Property<string>("Repeat")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("repeat");
+
+                    b.Property<DateOnly?>("RepeatUntil")
+                        .HasColumnType("date")
+                        .HasColumnName("repeat_until");
+
                     b.Property<Guid?>("SourceProposalId")
                         .HasColumnType("uuid")
                         .HasColumnName("source_proposal_id");
