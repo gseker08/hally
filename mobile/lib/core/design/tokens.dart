@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 
 /// Hally design tokens. Keep raw values here only; widgets read them through the theme or these classes.
 abstract final class HallyColors {
-  static const lavender = Color(0xFF7C6BD6);
-  static const lavenderDeep = Color(0xFF5A48C2);
-  static const lavenderSoft = Color(0xFFEDE9FB);
+  /// Brand primary ("Kiraz"). Dark-mode counterparts are used by the theme's dark scheme.
+  static const cherry = Color(0xFFA8133C);
+  static const cherryStrong = Color(0xFF8E0F33);
+  static const cherrySoft = Color(0xFFFBE6EC);
+  static const cherryDark = Color(0xFFE25C7C);
+  static const cherryStrongDark = Color(0xFFF08AA2);
+  static const cherrySoftDark = Color(0xFF3A1520);
   static const mint = Color(0xFF3FB59A);
   static const mintDeep = Color(0xFF23937A);
   static const mintSoft = Color(0xFFE2F5EF);
@@ -14,18 +18,19 @@ abstract final class HallyColors {
   static const roseSoft = Color(0xFFFBE7F0);
   static const sky = Color(0xFF4FA3E0);
   static const skySoft = Color(0xFFE3F0FB);
-  static const ink = Color(0xFF1F1B2E);
-  static const inkMuted = Color(0xFF6B6680);
-  static const line = Color(0xFFECE9F5);
-  static const canvas = Color(0xFFF7F5FD);
+  static const ink = Color(0xFF231A1D);
+  static const inkMuted = Color(0xFF625A5E);
+  static const line = Color(0xFFF0E4E7);
+  static const canvas = Color(0xFFFBF5F6);
   static const surface = Color(0xFFFFFFFF);
-  static const canvasDark = Color(0xFF14121C);
-  static const surfaceDark = Color(0xFF1E1B29);
-  static const lineDark = Color(0xFF2E2A3D);
-  static const error = Color(0xFFD64545);
+  static const canvasDark = Color(0xFF1A1215);
+  static const surfaceDark = Color(0xFF251B1F);
+  static const lineDark = Color(0xFF3A2A2F);
+  /// Errors and overdue states use orange, never red, and always come with an icon and text.
+  static const error = Color(0xFFC2621C);
 
   /// Avatar colours, picked by a stable hash of the member's name.
-  static const avatars = [lavender, mint, apricot, rose, sky];
+  static const avatars = [cherry, mint, apricot, rose, sky];
 
   /// Accent colour for text on its own soft tint ([softOf]): darkened in light mode and lightened in dark mode
   /// so small labels reach WCAG AA (raw apricot or mint on their tint is only ~2.4:1).
@@ -39,25 +44,25 @@ abstract final class HallyColors {
 }
 
 abstract final class HallyGradients {
-  /// Brand hero: deep lavender into a warm rose glow.
+  /// Brand hero: deep cherry into a warm coral glow.
   static const hero = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF5A48C2), Color(0xFF7C6BD6), Color(0xFFB57BD0)],
+    colors: [Color(0xFF8E0F33), Color(0xFFC2224E), Color(0xFFEE8B78)],
   );
 
   /// Sunrise accent used for the AI ("Hally") moments.
   static const magic = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF7C6BD6), Color(0xFFE27AA6), Color(0xFFF0A36A)],
+    colors: [Color(0xFF8E0F33), Color(0xFFC2224E), Color(0xFFEE8B78)],
   );
 
   /// Readable variant of [magic] for cards that carry white body text: every stop keeps white text at 4.6:1 or more.
   static const magicCard = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF5A48C2), Color(0xFF8A4FBF), Color(0xFFB4547C)],
+    colors: [Color(0xFF8E0F33), Color(0xFFA8133C), Color(0xFFB4472A)],
   );
 
   /// Readable mint for surfaces with white text (swipe-to-complete).
@@ -79,17 +84,17 @@ abstract final class HallyGradients {
     colors: [Color(0xFFE08A4C), Color(0xFFF2B36F)],
   );
 
-  static const lavender = LinearGradient(
+  static const cherry = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFF6A58D2), Color(0xFF9C8CF0)],
+    colors: [Color(0xFF8E0F33), Color(0xFFC2224E)],
   );
 }
 
 abstract final class HallyShadows {
   static List<BoxShadow> soft(Brightness b) => b == Brightness.dark
       ? const []
-      : [BoxShadow(color: const Color(0xFF3B2F7A).withValues(alpha: 0.07), blurRadius: 24, offset: const Offset(0, 8))];
+      : [BoxShadow(color: const Color(0xFF5A1023).withValues(alpha: 0.07), blurRadius: 24, offset: const Offset(0, 8))];
 
   static List<BoxShadow> glow(Color c) => [BoxShadow(color: c.withValues(alpha: 0.35), blurRadius: 24, offset: const Offset(0, 10))];
 }

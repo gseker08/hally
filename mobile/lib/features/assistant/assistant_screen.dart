@@ -76,7 +76,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                 ? ListView(
                     padding: const EdgeInsets.all(HallySpace.lg),
                     children: [
-                      HallyEmptyState(icon: Icons.auto_awesome_rounded, color: HallyColors.lavender, title: l10n.assistantEmptyTitle, body: l10n.assistantEmptyBody),
+                      HallyEmptyState(icon: Icons.auto_awesome_rounded, color: HallyColors.cherry, title: l10n.assistantEmptyTitle, body: l10n.assistantEmptyBody),
                       const SizedBox(height: HallySpace.md),
                       Wrap(
                         alignment: WrapAlignment.center,
@@ -149,7 +149,7 @@ class _Bubble extends ConsumerWidget {
           margin: const EdgeInsets.only(bottom: HallySpace.sm),
           padding: const EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: HallySpace.sm + 2),
           decoration: BoxDecoration(
-            gradient: mine ? HallyGradients.lavender : null,
+            gradient: mine ? HallyGradients.cherry : null,
             color: mine ? null : theme.colorScheme.surface,
             border: mine ? null : Border.all(color: theme.colorScheme.outlineVariant),
             borderRadius: BorderRadius.only(
@@ -171,7 +171,7 @@ class _Bubble extends ConsumerWidget {
                     child: HallyPill(
                       label: [p.payload.title, if (p.payload.date != null) p.payload.date!, if (p.payload.time != null) p.payload.time!].join(' · '),
                       icon: p.isEvent ? Icons.event_rounded : Icons.check_circle_outline_rounded,
-                      color: p.isEvent ? HallyColors.apricot : HallyColors.lavender,
+                      color: p.isEvent ? HallyColors.apricot : HallyColors.cherry,
                     ),
                   ),
                 Align(

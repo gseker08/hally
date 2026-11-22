@@ -54,7 +54,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                     child: ListTile(
                       leading: HallyIconBadge(
                         icon: n.kind == 'EveningPrep' ? Icons.nights_stay_rounded : Icons.alarm_rounded,
-                        color: n.kind == 'EveningPrep' ? HallyColors.lavender : HallyColors.apricot,
+                        color: n.kind == 'EveningPrep' ? HallyColors.cherry : HallyColors.apricot,
                       ),
                       title: Text(n.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: n.read ? FontWeight.w500 : FontWeight.w700)),
                       subtitle: Text('${n.body}\n${DateFormat.MMMd(locale).add_Hm().format(n.createdAt)}'),
@@ -92,7 +92,7 @@ class _EveningPrepCard extends ConsumerWidget {
         children: [
           SwitchListTile(
             key: const Key('prep.enabled'),
-            secondary: const HallyIconBadge(icon: Icons.nights_stay_rounded, color: HallyColors.lavender),
+            secondary: const HallyIconBadge(icon: Icons.nights_stay_rounded, color: HallyColors.cherry),
             title: Text(l10n.eveningPrepTitle),
             subtitle: Text(l10n.eveningPrepBody),
             value: settings.eveningPrepEnabled,

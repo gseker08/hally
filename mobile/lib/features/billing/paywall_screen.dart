@@ -217,7 +217,7 @@ class _Hero extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: HallyGradients.hero,
         borderRadius: BorderRadius.circular(HallyRadius.lg),
-        boxShadow: HallyShadows.glow(HallyColors.lavender),
+        boxShadow: HallyShadows.glow(HallyColors.cherry),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,7 +261,7 @@ class _Comparison extends StatelessWidget {
             TableRow(children: [
               const SizedBox(),
               Text(l10n.planFree, style: style.labelLarge, textAlign: TextAlign.center),
-              Text(l10n.planPlus, style: style.labelLarge?.copyWith(color: HallyColors.lavender), textAlign: TextAlign.center),
+              Text(l10n.planPlus, style: style.labelLarge?.copyWith(color: HallyColors.cherry), textAlign: TextAlign.center),
             ]),
             for (final (label, f, p) in rows)
               TableRow(children: [
@@ -299,11 +299,11 @@ class _ProductTile extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(HallyRadius.md),
-            border: Border.all(color: selected ? HallyColors.lavender : theme.dividerColor, width: selected ? 2 : 1),
+            border: Border.all(color: selected ? HallyColors.cherry : theme.dividerColor, width: selected ? 2 : 1),
           ),
           child: Row(
             children: [
-              Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, color: HallyColors.lavender),
+              Icon(selected ? Icons.radio_button_checked_rounded : Icons.radio_button_off_rounded, color: HallyColors.cherry),
               const SizedBox(width: HallySpace.md),
               Expanded(
                 child: Column(
@@ -359,7 +359,7 @@ class PlanScreen extends ConsumerWidget {
                     key: const Key('plan.status'),
                     leading: HallyIconBadge(
                       icon: e.isPlus ? Icons.workspace_premium_rounded : Icons.favorite_rounded,
-                      color: e.isPlus ? HallyColors.lavender : HallyColors.mint,
+                      color: e.isPlus ? HallyColors.cherry : HallyColors.mint,
                     ),
                     title: Text(e.isPlus ? l10n.planPlus : l10n.planFree, style: Theme.of(context).textTheme.titleMedium),
                     subtitle: Text(status),

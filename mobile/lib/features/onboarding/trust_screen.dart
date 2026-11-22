@@ -15,7 +15,7 @@ class TrustScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final points = [
-      (Icons.visibility_rounded, HallyColors.lavender, l10n.trustPoint1),
+      (Icons.visibility_rounded, HallyColors.cherry, l10n.trustPoint1),
       (Icons.lock_rounded, HallyColors.mint, l10n.trustPoint2),
       (Icons.delete_sweep_rounded, HallyColors.apricot, l10n.trustPoint3),
     ];
@@ -36,11 +36,11 @@ class TrustScreen extends ConsumerWidget {
             child: Container(
               width: 112,
               height: 112,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: HallyColors.softOf(HallyColors.lavender, Theme.of(context).brightness)),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: HallyColors.softOf(HallyColors.cherry, Theme.of(context).brightness)),
               alignment: Alignment.center,
               child: const HallyIconBadge(
                 icon: Icons.shield_rounded,
-                color: HallyColors.lavender,
+                color: HallyColors.cherry,
                 gradient: HallyGradients.hero,
                 size: 72,
                 glow: true,

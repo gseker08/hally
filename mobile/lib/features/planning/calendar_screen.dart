@@ -164,7 +164,7 @@ class _DayChip extends StatelessWidget {
         margin: const EdgeInsets.all(2),
         padding: const EdgeInsets.symmetric(vertical: HallySpace.sm),
         decoration: BoxDecoration(
-          gradient: selected ? HallyGradients.lavender : null,
+          gradient: selected ? HallyGradients.cherry : null,
           borderRadius: BorderRadius.circular(HallyRadius.md),
         ),
         child: Column(

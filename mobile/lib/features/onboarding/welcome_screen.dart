@@ -119,7 +119,7 @@ class _FloatingCards extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = [
       (Icons.event_rounded, HallyColors.apricot, -0.035, 0.0),
-      (Icons.checkroom_rounded, HallyColors.lavender, 0.03, 36.0),
+      (Icons.checkroom_rounded, HallyColors.cherry, 0.03, 36.0),
       (Icons.check_circle_rounded, HallyColors.mint, -0.02, 8.0),
     ];
     return Column(

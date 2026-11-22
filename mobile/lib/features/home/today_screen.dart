@@ -91,7 +91,7 @@ class TodayScreen extends ConsumerWidget {
         for (final t in d.dueToday) HallyEntrance(index: i++, child: TaskTile(task: t, familyId: familyId, color: HallyColors.mint)),
       ],
       if (d.events.isNotEmpty) ...[
-        HallySectionHeader(title: l10n.todayEvents, color: HallyColors.lavender, count: d.events.length),
+        HallySectionHeader(title: l10n.todayEvents, color: HallyColors.cherry, count: d.events.length),
         for (final (n, e) in d.events.indexed)
           HallyEntrance(index: i++, child: _EventTile(event: e, last: n == d.events.length - 1)),
       ],
@@ -251,7 +251,7 @@ class _QuickCapture extends ConsumerWidget {
         ),
         Row(
           children: [
-            tile(Icons.photo_camera_rounded, HallyGradients.lavender, HallyColors.lavender, l10n.captureCamera,
+            tile(Icons.photo_camera_rounded, HallyGradients.cherry, HallyColors.cherry, l10n.captureCamera,
                 () => startPhotoCapture(context, ref, camera: true)),
             const SizedBox(width: HallySpace.sm + 2),
             tile(Icons.photo_library_rounded, HallyGradients.mint, HallyColors.mint, l10n.captureGallery,
@@ -305,7 +305,7 @@ class _WaitingCard extends StatelessWidget {
                         Expanded(
                           child: Text(l10n.todayWaiting, style: theme.textTheme.titleLarge?.copyWith(color: Colors.white)),
                         ),
-                        HallyPill(label: '${titles.length}', color: Colors.white, solid: true, textColor: HallyColors.lavenderDeep),
+                        HallyPill(label: '${titles.length}', color: Colors.white, solid: true, textColor: HallyColors.cherryStrong),
                       ],
                     ),
                     const SizedBox(height: HallySpace.sm),
@@ -338,10 +338,10 @@ class _WaitingCard extends StatelessWidget {
                         children: [
                           Text(
                             l10n.todayReview,
-                            style: const TextStyle(color: HallyColors.lavenderDeep, fontWeight: FontWeight.w800),
+                            style: const TextStyle(color: HallyColors.cherryStrong, fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(width: 6),
-                          const Icon(Icons.arrow_forward_rounded, size: 18, color: HallyColors.lavenderDeep),
+                          const Icon(Icons.arrow_forward_rounded, size: 18, color: HallyColors.cherryStrong),
                         ],
                       ),
                     ),
@@ -524,7 +524,7 @@ class _EventTile extends StatelessWidget {
             width: 58,
             child: Padding(
               padding: const EdgeInsets.only(top: HallySpace.md),
-              child: Text(time, style: theme.textTheme.labelLarge?.copyWith(fontSize: 13, color: HallyColors.lavender)),
+              child: Text(time, style: theme.textTheme.labelLarge?.copyWith(fontSize: 13, color: HallyColors.cherry)),
             ),
           ),
           Column(
@@ -535,12 +535,12 @@ class _EventTile extends StatelessWidget {
                 height: 12,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: HallyColors.lavender,
-                  border: Border.all(color: HallyColors.softOf(HallyColors.lavender, theme.brightness), width: 3),
+                  color: HallyColors.cherry,
+                  border: Border.all(color: HallyColors.softOf(HallyColors.cherry, theme.brightness), width: 3),
                 ),
               ),
               Expanded(
-                child: Container(width: 2, color: last ? Colors.transparent : HallyColors.softOf(HallyColors.lavender, theme.brightness)),
+                child: Container(width: 2, color: last ? Colors.transparent : HallyColors.softOf(HallyColors.cherry, theme.brightness)),
               ),
             ],
           ),
@@ -552,7 +552,7 @@ class _EventTile extends StatelessWidget {
                 child: Row(
                   children: [
                     Expanded(child: Text(event.title, style: theme.textTheme.titleMedium)),
-                    const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.lavender, size: 34),
+                    const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.cherry, size: 34),
                   ],
                 ),
               ),

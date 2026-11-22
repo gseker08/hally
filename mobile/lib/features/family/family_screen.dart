@@ -57,7 +57,7 @@ class FamilyScreen extends ConsumerWidget {
                           HallyPill(
                             label: m.role == 'Owner' ? l10n.roleOwner : l10n.roleAdult,
                             icon: m.role == 'Owner' ? Icons.star_rounded : null,
-                            color: m.role == 'Owner' ? HallyColors.apricot : HallyColors.lavender,
+                            color: m.role == 'Owner' ? HallyColors.apricot : HallyColors.cherry,
                           ),
                         ],
                       ),
@@ -148,7 +148,7 @@ class _FamilyHero extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: HallyGradients.hero,
         borderRadius: BorderRadius.circular(HallyRadius.lg),
-        boxShadow: HallyShadows.glow(HallyColors.lavender),
+        boxShadow: HallyShadows.glow(HallyColors.cherry),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -208,7 +208,7 @@ class _PlanTile extends StatelessWidget {
             : l10n.planFreeUsage(e.usage.scansThisWeek, e.limits.scansPerWeek);
     return ListTile(
       key: const Key('family.plan'),
-      leading: HallyIconBadge(icon: Icons.workspace_premium_rounded, color: plus ? HallyColors.lavender : HallyColors.apricot),
+      leading: HallyIconBadge(icon: Icons.workspace_premium_rounded, color: plus ? HallyColors.cherry : HallyColors.apricot),
       title: Text(plus ? l10n.planPlus : l10n.planFree),
       subtitle: subtitle == null ? null : Text(subtitle),
       trailing: const Icon(Icons.chevron_right_rounded),
