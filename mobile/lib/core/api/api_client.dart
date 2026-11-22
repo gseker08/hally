@@ -56,7 +56,9 @@ class ApiClient {
     if (tokens == null) return handler.next(error);
 
     try {
-      final res = await Dio(BaseOptions(baseUrl: dio.options.baseUrl))
+      // A bare Dio (no interceptors, so no refresh loop) on the same transport.
+      final refresher = Dio(BaseOptions(baseUrl: dio.options.baseUrl))..httpClientAdapter = dio.httpClientAdapter;
+      final res = await refresher
           .post<Map<String, dynamic>>('/api/v1/auth/refresh', data: {'refreshToken': tokens.refreshToken});
       final body = res.data!;
       await _storage.write(StoredTokens(
@@ -65,11 +67,22 @@ class ApiClient {
       ));
       request.extra['retried'] = true;
       request.headers['Authorization'] = 'Bearer ${body['accessToken']}';
-      handler.resolve(await dio.fetch<dynamic>(request));
     } on DioException {
       await _storage.clear();
       onSessionExpired?.call();
-      handler.next(error);
+      return handler.next(error);
+    }
+
+    // A multipart body can only be sent once: retry with a fresh copy.
+    final data = request.data;
+    if (data is FormData) request.data = data.clone();
+    try {
+      handler.resolve(await dio.fetch<dynamic>(request));
+    } on DioException catch (retryError) {
+      handler.next(retryError);
+    } catch (e) {
+      // Never leave the queued interceptor without an answer, or the caller waits forever.
+      handler.next(DioException(requestOptions: request, error: e));
     }
   }
 
