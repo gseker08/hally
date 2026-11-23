@@ -14,6 +14,7 @@ import '../family/children.dart';
 import '../messages/chats_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../planning/planning_repository.dart';
+import 'live_now.dart';
 import '../profile/profile_screen.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -66,6 +67,7 @@ class TodayScreen extends ConsumerWidget {
     );
     var i = 0;
     return [
+      LiveNowStrip(familyId: familyId),
       ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
       if (d.waiting.isNotEmpty)
         HallyEntrance(

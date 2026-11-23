@@ -1333,5 +1333,92 @@
         "type": "int"
       }
     }
+  },
+  "addTitle": "Ne eklemek istersin?",
+  "addCaptureSection": "Hally yakalasın",
+  "captureCameraShort": "Fotoğraf",
+  "captureGalleryShort": "Galeri",
+  "captureTextShort2": "Mesaj",
+  "quickLogTitle": "Hızlı kayıt",
+  "quickSleepStart": "Uyku başlat",
+  "quickWokeUp": "Uyandı",
+  "quickSleepDone": "Uyku başladı: {name}",
+  "@quickSleepDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickWokeUpDone": "Uyandı: {name}",
+  "@quickWokeUpDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickMedication": "İlaç verildi",
+  "quickScreenStart": "Ekran süresi başlat",
+  "quickScreenStop": "Ekran süresini durdur",
+  "quickScreenStarted": "Ekran süresi başladı: {name}",
+  "@quickScreenStarted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickScreenStopped": "Ekran süresi durdu: {name}",
+  "@quickScreenStopped": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickStudyStart": "Ödev başlat",
+  "quickStudyStop": "Ödevi bitir",
+  "quickStudyStarted": "Ödev başladı: {name}",
+  "@quickStudyStarted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickStudyStopped": "Ödev bitti: {name}",
+  "@quickStudyStopped": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickStars": "Yıldız ver",
+  "liveNow": "Şu an",
+  "liveAsleep": "{name} uyuyor",
+  "@liveAsleep": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "liveScreen": "{name} · ekran",
+  "@liveScreen": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "liveStudy": "{name} · ödev",
+  "@liveStudy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   }
 }

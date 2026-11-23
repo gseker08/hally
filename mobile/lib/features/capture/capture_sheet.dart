@@ -13,10 +13,14 @@ import '../../l10n/gen/app_localizations.dart';
 import '../billing/paywall_screen.dart';
 import 'capture_models.dart';
 import 'capture_repository.dart';
+import 'quick_log.dart';
 
-/// Bottom sheet opened by the central "Yakala" tab.
+/// Bottom sheet opened by the central "Ekle" button: let Hally capture a photo or message, or log something for a
+/// child in one tap.
 Future<void> showCaptureSheet(BuildContext context, WidgetRef ref) {
   final l10n = AppLocalizations.of(context);
+  final familyId = ref.read(meProvider).valueOrNull?.primaryFamily?.id;
+  final messenger = ScaffoldMessenger.of(context);
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -29,46 +33,65 @@ Future<void> showCaptureSheet(BuildContext context, WidgetRef ref) {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text(l10n.addTitle, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: HallySpace.md),
               Row(
                 children: [
-                  const HallyIconBadge(icon: Icons.auto_awesome, color: HallyColors.rose, gradient: HallyGradients.magic, size: 40),
-                  const SizedBox(width: HallySpace.md),
-                  Expanded(child: Text(l10n.captureTitle, style: theme.textTheme.headlineSmall)),
+                  const Icon(Icons.auto_awesome_rounded, color: HallyColors.cherry, size: 18),
+                  const SizedBox(width: 6),
+                  Text(l10n.addCaptureSection, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                 ],
               ),
-              const SizedBox(height: HallySpace.sm),
-              Text(l10n.captureSubtitle, style: theme.textTheme.bodyMedium),
-              const SizedBox(height: HallySpace.lg),
-              CaptureOption(
-                key: const Key('capture.camera'),
-                icon: Icons.photo_camera_rounded,
-                gradient: HallyGradients.cherry,
-                color: HallyColors.cherry,
-                label: l10n.captureCamera,
-                hint: l10n.captureCameraHint,
-                onTap: () => _pick(sheetContext, context, ref, ImageSource.camera, 'Camera'),
+              const SizedBox(height: 4),
+              Text(l10n.captureSubtitle, style: theme.textTheme.bodySmall),
+              const SizedBox(height: HallySpace.sm + 2),
+              Row(
+                children: [
+                  Expanded(
+                    child: CaptureOption(
+                      key: const Key('capture.camera'),
+                      icon: Icons.photo_camera_rounded,
+                      color: HallyColors.cherry,
+                      label: l10n.captureCameraShort,
+                      onTap: () => _pick(sheetContext, context, ref, ImageSource.camera, 'Camera'),
+                    ),
+                  ),
+                  const SizedBox(width: HallySpace.sm),
+                  Expanded(
+                    child: CaptureOption(
+                      key: const Key('capture.gallery'),
+                      icon: Icons.photo_library_rounded,
+                      color: HallyColors.mint,
+                      label: l10n.captureGalleryShort,
+                      onTap: () => _pick(sheetContext, context, ref, ImageSource.gallery, 'Gallery'),
+                    ),
+                  ),
+                  const SizedBox(width: HallySpace.sm),
+                  Expanded(
+                    child: CaptureOption(
+                      key: const Key('capture.text'),
+                      icon: Icons.chat_rounded,
+                      color: HallyColors.apricot,
+                      label: l10n.captureTextShort2,
+                      onTap: () {
+                        Navigator.of(sheetContext).pop();
+                        context.push('/capture/text');
+                      },
+                    ),
+                  ),
+                ],
               ),
-              CaptureOption(
-                key: const Key('capture.gallery'),
-                icon: Icons.photo_library_rounded,
-                gradient: HallyGradients.mint,
-                color: HallyColors.mint,
-                label: l10n.captureGallery,
-                hint: l10n.captureGalleryHint,
-                onTap: () => _pick(sheetContext, context, ref, ImageSource.gallery, 'Gallery'),
-              ),
-              CaptureOption(
-                key: const Key('capture.text'),
-                icon: Icons.chat_rounded,
-                gradient: HallyGradients.apricot,
-                color: HallyColors.apricot,
-                label: l10n.captureText,
-                hint: l10n.captureTextShort,
-                onTap: () {
-                  Navigator.of(sheetContext).pop();
-                  context.push('/capture/text');
-                },
-              ),
+              if (familyId != null) ...[
+                const SizedBox(height: HallySpace.lg),
+                QuickLog(
+                  familyId: familyId,
+                  onDone: ({message, route}) {
+                    Navigator.of(sheetContext).pop();
+                    if (route != null) context.push(route);
+                    if (message != null) messenger.showSnackBar(SnackBar(content: Text(message)));
+                  },
+                ),
+              ],
             ],
           ),
         ),
@@ -123,56 +146,37 @@ Future<void> runCapture(BuildContext context, WidgetRef ref, Future<CaptureResul
   }
 }
 
-/// Large tappable row in the capture sheet.
+/// Compact capture tile in the add sheet.
 class CaptureOption extends StatelessWidget {
-  const CaptureOption({
-    super.key,
-    required this.icon,
-    required this.gradient,
-    required this.color,
-    required this.label,
-    required this.hint,
-    required this.onTap,
-  });
+  const CaptureOption({super.key, required this.icon, required this.color, required this.label, required this.onTap});
 
   final IconData icon;
-  final Gradient gradient;
   final Color color;
   final String label;
-  final String hint;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: HallySpace.sm + 2),
-      child: HallyPressable(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(HallySpace.md - 2),
-          decoration: BoxDecoration(
-            color: HallyColors.softOf(color, theme.brightness).withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(HallyRadius.lg),
-            border: Border.all(color: HallyColors.softOf(color, theme.brightness)),
-          ),
-          child: Row(
-            children: [
-              HallyIconBadge(icon: icon, color: color, gradient: gradient, size: 48, glow: true),
-              const SizedBox(width: HallySpace.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(label, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 2),
-                    Text(hint, style: theme.textTheme.bodySmall),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
-            ],
-          ),
+    return HallyPressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: HallySpace.md - 2, horizontal: 6),
+        decoration: BoxDecoration(
+          color: HallyColors.softOf(color, theme.brightness),
+          borderRadius: BorderRadius.circular(HallyRadius.md + 2),
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(color: theme.colorScheme.surface, borderRadius: BorderRadius.circular(HallyRadius.sm)),
+              child: Icon(icon, color: HallyColors.readableOn(color, theme.brightness), size: 22),
+            ),
+            const SizedBox(height: HallySpace.sm),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700)),
+          ],
         ),
       ),
     );
