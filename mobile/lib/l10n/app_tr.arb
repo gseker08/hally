@@ -1089,5 +1089,158 @@
   "healthGrowthRequired": "En az bir ölçüm yazın.",
   "healthAppointmentTitle": "Ne için? (ör. diş kontrolü)",
   "healthPlace": "Yer",
-  "healthRemind": "Önceki akşam hatırlat"
+  "healthRemind": "Önceki akşam hatırlat",
+  "insightsTitle": "Analiz",
+  "insightsTitleFor": "{name} · Analiz",
+  "@insightsTitleFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsEditChild": "Düzenle",
+  "insightsDaily": "Günlük",
+  "insightsWeekly": "Haftalık",
+  "insightsToday": "Bugün",
+  "insightsTotal": "Toplam {value}",
+  "@insightsTotal": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsAverage": "Günde ort. {value}",
+  "@insightsAverage": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsGoalOf": "Hedef {goal}",
+  "@insightsGoalOf": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsOverGoal": "Hedef {goal}, aşıldı",
+  "@insightsOverGoal": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsGoalOverDays": "Hedef {goal} · {count} gün aşıldı",
+  "@insightsGoalOverDays": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsGoalMetDays": "Hedef {goal} · {met}/{total} gün tamam",
+  "@insightsGoalMetDays": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      },
+      "met": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsStudySplit": "Ödev {homework} · Okuma {reading}",
+  "@insightsStudySplit": {
+    "placeholders": {
+      "homework": {
+        "type": "String"
+      },
+      "reading": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsSleepSplit": "Gece {night} · Şekerleme {nap}",
+  "@insightsSleepSplit": {
+    "placeholders": {
+      "night": {
+        "type": "String"
+      },
+      "nap": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsFeeds": "{count} öğün",
+  "@insightsFeeds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsSolids": "{count} ek gıda",
+  "@insightsSolids": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsStarsSpent": "{count} yıldız harcandı",
+  "@insightsStarsSpent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsDoses": "{count} doz",
+  "@insightsDoses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsHasAllergies": "Alerjisi var, sağlık kartına bakın",
+  "insightsVaccinesOverdue": "{count} aşı gecikti",
+  "@insightsVaccinesOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsVaccinesSoon": "30 gün içinde {count} aşı",
+  "@insightsVaccinesSoon": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "insightsNextAppointment": "Sıradaki randevu: {title}, {when}",
+  "@insightsNextAppointment": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "insightsEmpty": "Bu aralıkta kayıt yok. Ekran süresi, uyku, ödev gibi kayıtlar girildikçe burada özetlenir."
 }

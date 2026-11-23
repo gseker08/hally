@@ -138,8 +138,13 @@ class FamilyScreen extends ConsumerWidget {
                     leading: ChildBadge(child: c, size: 40),
                     title: Text(c.firstName, style: Theme.of(context).textTheme.titleMedium),
                     subtitle: c.birthYear == null ? null : Text(l10n.childBorn(c.birthYear!)),
-                    trailing: const Icon(Icons.edit_outlined),
-                    onTap: () => showChildSheet(context, ref, familyId: f.id, child: c, siblings: f.children),
+                    trailing: IconButton(
+                      key: Key('family.editChild.${c.id}'),
+                      tooltip: l10n.insightsEditChild,
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: () => showChildSheet(context, ref, familyId: f.id, child: c, siblings: f.children),
+                    ),
+                    onTap: () => context.push('/child/${c.id}/insights'),
                   ),
                 ),
               Card(
