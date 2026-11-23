@@ -390,6 +390,8 @@ class _EventDialogState extends State<_EventDialog> {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     return AlertDialog(
+      // Scrolls instead of overflowing on short screens, with the keyboard open or large text.
+      scrollable: true,
       title: Text(l10n.calendarAdd),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -420,6 +422,7 @@ class _EventDialogState extends State<_EventDialog> {
           ),
           DropdownButtonFormField<EventRepeat>(
             key: const Key('event.repeat'),
+            isExpanded: true,
             initialValue: _repeat,
             decoration: InputDecoration(labelText: l10n.eventRepeat, prefixIcon: const Icon(Icons.repeat)),
             items: [for (final r in EventRepeat.values) DropdownMenuItem(value: r, child: Text(repeatLabel(l10n, r)))],
