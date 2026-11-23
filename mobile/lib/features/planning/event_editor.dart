@@ -6,6 +6,7 @@ import '../../core/design/tokens.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../family/children.dart';
 import '../family/family_repository.dart';
+import '../notifications/notifications_repository.dart';
 import 'calendar_screen.dart' show repeatLabel;
 import 'planning_repository.dart';
 
@@ -47,12 +48,15 @@ Future<DateTime?> showEventEditor(
         refresh();
         messenger.showSnackBar(SnackBar(content: Text(l10n.eventDeleted)));
         return DateUtils.dateOnly(event.startsAt);
-      case _Save(:final title, :final date, :final time, :final repeat, :final childIds):
+      case _Save(:final title, :final date, :final time, :final repeat, :final childIds, :final reminder):
         final startsAt = DateTime(date.year, date.month, date.day, time?.hour ?? 0, time?.minute ?? 0);
         final saved = event == null
             ? await repo.createEvent(familyId, title: title, startsAt: startsAt, allDay: time == null, repeat: repeat, childIds: childIds)
             : await repo.updateEvent(familyId, event, title: title, startsAt: startsAt, allDay: time == null, repeat: repeat, childIds: childIds);
         refresh();
+        if (event == null && time != null && reminder != null) {
+          await _remind(ref, messenger, l10n, familyId, saved.event.id, reminder, startsAt);
+        }
         if (saved.conflicts.isNotEmpty) {
           messenger.showSnackBar(SnackBar(content: Text(l10n.eventConflict(saved.conflicts.first.title))));
         }
@@ -67,18 +71,37 @@ Future<DateTime?> showEventEditor(
   }
 }
 
+/// The reminder picked in the editor of a new event. Best effort: the event is already saved.
+Future<void> _remind(WidgetRef ref, ScaffoldMessengerState messenger, AppLocalizations l10n, String familyId, String eventId,
+    ReminderPreset preset, DateTime startsAt) async {
+  final fireAt = eventReminderTime(preset, startsAt, DateTime.now());
+  if (fireAt == null) {
+    messenger.showSnackBar(SnackBar(content: Text(l10n.eventReminderSkipped)));
+    return;
+  }
+  try {
+    await ref.read(notificationsRepositoryProvider).createReminder(familyId, target: 'Event', targetId: eventId, fireAt: fireAt, forEveryone: false);
+    messenger.showSnackBar(SnackBar(content: Text(l10n.eventReminderSet(DateFormat.Hm().format(fireAt)))));
+  } catch (_) {
+    messenger.showSnackBar(SnackBar(content: Text(l10n.eventReminderFailed)));
+  }
+}
+
 sealed class _EventResult {
   const _EventResult();
 }
 
 class _Save extends _EventResult {
-  const _Save(this.title, this.date, this.time, this.repeat, this.childIds);
+  const _Save(this.title, this.date, this.time, this.repeat, this.childIds, this.reminder);
 
   final String title;
   final DateTime date;
   final TimeOfDay? time;
   final EventRepeat repeat;
   final List<String> childIds;
+
+  /// Only for a new event with a time; null = no reminder.
+  final ReminderPreset? reminder;
 }
 
 class _Delete extends _EventResult {
@@ -106,6 +129,10 @@ class _EventDialogState extends State<_EventDialog> {
   late TimeOfDay? _time = _event == null || _event.allDay ? null : TimeOfDay.fromDateTime(_event.seriesStartsAt);
   late EventRepeat _repeat = _event?.repeat ?? EventRepeat.none;
   late Set<String> _childIds = widget.initialChildIds;
+
+  // New timed events get a reminder by default; "No reminder" turns it off.
+  ReminderPreset? _reminder = ReminderPreset.fifteenBefore;
+  static const _reminderChoices = <ReminderPreset?>[null, ReminderPreset.atStart, ReminderPreset.fifteenBefore, ReminderPreset.hourBefore];
 
   bool get _isSeries => _event != null && _event.repeat != EventRepeat.none;
 
@@ -207,6 +234,29 @@ class _EventDialogState extends State<_EventDialog> {
             items: [for (final r in EventRepeat.values) DropdownMenuItem(value: r, child: Text(repeatLabel(l10n, r)))],
             onChanged: (r) => setState(() => _repeat = r ?? EventRepeat.none),
           ),
+          if (_event == null && _time != null)
+            Padding(
+              padding: const EdgeInsets.only(top: HallySpace.sm),
+              child: DropdownButtonFormField<ReminderPreset?>(
+                key: const Key('event.reminder'),
+                isExpanded: true,
+                initialValue: _reminder,
+                decoration: InputDecoration(labelText: l10n.reminderTitle, prefixIcon: const Icon(Icons.alarm_rounded)),
+                items: [
+                  for (final r in _reminderChoices)
+                    DropdownMenuItem(
+                      value: r,
+                      child: Text(switch (r) {
+                        null => l10n.reminderNone,
+                        ReminderPreset.atStart => l10n.reminderAtStart,
+                        ReminderPreset.hourBefore => l10n.reminderHourBefore,
+                        _ => l10n.reminder15Before,
+                      }),
+                    ),
+                ],
+                onChanged: (r) => setState(() => _reminder = r),
+              ),
+            ),
           ChildPicker(children: widget.children, selected: _childIds, onChanged: (ids) => setState(() => _childIds = ids)),
         ],
       ),
@@ -224,7 +274,7 @@ class _EventDialogState extends State<_EventDialog> {
           onPressed: () {
             final title = _title.text.trim();
             if (title.isEmpty) return;
-            Navigator.pop(context, _Save(title, _date, _time, _repeat, _childIds.toList()));
+            Navigator.pop(context, _Save(title, _date, _time, _repeat, _childIds.toList(), _event == null && _time != null ? _reminder : null));
           },
           child: Text(l10n.eventSave),
         ),

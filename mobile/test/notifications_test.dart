@@ -69,14 +69,26 @@ void main() {
     final now = DateTime(2026, 11, 12, 10);
     final at = DateTime(2026, 11, 13, 18, 30);
     final presets = reminderPresets(at, false, now);
-    expect(presets.map((p) => p.$1), [ReminderPreset.fifteenBefore, ReminderPreset.hourBefore, ReminderPreset.morningOf, ReminderPreset.eveningBefore]);
+    expect(presets.map((p) => p.$1),
+        [ReminderPreset.atStart, ReminderPreset.fifteenBefore, ReminderPreset.hourBefore, ReminderPreset.morningOf, ReminderPreset.eveningBefore]);
     expect(presets.last.$2, DateTime(2026, 11, 12, 20));
 
-    // Due in 30 minutes: only "15 minutes before" is still possible.
-    expect(reminderPresets(DateTime(2026, 11, 12, 10, 30), false, now).map((p) => p.$1), [ReminderPreset.fifteenBefore]);
+    // Due in 30 minutes: only "at start" and "15 minutes before" are still possible.
+    expect(reminderPresets(DateTime(2026, 11, 12, 10, 30), false, now).map((p) => p.$1), [ReminderPreset.atStart, ReminderPreset.fifteenBefore]);
+    // Due in 1 minute: the start time itself is still offered.
+    expect(reminderPresets(DateTime(2026, 11, 12, 10, 1), false, now).map((p) => p.$1), [ReminderPreset.atStart]);
     // All-day item: the morning of the day is allowed even though it is after midnight.
     expect(reminderPresets(DateTime(2026, 11, 14), true, now).map((p) => p.$1), [ReminderPreset.morningOf, ReminderPreset.eveningBefore]);
     expect(reminderPresets(null, false, now), isEmpty);
+  });
+
+  test('a new event reminder falls back to the start time when the preset has passed', () {
+    final now = DateTime(2026, 11, 23, 22, 36);
+    final soon = DateTime(2026, 11, 23, 22, 37);
+    expect(eventReminderTime(ReminderPreset.fifteenBefore, DateTime(2026, 11, 23, 23), now), DateTime(2026, 11, 23, 22, 45));
+    expect(eventReminderTime(ReminderPreset.fifteenBefore, soon, now), soon);
+    expect(eventReminderTime(ReminderPreset.atStart, soon, now), soon);
+    expect(eventReminderTime(ReminderPreset.hourBefore, DateTime(2026, 11, 23, 22, 30), now), isNull);
   });
 
   testWidgets('inbox shows entries, marks them read and toggles evening prep', (tester) async {

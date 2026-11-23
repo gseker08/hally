@@ -9,6 +9,7 @@ import 'package:hally/features/demo/demo_repository.dart';
 import 'package:hally/features/demo/demo_scan_screen.dart';
 import 'package:hally/features/family/family_repository.dart';
 import 'package:hally/features/home/today_screen.dart';
+import 'package:hally/features/notifications/notifications_repository.dart';
 import 'package:hally/features/planning/calendar_screen.dart';
 import 'package:hally/features/planning/planning_repository.dart';
 import 'package:hally/features/planning/tasks_screen.dart';
@@ -16,6 +17,17 @@ import 'package:hally/features/share/share_intake.dart';
 import 'package:hally/l10n/gen/app_localizations.dart';
 
 const _me = Me(id: 'u1', displayName: 'Ayşe', locale: 'tr', families: [FamilyRef(id: 'f1', name: 'Yılmaz')]);
+
+class _FakeReminders implements NotificationsRepository {
+  final reminders = <(String, String, DateTime)>[];
+
+  @override
+  Future<void> createReminder(String familyId, {required String target, required String targetId, required DateTime fireAt, required bool forEveryone}) async =>
+      reminders.add((target, targetId, fireAt));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
 
 class _FakePlanning implements PlanningRepository {
   final open = <TaskItem>[const TaskItem(id: 't1', title: 'Beslenme çantası', allDay: false, state: 'Open')];
@@ -308,6 +320,50 @@ void main() {
     }
     expect(find.text('Yüzme'), findsNWidgets(2));
     expect(find.text('Bu saatte başka bir etkinlik var: Yüzme'), findsOneWidget);
+  });
+
+  testWidgets('calendar: a new timed event gets a reminder unless it is turned off', (tester) async {
+    final repo = _FakePlanning();
+    final reminders = _FakeReminders();
+    await tester.pumpWidget(_app(const CalendarScreen(),
+        [planningRepositoryProvider.overrideWithValue(repo), notificationsRepositoryProvider.overrideWithValue(reminders)]));
+    await tester.pumpAndSettle();
+
+    Future<void> addAtNine(String title, {bool noReminder = false}) async {
+      await tester.tap(find.byKey(const Key('calendar.add')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('event.title')), title);
+      // All-day events have no reminder choice.
+      expect(find.byKey(const Key('event.reminder')), findsNothing);
+      await tester.tap(find.byIcon(Icons.schedule));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MaterialLocalizations.of(tester.element(find.byType(TimePickerDialog))).okButtonLabel));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('event.reminder')), findsOneWidget);
+      if (noReminder) {
+        await tester.tap(find.byKey(const Key('event.reminder')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Hatırlatma yok').last);
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.text('Kaydet'));
+      await tester.pumpAndSettle();
+    }
+
+    await addAtNine('Yüzme', noReminder: true);
+    expect(reminders.reminders, isEmpty);
+
+    await addAtNine('Veli toplantısı');
+    final startsAt = repo.saved.last.startsAt;
+    if (startsAt.isAfter(DateTime.now())) {
+      final (target, id, fireAt) = reminders.reminders.single;
+      expect((target, id), ('Event', repo.saved.last.id));
+      expect(fireAt.isAfter(startsAt), isFalse);
+    } else {
+      // Today's 09:00 has already passed while the test runs: the editor says so instead of failing silently.
+      expect(reminders.reminders, isEmpty);
+      expect(find.text('Etkinliğin saati geçtiği için hatırlatma kurulmadı'), findsOneWidget);
+    }
   });
 
   testWidgets('calendar: a weekly event is saved as a series and labelled', (tester) async {
