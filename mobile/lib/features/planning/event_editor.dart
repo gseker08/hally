@@ -126,7 +126,7 @@ class _EventDialogState extends State<_EventDialog> {
           TextButton(onPressed: () => Navigator.pop(c, false), child: Text(MaterialLocalizations.of(c).cancelButtonLabel)),
           FilledButton(
             key: const Key('event.deleteConfirm'),
-            style: FilledButton.styleFrom(backgroundColor: HallyColors.error, foregroundColor: Colors.white),
+            style: FilledButton.styleFrom(minimumSize: const Size(64, 40), backgroundColor: HallyColors.error, foregroundColor: Colors.white),
             onPressed: () => Navigator.pop(c, true),
             child: Text(l10n.eventDelete),
           ),
