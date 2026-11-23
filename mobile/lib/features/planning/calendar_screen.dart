@@ -422,6 +422,7 @@ class _EventDialogState extends State<_EventDialog> {
           ),
           DropdownButtonFormField<EventRepeat>(
             key: const Key('event.repeat'),
+            isExpanded: true,
             initialValue: _repeat,
             decoration: InputDecoration(labelText: l10n.eventRepeat, prefixIcon: const Icon(Icons.repeat)),
             items: [for (final r in EventRepeat.values) DropdownMenuItem(value: r, child: Text(repeatLabel(l10n, r)))],
