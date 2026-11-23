@@ -57,8 +57,10 @@ class _ReminderSheet extends StatefulWidget {
 
 class _ReminderSheetState extends State<_ReminderSheet> {
   bool _everyone = false;
+  bool _pastTime = false;
 
   String _label(AppLocalizations l10n, ReminderPreset p) => switch (p) {
+        ReminderPreset.atStart => l10n.reminderAtStart,
         ReminderPreset.fifteenBefore => l10n.reminder15Before,
         ReminderPreset.hourBefore => l10n.reminderHourBefore,
         ReminderPreset.morningOf => l10n.reminderMorningOf,
@@ -72,7 +74,12 @@ class _ReminderSheetState extends State<_ReminderSheet> {
     final time = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(now.add(const Duration(hours: 1))));
     if (time == null || !mounted) return;
     final at = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-    if (at.isAfter(DateTime.now())) Navigator.pop(context, (at, _everyone));
+    if (at.isAfter(DateTime.now())) {
+      Navigator.pop(context, (at, _everyone));
+    } else {
+      // Say why nothing happened instead of leaving the sheet open silently.
+      setState(() => _pastTime = true);
+    }
   }
 
   @override
@@ -114,6 +121,15 @@ class _ReminderSheetState extends State<_ReminderSheet> {
               title: Text(l10n.reminderCustom),
               onTap: _custom,
             ),
+            if (_pastTime)
+              Row(
+                key: const Key('reminder.pastTime'),
+                children: [
+                  const Icon(Icons.error_outline_rounded, size: 18, color: HallyColors.error),
+                  const SizedBox(width: HallySpace.xs),
+                  Expanded(child: Text(l10n.reminderPastTime, style: theme.textTheme.bodySmall?.copyWith(color: HallyColors.error))),
+                ],
+              ),
           ],
         ),
       ),

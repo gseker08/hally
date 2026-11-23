@@ -104,17 +104,34 @@ final notificationSettingsProvider = FutureProvider.autoDispose<NotificationSett
 
 /// Ready-made reminder times for an item due at [at], in device-local time. Past options are dropped.
 List<(ReminderPreset, DateTime)> reminderPresets(DateTime? at, bool allDay, DateTime now) {
-  final out = <(ReminderPreset, DateTime)>[];
-  if (at != null) {
-    final day = DateTime(at.year, at.month, at.day);
-    if (!allDay) {
-      out.add((ReminderPreset.fifteenBefore, at.subtract(const Duration(minutes: 15))));
-      out.add((ReminderPreset.hourBefore, at.subtract(const Duration(hours: 1))));
-    }
-    out.add((ReminderPreset.morningOf, day.add(const Duration(hours: 8))));
-    out.add((ReminderPreset.eveningBefore, day.subtract(const Duration(hours: 4)))); // 20:00 the day before
-  }
-  return out.where((p) => p.$2.isAfter(now) && (at == null || allDay || !p.$2.isAfter(at))).toList();
+  if (at == null) return const [];
+  final presets = allDay
+      ? const [ReminderPreset.morningOf, ReminderPreset.eveningBefore]
+      : ReminderPreset.values;
+  return [
+    for (final p in presets)
+      if (reminderTime(p, at).isAfter(now) && (allDay || !reminderTime(p, at).isAfter(at))) (p, reminderTime(p, at)),
+  ];
 }
 
-enum ReminderPreset { fifteenBefore, hourBefore, morningOf, eveningBefore }
+/// When [preset] fires for an item at [at] (device-local time).
+DateTime reminderTime(ReminderPreset preset, DateTime at) {
+  final day = DateTime(at.year, at.month, at.day);
+  return switch (preset) {
+    ReminderPreset.atStart => at,
+    ReminderPreset.fifteenBefore => at.subtract(const Duration(minutes: 15)),
+    ReminderPreset.hourBefore => at.subtract(const Duration(hours: 1)),
+    ReminderPreset.morningOf => day.add(const Duration(hours: 8)),
+    ReminderPreset.eveningBefore => day.subtract(const Duration(hours: 4)), // 20:00 the day before
+  };
+}
+
+/// The reminder a new timed event gets from its editor: [preset] when that is still ahead, otherwise the start time
+/// itself (an event a few minutes away still gets a reminder). Null when the event has already started.
+DateTime? eventReminderTime(ReminderPreset preset, DateTime startsAt, DateTime now) {
+  final at = reminderTime(preset, startsAt);
+  if (at.isAfter(now)) return at;
+  return startsAt.isAfter(now) ? startsAt : null;
+}
+
+enum ReminderPreset { atStart, fifteenBefore, hourBefore, morningOf, eveningBefore }
