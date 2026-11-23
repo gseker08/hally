@@ -84,7 +84,8 @@ class KidsScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(childInsightsProvider);
-              await ref.refresh(familyProvider(familyId).future);
+              ref.invalidate(familyProvider(familyId));
+              await ref.read(familyProvider(familyId).future);
             },
             child: ListView(
               padding: const EdgeInsets.fromLTRB(HallySpace.md, 0, HallySpace.md, 120),

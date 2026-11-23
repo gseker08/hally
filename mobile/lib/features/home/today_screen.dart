@@ -10,7 +10,6 @@ import '../../core/design/widgets.dart';
 import '../../core/text/locale_case.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_repository.dart';
-import '../capture/capture_sheet.dart';
 import '../family/children.dart';
 import '../messages/chats_screen.dart';
 import '../notifications/notifications_screen.dart';
