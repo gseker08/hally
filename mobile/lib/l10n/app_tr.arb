@@ -977,5 +977,51 @@
       }
     }
   },
-  "dutiesReset": "Her zamanki plana dön"
+  "dutiesReset": "Her zamanki plana dön",
+  "expensesTitle": "Harcamalar",
+  "expensesBody": "Kim ne ödedi, eşit paylaşım ve hesaplaşma",
+  "expensesMonthTotal": "Bu ayın toplamı",
+  "expensesAllSquare": "Hesaplar denk.",
+  "expensesSolo": "Paylaşmak için aileye ikinci bir ebeveyn davet edin. Harcamaları yine de buradan takip edebilirsiniz.",
+  "expensesOwes": "{from}, {to} kişisine {amount} borçlu",
+  "@expensesOwes": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "expensesSettle": "Ödedim",
+  "expensesSettleTitle": "Ödemeyi kaydet",
+  "expensesNoMoneyMoves": "Hally para göndermez, yalnızca kaydı tutar.",
+  "expensesNone": "Bu ay harcama yok. Eklemek için Ekle'ye dokunun.",
+  "expensesAdd": "Ekle",
+  "expensesWhat": "Ne için?",
+  "expensesAmount": "Tutar (₺)",
+  "expensesPaidBy": "Ödeyen",
+  "expensesAmountInvalid": "Geçerli bir tutar yazın.",
+  "expensesPaidByLine": "{name} ödedi · payınız {share}",
+  "@expensesPaidByLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "share": {
+        "type": "String"
+      }
+    }
+  },
+  "expensesPayments": "Ödemeler",
+  "expensesCatSchool": "Okul",
+  "expensesCatHealth": "Sağlık",
+  "expensesCatClothes": "Giyim",
+  "expensesCatActivity": "Etkinlik",
+  "expensesCatFood": "Yemek",
+  "expensesCatOther": "Diğer"
 }

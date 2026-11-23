@@ -3,6 +3,7 @@ using Hally.Domain.Billing;
 using Hally.Domain.Capture;
 using Hally.Domain.Common;
 using Hally.Domain.Duties;
+using Hally.Domain.Expenses;
 using Hally.Domain.Families;
 using Hally.Domain.Feeding;
 using Hally.Domain.Habits;
@@ -63,6 +64,8 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<DutyRule> DutyRules => Set<DutyRule>();
     public DbSet<DutyOverride> DutyOverrides => Set<DutyOverride>();
     public DbSet<DutyDone> DutyDones => Set<DutyDone>();
+    public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<Settlement> Settlements => Set<Settlement>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -351,6 +354,25 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StartedByUserId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.EndedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Expense>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(80);
+            e.Property(x => x.Note).HasMaxLength(200);
+            e.Property(x => x.Amount).HasPrecision(12, 2);
+            e.Property(x => x.Category).HasConversion<string>().HasMaxLength(12);
+            e.HasIndex(x => new { x.FamilyId, x.Date });
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Settlement>(e =>
+        {
+            e.Property(x => x.Amount).HasPrecision(12, 2);
+            e.HasIndex(x => new { x.FamilyId, x.Date });
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<DutyRule>(e =>

@@ -56,6 +56,9 @@ abstract interface class ChatRealtime {
 
   /// Raw `DutiesChanged` payloads (`{familyId}`).
   Stream<Map<String, dynamic>> get dutiesEvents;
+
+  /// Raw `ExpensesChanged` payloads (`{familyId}`).
+  Stream<Map<String, dynamic>> get expensesEvents;
   bool get isConnected;
   Future<void> dispose();
 }
@@ -111,6 +114,10 @@ class SignalRChatRealtime implements ChatRealtime {
       final payload = args?.firstOrNull;
       if (payload is Map) _duties.add(Map<String, dynamic>.from(payload));
     });
+    _connection.on('ExpensesChanged', (args) {
+      final payload = args?.firstOrNull;
+      if (payload is Map) _expenses.add(Map<String, dynamic>.from(payload));
+    });
     _connection.onclose(({error}) => _scheduleRetry());
     unawaited(_start());
   }
@@ -130,6 +137,7 @@ class SignalRChatRealtime implements ChatRealtime {
   final _points = StreamController<Map<String, dynamic>>.broadcast();
   final _habits = StreamController<Map<String, dynamic>>.broadcast();
   final _duties = StreamController<Map<String, dynamic>>.broadcast();
+  final _expenses = StreamController<Map<String, dynamic>>.broadcast();
   Timer? _retry;
   bool _disposed = false;
 
@@ -162,6 +170,9 @@ class SignalRChatRealtime implements ChatRealtime {
 
   @override
   Stream<Map<String, dynamic>> get dutiesEvents => _duties.stream;
+
+  @override
+  Stream<Map<String, dynamic>> get expensesEvents => _expenses.stream;
 
   @override
   bool get isConnected => _connection.state == HubConnectionState.Connected;
@@ -223,6 +234,7 @@ class SignalRChatRealtime implements ChatRealtime {
     await _points.close();
     await _habits.close();
     await _duties.close();
+    await _expenses.close();
   }
 }
 
@@ -257,6 +269,9 @@ class NoChatRealtime implements ChatRealtime {
 
   @override
   Stream<Map<String, dynamic>> get dutiesEvents => const Stream.empty();
+
+  @override
+  Stream<Map<String, dynamic>> get expensesEvents => const Stream.empty();
 
   @override
   bool get isConnected => false;

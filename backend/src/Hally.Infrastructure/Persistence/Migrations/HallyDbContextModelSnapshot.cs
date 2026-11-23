@@ -489,6 +489,118 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("duty_rules", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Expenses.Expense", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("category");
+
+                    b.Property<Guid?>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid>("PaidByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("paid_by_user_id");
+
+                    b.Property<List<Guid>>("SharedWith")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("shared_with");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_expenses");
+
+                    b.HasIndex("ChildId")
+                        .HasDatabaseName("ix_expenses_child_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_expenses_created_by_user_id");
+
+                    b.HasIndex("FamilyId", "Date")
+                        .HasDatabaseName("ix_expenses_family_id_date");
+
+                    b.ToTable("expenses", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Expenses.Settlement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<Guid>("FromUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("from_user_id");
+
+                    b.Property<Guid>("ToUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("to_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_settlements");
+
+                    b.HasIndex("FamilyId", "Date")
+                        .HasDatabaseName("ix_settlements_family_id_date");
+
+                    b.ToTable("settlements", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Families.Child", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2211,6 +2323,38 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_duty_rules_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Expenses.Expense", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_expenses_children_child_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_expenses_users_created_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_expenses_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Expenses.Settlement", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_settlements_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Families.Child", b =>
