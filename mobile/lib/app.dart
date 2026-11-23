@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/app_config.dart';
 import 'core/design/theme.dart';
 import 'core/locale/app_language.dart';
+import 'features/home/today_widget.dart';
 import 'features/notifications/push.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'router.dart';
@@ -16,6 +17,8 @@ class HallyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Registers this device for push once someone is signed in (a no-op until Firebase is set up).
     ref.watch(pushControllerProvider);
+    // Keeps the Android home screen "Today" widget up to date (a no-op elsewhere).
+    ref.watch(todayWidgetSyncProvider);
     return MaterialApp.router(
       scaffoldMessengerKey: hallyMessengerKey,
       title: AppConfig.appName,
