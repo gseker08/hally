@@ -30,7 +30,7 @@ public class HabitsTests(HallyApiFactory api)
     public async Task Parents_check_habits_for_today_and_the_last_week()
     {
         var owner = await api.SignInAsync($"{Guid.NewGuid():N}@example.com", "Ayşe");
-        var family = (await (await owner.PostIdempotentAsync("/api/v1/families", new { name = "Yılmaz" })).Content.ReadFromJsonAsync<FamilyBody>())!;
+        var family = (await (await owner.PostIdempotentAsync("/api/v1/families", new { name = "Yılmaz", timeZoneId = TestZones.Daytime(api.Clock) })).Content.ReadFromJsonAsync<FamilyBody>())!;
         var child = (await (await owner.PostIdempotentAsync($"/api/v1/families/{family.Id}/children", new { firstName = "Ela" })).Content.ReadFromJsonAsync<ChildBody>())!;
         var url = $"/api/v1/families/{family.Id}/habits";
 

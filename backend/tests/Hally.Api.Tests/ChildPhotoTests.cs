@@ -73,7 +73,16 @@ public class ChildPhotoTests(HallyApiFactory api)
         var (client, familyId, childId) = await FamilyWithChild();
         var first = (await (await Upload(client, familyId, childId, Png)).Content.ReadFromJsonAsync<ChildPhotoBody>())!;
         api.Clock.Advance(TimeSpan.FromSeconds(5));
-        var second = (await (await Upload(client, familyId, childId, Jpeg)).Content.ReadFromJsonAsync<ChildPhotoBody>())!;
+        ChildPhotoBody second;
+        try
+        {
+            second = (await (await Upload(client, familyId, childId, Jpeg)).Content.ReadFromJsonAsync<ChildPhotoBody>())!;
+        }
+        finally
+        {
+            api.Clock.Advance(TimeSpan.FromSeconds(-5));
+        }
+
         second.PhotoUrl.Should().NotBe(first.PhotoUrl);
         StoredFiles(familyId).Should().ContainSingle();
         var photo = await client.GetAsync(second.PhotoUrl);
