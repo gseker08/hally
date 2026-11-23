@@ -82,12 +82,15 @@ public class ScreenTimeTests(HallyApiFactory api)
     }
 
     [Fact]
-    public Task Reaching_the_goal_notifies_every_adult_once_in_their_language() =>
-        WithClockAdvanced(ToDaytime(), GoalNotifiesEveryAdultOnce);
-
-    private async Task GoalNotifiesEveryAdultOnce()
+    public async Task Reaching_the_goal_notifies_every_adult_once_in_their_language()
     {
+        // Signed in at the real time (tokens are checked against it), then the family's day moved off midnight.
         var (owner, partner, familyId, childId) = await FamilyWithChild();
+        await WithClockAdvanced(ToDaytime(), () => GoalNotifiesEveryAdultOnce(owner, partner, familyId, childId));
+    }
+
+    private async Task GoalNotifiesEveryAdultOnce(HttpClient owner, HttpClient partner, Guid familyId, Guid childId)
+    {
         await partner.PutAsJsonAsync("/api/v1/me/devices", new { platform = "android", token = $"tok-{Guid.NewGuid():N}" });
         (await owner.PutAsJsonAsync(Url(familyId, childId, "goal"), new { dailyMinutes = 30 })).StatusCode.Should().Be(HttpStatusCode.OK);
 
