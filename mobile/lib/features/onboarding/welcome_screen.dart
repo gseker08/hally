@@ -28,12 +28,18 @@ class WelcomeScreen extends ConsumerWidget {
                   // Hero: brand gradient with floating "what Hally does" cards.
                   Expanded(
                     child: Container(
-                      decoration: const BoxDecoration(gradient: HallyGradients.hero),
+                      decoration: const BoxDecoration(color: HallyColors.cherry),
                       clipBehavior: Clip.antiAlias,
                       child: Stack(
                         children: [
-                          const Positioned(top: -80, right: -60, child: HallyGlow(color: Color(0xFFF0A36A), size: 280)),
-                          const Positioned(bottom: -60, left: -80, child: HallyGlow(color: Color(0xFF6FD3B4), size: 260)),
+                          const Positioned(
+                            top: -30,
+                            right: -90,
+                            child: Opacity(
+                              opacity: 0.09,
+                              child: HallyMark(size: 320, colors: HallyMarkColors(cherry: Colors.white, stem: Colors.white, leaf: Colors.white)),
+                            ),
+                          ),
                           SafeArea(
                             bottom: false,
                             child: Padding(
@@ -41,16 +47,7 @@ class WelcomeScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      const HallyLogo(size: 44, onDark: true),
-                                      const SizedBox(width: HallySpace.sm + 4),
-                                      Text(
-                                        AppConfig.appName,
-                                        style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white),
-                                      ),
-                                    ],
-                                  ),
+                                  const HallyWordmark(height: 34, onBrand: true),
                                   const SizedBox(height: HallySpace.lg),
                                   Text(
                                     l10n.appTagline(AppConfig.appName),

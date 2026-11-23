@@ -6,6 +6,8 @@ abstract final class HallyColors {
   static const cherry = Color(0xFFA8133C);
   static const cherryStrong = Color(0xFF8E0F33);
   static const cherrySoft = Color(0xFFFBE6EC);
+  /// Logo stem and deep accents.
+  static const cherryStem = Color(0xFF5A0A20);
   static const cherryDark = Color(0xFFE25C7C);
   static const cherryStrongDark = Color(0xFFF08AA2);
   static const cherrySoftDark = Color(0xFF3A1520);

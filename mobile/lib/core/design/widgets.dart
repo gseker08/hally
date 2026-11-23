@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'tokens.dart';
 
+export 'brand.dart';
+
 /// Standard padded page body used by onboarding-style screens.
 class HallyPage extends StatelessWidget {
   const HallyPage({super.key, required this.children, this.bottom});
@@ -207,48 +209,6 @@ class HallyGlow extends StatelessWidget {
           ),
         ),
       );
-}
-
-/// The Hally logo mark: a rounded tile with an "H" and a spark.
-class HallyLogo extends StatelessWidget {
-  const HallyLogo({super.key, this.size = 56, this.onDark = false});
-
-  final double size;
-  final bool onDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        color: onDark ? Colors.white : null,
-        gradient: onDark ? null : HallyGradients.hero,
-        borderRadius: BorderRadius.circular(size * 0.3),
-        boxShadow: HallyShadows.glow(onDark ? Colors.black : HallyColors.cherry),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Text(
-            'H',
-            style: TextStyle(
-              fontFamily: HallyFonts.display,
-              fontWeight: FontWeight.w800,
-              fontSize: size * 0.56,
-              height: 1,
-              color: onDark ? HallyColors.cherryStrong : Colors.white,
-            ),
-          ),
-          Positioned(
-            top: size * 0.14,
-            right: size * 0.14,
-            child: Icon(Icons.auto_awesome, size: size * 0.24, color: onDark ? HallyColors.apricot : const Color(0xFFFFD9B8)),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Avatar with a colour chosen from the name, so each family member keeps the same colour.
