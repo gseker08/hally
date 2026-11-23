@@ -118,34 +118,10 @@ void main() {
     expect(repo.calls.last, 'delete c1');
   });
 
-  test('filterByChild keeps whole-family items', () {
+  test('filterByChild keeps only items tagged with the child', () {
     final items = [('a', <String>[]), ('b', ['c1']), ('c', ['c2']), ('d', ['c1', 'c2'])];
-    expect(filterByChild(items, (i) => i.$2, 'c1').map((i) => i.$1), ['a', 'b', 'd']);
+    expect(filterByChild(items, (i) => i.$2, 'c1').map((i) => i.$1), ['b', 'd']);
+    expect(filterByChild(items, (i) => i.$2, 'c2').map((i) => i.$1), ['c', 'd']);
     expect(filterByChild(items, (i) => i.$2, null), items);
-  });
-
-  testWidgets('whole-family items are marked only while a child filter is on', (tester) async {
-    late WidgetRef ref;
-    await tester.pumpWidget(ProviderScope(
-      overrides: [
-        familyProvider.overrideWith((ref, id) async => const FamilyDetails(id: 'f1', name: 'A', timeZoneId: 'Europe/Istanbul', members: [])),
-      ],
-      child: MaterialApp(
-        theme: buildHallyTheme(Brightness.light),
-        locale: const Locale('tr'),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Consumer(builder: (context, r, _) {
-          ref = r;
-          return const Scaffold(body: ChildBadges(familyId: 'f1', childIds: []));
-        }),
-      ),
-    ));
-    await tester.pumpAndSettle();
-    expect(find.text('Tüm aile'), findsNothing);
-
-    ref.read(childFilterProvider.notifier).state = 'c1';
-    await tester.pumpAndSettle();
-    expect(find.text('Tüm aile'), findsOneWidget);
   });
 }

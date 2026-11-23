@@ -488,7 +488,7 @@ class _TaskTileState extends ConsumerState<TaskTile> {
                       ],
                     ),
                   ),
-                  if (t.childIds.isNotEmpty || ref.watch(childFilterProvider) != null) ...[
+                  if (t.childIds.isNotEmpty) ...[
                     ChildBadges(familyId: widget.familyId, childIds: t.childIds),
                     const SizedBox(width: HallySpace.sm),
                   ],
@@ -556,7 +556,7 @@ class _EventTile extends ConsumerWidget {
                   child: Row(
                     children: [
                       Expanded(child: Text(event.title, style: theme.textTheme.titleMedium)),
-                      if (event.childIds.isNotEmpty || ref.watch(childFilterProvider) != null) ...[
+                      if (event.childIds.isNotEmpty) ...[
                         ChildBadges(familyId: familyId, childIds: event.childIds),
                         const SizedBox(width: HallySpace.sm),
                       ],

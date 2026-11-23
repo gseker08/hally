@@ -285,7 +285,6 @@
   "childDeleteTitle": "Remove {name}?",
   "childDeleteBody": "Tasks and events stay; only this child's tag is removed.",
   "childFilterAll": "Everyone",
-  "childFamilyWide": "Whole family",
   "childPickerLabel": "Who is it for?",
   "childPickerWholeFamily": "Leave empty for the whole family.",
   "chatsTitle": "Messages",
