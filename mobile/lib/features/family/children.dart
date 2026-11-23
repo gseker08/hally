@@ -22,9 +22,10 @@ Color childColor(String key) => switch (key) {
 /// choice follows the parent from screen to screen.
 final childFilterProvider = StateProvider<String?>((ref) => null);
 
-/// Keeps items that belong to [childId]. Untagged items are about the whole family, so they always stay.
+/// Keeps only items tagged with [childId]. Untagged (whole-family) items show under "Hepsi" only: mixing them
+/// into every child's list made one child look like they had everything.
 List<T> filterByChild<T>(List<T> items, List<String> Function(T) childIdsOf, String? childId) =>
-    childId == null ? items : items.where((i) => childIdsOf(i).isEmpty || childIdsOf(i).contains(childId)).toList();
+    childId == null ? items : items.where((i) => childIdsOf(i).contains(childId)).toList();
 
 /// Children of the family, or an empty list while it loads.
 List<ChildProfile> watchChildren(WidgetRef ref, String familyId) => ref.watch(familyProvider(familyId)).valueOrNull?.children ?? const [];
