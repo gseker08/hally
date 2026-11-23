@@ -5,14 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
-import '../../core/locale/app_language.dart';
 import '../../l10n/gen/app_localizations.dart';
-import '../notifications/push.dart';
-import '../billing/billing_repository.dart';
 import '../messages/messages_repository.dart';
-import '../screen_time/screen_time_screen.dart';
-import 'children.dart';
-import 'language_sheet.dart';
+import '../profile/profile_screen.dart';
 import 'family_repository.dart';
 
 class FamilyScreen extends ConsumerWidget {
@@ -28,278 +23,151 @@ class FamilyScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.tabFamily),
-        actions: [
-          IconButton(
-            tooltip: l10n.signOut,
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: () async {
-              await ref.read(pushControllerProvider)?.unregister();
-              await ref.read(authRepositoryProvider).signOut();
-              ref.invalidate(meProvider);
-            },
-          ),
-        ],
+        actions: const [ProfileButton(), SizedBox(width: HallySpace.sm)],
       ),
       body: family.when(
         loading: () => const HallyLoading(),
         error: (_, __) => HallyErrorState(onRetry: () => ref.invalidate(familyProvider(familyId))),
-        data: (f) => RefreshIndicator(
-          onRefresh: () => ref.refresh(familyProvider(familyId).future),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.sm, HallySpace.md, 120),
-            children: [
-              HallyEntrance(child: _FamilyHero(family: f)),
-              HallySectionHeader(title: l10n.familyMembers, count: f.members.length),
-              for (final (i, m) in f.members.indexed)
-                HallyEntrance(
-                  index: i + 1,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(HallySpace.md - 2),
-                      child: Row(
-                        children: [
-                          HallyAvatar(name: m.displayName, size: 46),
-                          const SizedBox(width: HallySpace.md),
-                          Expanded(child: Text(m.displayName, style: Theme.of(context).textTheme.titleMedium)),
-                          HallyPill(
-                            label: m.role == 'Owner' ? l10n.roleOwner : l10n.roleAdult,
-                            icon: m.role == 'Owner' ? Icons.star_rounded : null,
-                            color: m.role == 'Owner' ? HallyColors.apricot : HallyColors.cherry,
-                          ),
-                        ],
+        data: (f) {
+          final unread = ref.watch(chatListProvider(f.id)).valueOrNull?.totalUnread ?? 0;
+          return RefreshIndicator(
+            onRefresh: () => ref.refresh(familyProvider(familyId).future),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.sm, HallySpace.md, 120),
+              children: [
+                HallyEntrance(child: _FamilyHero(family: f)),
+                if (f.members.length > 1) ...[
+                  const SizedBox(height: HallySpace.md),
+                  Card(
+                    margin: EdgeInsets.zero,
+                    child: ListTile(
+                      key: const Key('family.chats'),
+                      leading: const HallyIconBadge(icon: Icons.forum_rounded, color: HallyColors.cherry, size: 40),
+                      title: Text(l10n.chatsTitle),
+                      subtitle: Text(l10n.familyChatsBody),
+                      trailing: Badge(
+                        isLabelVisible: unread > 0,
+                        label: Text('$unread'),
+                        backgroundColor: HallyColors.cherry,
+                        child: const Icon(Icons.chevron_right_rounded),
                       ),
+                      onTap: () async {
+                        await context.push('/chats');
+                        ref.invalidate(chatListProvider(f.id));
+                      },
                     ),
                   ),
+                ],
+                HallySectionHeader(title: l10n.familyTogether),
+                HallyTileGrid(
+                  children: [
+                    _SharedTile(key: const Key('family.shopping'), icon: Icons.shopping_basket_rounded, color: HallyColors.mint,
+                        title: l10n.shoppingTitle, body: l10n.shoppingBody, route: '/shopping'),
+                    _SharedTile(key: const Key('family.schoolRun'), icon: Icons.directions_car_rounded, color: HallyColors.sky,
+                        title: l10n.dutiesTitle, body: l10n.dutiesBody, route: '/school-run'),
+                    _SharedTile(key: const Key('family.expenses'), icon: Icons.account_balance_wallet_rounded, color: HallyColors.apricot,
+                        title: l10n.expensesTitle, body: l10n.expensesBody, route: '/expenses'),
+                    _SharedTile(key: const Key('family.weeklyCard'), icon: Icons.auto_awesome_rounded, color: HallyColors.rose,
+                        title: l10n.familyWeeklyCard, body: l10n.familyWeeklyCardBody, route: '/weekly-card'),
+                  ],
                 ),
-              const SizedBox(height: HallySpace.sm),
-              if (f.members.length > 1)
-                Card(
-                  child: ListTile(
-                    key: const Key('family.chats'),
-                    leading: const HallyIconBadge(icon: Icons.forum_rounded, color: HallyColors.cherry),
-                    title: Text(l10n.chatsTitle),
-                    subtitle: Text(l10n.familyChatsBody),
-                    trailing: Badge(
-                      isLabelVisible: (ref.watch(chatListProvider(f.id)).valueOrNull?.totalUnread ?? 0) > 0,
-                      label: Text('${ref.watch(chatListProvider(f.id)).valueOrNull?.totalUnread ?? 0}'),
-                      backgroundColor: HallyColors.cherry,
-                      child: const Icon(Icons.chevron_right_rounded),
-                    ),
-                    onTap: () async {
-                      await context.push('/chats');
-                      ref.invalidate(chatListProvider(f.id));
-                    },
-                  ),
-                ),
-              Card(
-                child: ListTile(
-                  key: const Key('family.shopping'),
-                  leading: const HallyIconBadge(icon: Icons.shopping_basket_rounded, color: HallyColors.mint),
-                  title: Text(l10n.shoppingTitle),
-                  subtitle: Text(l10n.shoppingBody),
-                  trailing: const Icon(Icons.chevron_right_rounded),
-                  onTap: () => context.push('/shopping'),
-                ),
-              ),
-              const SizedBox(height: HallySpace.sm),
-              HallyPressable(
-                onTap: () => context.push('/family/${f.id}/invite'),
-                child: Container(
-                  padding: const EdgeInsets.all(HallySpace.md),
-                  decoration: BoxDecoration(
-                    color: HallyColors.softOf(HallyColors.mint, Theme.of(context).brightness),
-                    borderRadius: BorderRadius.circular(HallyRadius.lg),
-                    border: Border.all(color: HallyColors.mint.withValues(alpha: 0.4), width: 1.5),
-                  ),
-                  child: Row(
-                    children: [
-                      const HallyIconBadge(icon: Icons.person_add_alt_1_rounded, color: HallyColors.mint, gradient: HallyGradients.mint, size: 46),
-                      const SizedBox(width: HallySpace.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                HallySectionHeader(title: l10n.familyMembers, count: f.members.length),
+                for (final (i, m) in f.members.indexed)
+                  HallyEntrance(
+                    index: i + 1,
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: HallySpace.md - 2, vertical: HallySpace.sm + 2),
+                        child: Row(
                           children: [
-                            Text(l10n.familyInviteMore, style: Theme.of(context).textTheme.titleMedium),
-                            const SizedBox(height: 2),
-                            Text(l10n.familyInviteBody, style: Theme.of(context).textTheme.bodySmall),
+                            HallyAvatar(name: m.displayName, size: 40),
+                            const SizedBox(width: HallySpace.md),
+                            Expanded(child: Text(m.displayName, style: Theme.of(context).textTheme.titleMedium)),
+                            HallyPill(
+                              label: m.role == 'Owner' ? l10n.roleOwner : l10n.roleAdult,
+                              icon: m.role == 'Owner' ? Icons.star_rounded : null,
+                              color: m.role == 'Owner' ? HallyColors.apricot : HallyColors.cherry,
+                            ),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: HallyColors.mintDeep),
-                    ],
-                  ),
-                ),
-              ),
-              HallySectionHeader(title: l10n.familyChildren, count: f.children.isEmpty ? null : f.children.length),
-              for (final c in f.children)
-                Card(
-                  child: ListTile(
-                    key: Key('family.child.${c.id}'),
-                    leading: ChildBadge(child: c, size: 40),
-                    title: Text(c.firstName, style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: c.birthYear == null ? null : Text(l10n.childBorn(c.birthYear!)),
-                    trailing: IconButton(
-                      key: Key('family.editChild.${c.id}'),
-                      tooltip: l10n.insightsEditChild,
-                      icon: const Icon(Icons.edit_outlined),
-                      onPressed: () => showChildSheet(context, ref, familyId: f.id, child: c, siblings: f.children),
                     ),
-                    onTap: () => context.push('/child/${c.id}/insights'),
                   ),
-                ),
-              Card(
-                child: ListTile(
-                  key: const Key('family.addChild'),
-                  leading: const HallyIconBadge(icon: Icons.child_care_rounded, color: HallyColors.sky),
-                  title: Text(l10n.childAdd),
-                  subtitle: f.children.isEmpty ? Text(l10n.childAddBody) : null,
-                  trailing: const Icon(Icons.add_rounded),
-                  onTap: () => showChildSheet(context, ref, familyId: f.id, siblings: f.children),
-                ),
-              ),
-              if (f.children.isNotEmpty) ...[
                 const SizedBox(height: HallySpace.sm),
-                ScreenTimeCard(familyId: f.id, children: f.children),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.medications'),
-                    leading: const HallyIconBadge(icon: Icons.medication_rounded, color: HallyColors.rose),
-                    title: Text(l10n.medicationsTitle),
-                    subtitle: Text(l10n.medicationsBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/medications'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.sleep'),
-                    leading: const HallyIconBadge(icon: Icons.bedtime_rounded, color: HallyColors.sky),
-                    title: Text(l10n.sleepTitle),
-                    subtitle: Text(l10n.sleepBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/sleep'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.feeding'),
-                    leading: const HallyIconBadge(icon: Icons.restaurant_rounded, color: HallyColors.mint),
-                    title: Text(l10n.feedingTitle),
-                    subtitle: Text(l10n.feedingBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/feeding'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.study'),
-                    leading: const HallyIconBadge(icon: Icons.menu_book_rounded, color: HallyColors.cherry),
-                    title: Text(l10n.studyTitle),
-                    subtitle: Text(l10n.studyBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/study'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.stars'),
-                    leading: const HallyIconBadge(icon: Icons.star_rounded, color: HallyColors.apricot),
-                    title: Text(l10n.pointsTitle),
-                    subtitle: Text(l10n.pointsBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/stars'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.habits'),
-                    leading: const HallyIconBadge(icon: Icons.local_fire_department_rounded, color: HallyColors.rose),
-                    title: Text(l10n.habitsTitle),
-                    subtitle: Text(l10n.habitsBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/habits'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.schoolRun'),
-                    leading: const HallyIconBadge(icon: Icons.directions_walk_rounded, color: HallyColors.sky),
-                    title: Text(l10n.dutiesTitle),
-                    subtitle: Text(l10n.dutiesBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/school-run'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.expenses'),
-                    leading: const HallyIconBadge(icon: Icons.account_balance_wallet_rounded, color: HallyColors.mint),
-                    title: Text(l10n.expensesTitle),
-                    subtitle: Text(l10n.expensesBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/expenses'),
-                  ),
-                ),
-                Card(
-                  child: ListTile(
-                    key: const Key('family.health'),
-                    leading: const HallyIconBadge(icon: Icons.health_and_safety_rounded, color: HallyColors.sky),
-                    title: Text(l10n.healthTitle),
-                    subtitle: Text(l10n.healthBody),
-                    trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => context.push('/health'),
+                HallyPressable(
+                  onTap: () => context.push('/family/${f.id}/invite'),
+                  child: Container(
+                    padding: const EdgeInsets.all(HallySpace.md),
+                    decoration: BoxDecoration(
+                      color: HallyColors.softOf(HallyColors.mint, Theme.of(context).brightness),
+                      borderRadius: BorderRadius.circular(HallyRadius.lg),
+                      border: Border.all(color: HallyColors.mint.withValues(alpha: 0.4), width: 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        const HallyIconBadge(icon: Icons.person_add_alt_1_rounded, color: HallyColors.mint, size: 42),
+                        const SizedBox(width: HallySpace.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(l10n.familyInviteMore, style: Theme.of(context).textTheme.titleMedium),
+                              const SizedBox(height: 2),
+                              Text(l10n.familyInviteBody, style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right_rounded, color: HallyColors.mintDeep),
+                      ],
+                    ),
                   ),
                 ),
               ],
-              const SizedBox(height: HallySpace.md),
-              Card(
-                child: Column(
-                  children: [
-                    _PlanTile(entitlement: ref.watch(entitlementProvider).valueOrNull),
-                    ListTile(
-                      key: const Key('family.weeklyCard'),
-                      leading: const HallyIconBadge(icon: Icons.auto_awesome_rounded, color: HallyColors.rose),
-                      title: Text(l10n.familyWeeklyCard),
-                      subtitle: Text(l10n.familyWeeklyCardBody),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push('/weekly-card'),
-                    ),
-                    ListTile(
-                      key: const Key('family.helperLinks'),
-                      leading: const HallyIconBadge(icon: Icons.volunteer_activism_rounded, color: HallyColors.mint),
-                      title: Text(l10n.familyHelperLinks),
-                      subtitle: Text(l10n.familyHelperLinksBody),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push('/share-links'),
-                    ),
-                    ListTile(
-                      key: const Key('family.privacy'),
-                      leading: const HallyIconBadge(icon: Icons.shield_rounded, color: HallyColors.sky),
-                      title: Text(l10n.privacyTitle),
-                      subtitle: Text(l10n.familyPrivacyBody),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => context.push('/privacy'),
-                    ),
-                    ListTile(
-                      key: const Key('family.language'),
-                      leading: const HallyIconBadge(icon: Icons.translate_rounded, color: HallyColors.apricot),
-                      title: Text(l10n.languageTitle),
-                      subtitle: Text(languageLabel(l10n, ref.watch(languageProvider))),
-                      trailing: const Icon(Icons.chevron_right_rounded),
-                      onTap: () => showLanguageSheet(context),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _SharedTile extends StatelessWidget {
+  const _SharedTile({super.key, required this.icon, required this.color, required this.title, required this.body, required this.route});
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
+  final String route;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return HallyPressable(
+      onTap: () => context.push(route),
+      child: Container(
+        padding: const EdgeInsets.all(HallySpace.md - 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(HallyRadius.lg),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            HallyIconBadge(icon: icon, color: color, size: 34),
+            const SizedBox(height: HallySpace.sm + 2),
+            const Spacer(),
+            Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(body, style: theme.textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Gradient card with the family name and overlapping member avatars.
+/// Flat cherry card with the family name and overlapping member avatars.
 class _FamilyHero extends StatelessWidget {
   const _FamilyHero({required this.family});
 
@@ -312,14 +180,20 @@ class _FamilyHero extends StatelessWidget {
     final shown = family.members.take(5).toList();
     return Container(
       decoration: BoxDecoration(
-        gradient: HallyGradients.hero,
+        color: HallyColors.cherry,
         borderRadius: BorderRadius.circular(HallyRadius.lg),
-        boxShadow: HallyShadows.glow(HallyColors.cherry),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          const Positioned(right: -40, top: -50, child: HallyGlow(color: Color(0xFFF0A36A), size: 180)),
+          const Positioned(
+            right: -30,
+            bottom: -50,
+            child: Opacity(
+              opacity: 0.12,
+              child: HallyMark(size: 170, colors: HallyMarkColors(cherry: Colors.white, stem: Colors.white, leaf: Colors.white)),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(HallySpace.lg),
             child: Column(
@@ -352,33 +226,6 @@ class _FamilyHero extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// Current plan with this week's scans; opens the plan screen.
-class _PlanTile extends StatelessWidget {
-  const _PlanTile({required this.entitlement});
-
-  final Entitlement? entitlement;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final e = entitlement;
-    final plus = e?.isPlus ?? false;
-    final subtitle = e == null
-        ? null
-        : plus
-            ? (e.state == 'Trialing' ? l10n.planTrialShort : l10n.planPlusShort)
-            : l10n.planFreeUsage(e.usage.scansThisWeek, e.limits.scansPerWeek);
-    return ListTile(
-      key: const Key('family.plan'),
-      leading: HallyIconBadge(icon: Icons.workspace_premium_rounded, color: plus ? HallyColors.cherry : HallyColors.apricot),
-      title: Text(plus ? l10n.planPlus : l10n.planFree),
-      subtitle: subtitle == null ? null : Text(subtitle),
-      trailing: const Icon(Icons.chevron_right_rounded),
-      onTap: () => context.push('/plan'),
     );
   }
 }

@@ -19,6 +19,10 @@ abstract final class HallyColors {
   static const rose = Color(0xFFE27AA6);
   static const roseSoft = Color(0xFFFBE7F0);
   static const sky = Color(0xFF4FA3E0);
+  /// Learning (homework, reading).
+  static const study = Color(0xFF5B4BB0);
+  /// Stars and rewards.
+  static const star = Color(0xFFD4A21A);
   static const skySoft = Color(0xFFE3F0FB);
   static const ink = Color(0xFF231A1D);
   static const inkMuted = Color(0xFF625A5E);

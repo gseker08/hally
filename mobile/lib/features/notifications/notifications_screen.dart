@@ -126,7 +126,9 @@ class _EveningPrepCard extends ConsumerWidget {
 
 /// Bell with an unread badge, for the Today header.
 class NotificationBell extends ConsumerWidget {
-  const NotificationBell({super.key});
+  const NotificationBell({super.key, this.color = Colors.white});
+
+  final Color color;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -141,8 +143,8 @@ class NotificationBell extends ConsumerWidget {
       icon: Badge(
         isLabelVisible: unread > 0,
         label: Text('$unread'),
-        backgroundColor: HallyColors.rose,
-        child: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+        backgroundColor: HallyColors.cherry,
+        child: Icon(Icons.notifications_none_rounded, color: color),
       ),
     );
   }
