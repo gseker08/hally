@@ -48,3 +48,8 @@ Uygulamanın kendi gösterdiği bildirimler (`flutter_local_notifications`). Kod
   kilitli ekranda gizlenir.
 - Push için `google-services.json` gerekir (bkz. `docs/mobile/push.md`). Uygulamanın eski bir sürümü bu yalnızca
   veri push'unu göstermez; güncel sürümle sorun yok.
+
+## iPhone
+
+On iPhone running timers are Live Activities (lock screen and Dynamic Island) instead of ongoing notifications, and the
+medication reminder push carries the `hally.med` category with its Verdim button. See `ios.md`.

@@ -21,3 +21,7 @@ Ana ekranda bugünün sıradaki 3 etkinlik/görevini gösteren widget. Dokununca
 
 Ana ekranda boş bir yere uzun bas → **Widgets** → listede **Hally**'yi bul → "Bugün" widget'ını tutup ana ekrana
 sürükle. Widget'ı uzun basıp kenarlarından büyütebilirsin.
+
+## iPhone
+
+The same data drives the iPhone widget (`mobile/ios/HallyWidgets/TodayWidget.swift`), on the home screen and the lock screen. See `ios.md`.

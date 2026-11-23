@@ -12,7 +12,7 @@ import '../../core/locale/app_language.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../planning/planning_repository.dart';
 
-/// One row of the Android home screen "Today" widget.
+/// One row of the home screen "Today" widget (Android and iPhone).
 class TodayWidgetEntry {
   const TodayWidgetEntry({required this.title, required this.kind, this.at, this.allDay = false});
 
@@ -82,22 +82,26 @@ abstract interface class TodayWidgetStore {
 class HomeWidgetTodayStore implements TodayWidgetStore {
   static const _provider = 'app.hally.hally.TodayWidgetProvider';
 
+  /// The WidgetKit kind of the iPhone widget (ios/HallyWidgets/TodayWidget.swift).
+  static const _iosKind = 'TodayWidget';
+
   @override
   Future<void> save(Map<String, String> data, List<DateTime> refreshAt) async {
     for (final e in data.entries) {
       await HomeWidget.saveWidgetData<String>(e.key, e.value);
     }
-    await HomeWidget.updateWidget(qualifiedAndroidName: _provider);
-    // Redraw when an item drops off and just after midnight, also while the app is closed (inexact alarms).
-    await HomeWidget.scheduleWidgetUpdates(refreshAt, qualifiedAndroidName: _provider);
+    await HomeWidget.updateWidget(qualifiedAndroidName: _provider, iOSName: _iosKind);
+    // Redraw when an item drops off and just after midnight, also while the app is closed (inexact alarms). The
+    // iPhone widget plans the same moments in its own timeline.
+    if (Platform.isAndroid) await HomeWidget.scheduleWidgetUpdates(refreshAt, qualifiedAndroidName: _provider);
   }
 
   @override
   Future<void> clear() async {
     await HomeWidget.saveWidgetData<String>('today.items', null);
     await HomeWidget.saveWidgetData<String>('today.day', null);
-    await HomeWidget.updateWidget(qualifiedAndroidName: _provider);
-    await HomeWidget.cancelScheduledWidgetUpdates(qualifiedAndroidName: _provider);
+    await HomeWidget.updateWidget(qualifiedAndroidName: _provider, iOSName: _iosKind);
+    if (Platform.isAndroid) await HomeWidget.cancelScheduledWidgetUpdates(qualifiedAndroidName: _provider);
   }
 }
 
@@ -109,8 +113,8 @@ class NoTodayWidgetStore implements TodayWidgetStore {
 }
 
 final todayWidgetStoreProvider = Provider<TodayWidgetStore>((ref) {
-  // Android only for now (the iPhone widget needs Xcode); `flutter test` has no native side.
-  if (kIsWeb || !Platform.isAndroid || Platform.environment.containsKey('FLUTTER_TEST')) return NoTodayWidgetStore();
+  // `flutter test` has no native side.
+  if (kIsWeb || !(Platform.isAndroid || Platform.isIOS) || Platform.environment.containsKey('FLUTTER_TEST')) return NoTodayWidgetStore();
   return HomeWidgetTodayStore();
 });
 
