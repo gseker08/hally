@@ -217,6 +217,13 @@
   "eventDate": "Tarih",
   "eventTime": "Saat",
   "eventSave": "Kaydet",
+  "eventEdit": "Etkinliği düzenle",
+  "eventDelete": "Sil",
+  "eventDeleted": "Etkinlik silindi.",
+  "eventDeleteTitle": "Etkinlik silinsin mi?",
+  "eventDeleteBody": "Bu etkinlik takvimden kaldırılır.",
+  "eventDeleteSeriesBody": "Bu tekrarlanan bir etkinlik. Tüm tekrarlarıyla birlikte silinir.",
+  "eventSeriesNote": "Tekrarlanan etkinlik: değişiklikler tüm tekrarlara uygulanır.",
   "eventConflict": "Bu saatte başka bir etkinlik var: {title}",
   "@eventConflict": {
     "placeholders": {
