@@ -585,6 +585,88 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("feeding_entries", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Habits.Habit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Days")
+                        .HasColumnType("integer")
+                        .HasColumnName("days");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_habits");
+
+                    b.HasIndex("ChildId")
+                        .HasDatabaseName("ix_habits_child_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_habits_family_id");
+
+                    b.ToTable("habits", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Habits.HabitCheck", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("by_user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<Guid>("HabitId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("habit_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_habit_checks");
+
+                    b.HasIndex("ByUserId")
+                        .HasDatabaseName("ix_habit_checks_by_user_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_habit_checks_family_id");
+
+                    b.HasIndex("HabitId", "Day")
+                        .IsUnique()
+                        .HasDatabaseName("ix_habit_checks_habit_id_day");
+
+                    b.ToTable("habit_checks", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Health.Medication", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2002,6 +2084,46 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_feeding_entries_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Habits.Habit", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_habits_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_habits_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Habits.HabitCheck", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_habit_checks_users_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_habit_checks_families_family_id");
+
+                    b.HasOne("Hally.Domain.Habits.Habit", null)
+                        .WithMany()
+                        .HasForeignKey("HabitId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_habit_checks_habits_habit_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Health.Medication", b =>

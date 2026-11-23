@@ -205,6 +205,16 @@ class FamilyScreen extends ConsumerWidget {
                     onTap: () => context.push('/stars'),
                   ),
                 ),
+                Card(
+                  child: ListTile(
+                    key: const Key('family.habits'),
+                    leading: const HallyIconBadge(icon: Icons.local_fire_department_rounded, color: HallyColors.rose),
+                    title: Text(l10n.habitsTitle),
+                    subtitle: Text(l10n.habitsBody),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push('/habits'),
+                  ),
+                ),
               ],
               const SizedBox(height: HallySpace.md),
               Card(

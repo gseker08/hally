@@ -434,5 +434,16 @@
   "pointsChoreHint": "Chore (e.g. Tidy your room)",
   "pointsRewardHint": "Reward (e.g. pocket money)",
   "pointsEveryone": "Everyone",
-  "pointsTitleRequired": "Enter a name."
+  "pointsTitleRequired": "Enter a name.",
+  "habitsTitle": "Habits",
+  "habitsBody": "Daily habits like brushing teeth, with streaks",
+  "habitsNoChildren": "Add a child on the Family tab to track habits.",
+  "habitsEmpty": "No habits yet. E.g. Brush teeth, Make the bed.",
+  "habitsAdd": "Add habit",
+  "habitsDoneToday": "Done today",
+  "habitsStreak": "Streak: {days} days · best {best}",
+  "habitsStart": "Start today",
+  "habitsNotToday": "Not today",
+  "habitsTitleHint": "Habit (e.g. Brush teeth)",
+  "habitsPickDay": "Pick at least one day."
 }

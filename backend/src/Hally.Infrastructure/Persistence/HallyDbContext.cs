@@ -4,6 +4,7 @@ using Hally.Domain.Capture;
 using Hally.Domain.Common;
 using Hally.Domain.Families;
 using Hally.Domain.Feeding;
+using Hally.Domain.Habits;
 using Hally.Domain.Health;
 using Hally.Domain.Messaging;
 using Hally.Domain.Notifications;
@@ -56,6 +57,8 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<Chore> Chores => Set<Chore>();
     public DbSet<Reward> Rewards => Set<Reward>();
     public DbSet<PointEntry> PointEntries => Set<PointEntry>();
+    public DbSet<Habit> Habits => Set<Habit>();
+    public DbSet<HabitCheck> HabitChecks => Set<HabitCheck>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -344,6 +347,23 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StartedByUserId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.EndedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Habit>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(60);
+            e.HasIndex(x => x.FamilyId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<HabitCheck>(e =>
+        {
+            // Once per habit per day, even when both parents tap it.
+            e.HasIndex(x => new { x.HabitId, x.Day }).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Habit>().WithMany().HasForeignKey(x => x.HabitId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<Chore>(e =>
