@@ -946,5 +946,36 @@
   "habitsStart": "Bugün başla",
   "habitsNotToday": "Bugün yok",
   "habitsTitleHint": "Alışkanlık (ör. Diş fırçalama)",
-  "habitsPickDay": "En az bir gün seçin."
+  "habitsPickDay": "En az bir gün seçin.",
+  "dutiesTitle": "Okul nöbeti",
+  "dutiesBody": "Kim bırakıyor, kim alıyor; alındı bildirimi",
+  "dutiesToday": "Bugün",
+  "dutiesDropOff": "Bırakma",
+  "dutiesPickUp": "Alma",
+  "dutiesDroppedOff": "Bıraktım",
+  "dutiesPickedUp": "Aldım",
+  "dutiesDoneBy": "{name} · {time}",
+  "@dutiesDoneBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dutiesNobody": "Gerek yok",
+  "dutiesHint": "Değiştirmek için bir güne dokunun. Her hafta aynıysa kutuyu işaretleyin.",
+  "dutiesSomeoneElse": "Başka biri",
+  "dutiesNameHint": "Ad (ör. Babaanne, Servis)",
+  "dutiesEveryWeek": "Her {weekday} böyle",
+  "@dutiesEveryWeek": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "dutiesReset": "Her zamanki plana dön"
 }

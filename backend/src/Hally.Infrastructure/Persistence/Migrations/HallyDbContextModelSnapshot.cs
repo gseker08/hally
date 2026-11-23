@@ -348,6 +348,147 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("proposals", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Duties.DutyDone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("by_user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.HasKey("Id")
+                        .HasName("pk_duty_dones");
+
+                    b.HasIndex("ByUserId")
+                        .HasDatabaseName("ix_duty_dones_by_user_id");
+
+                    b.HasIndex("FamilyId", "Date", "Kind")
+                        .IsUnique()
+                        .HasDatabaseName("ix_duty_dones_family_id_date_kind");
+
+                    b.ToTable("duty_dones", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Duties.DutyOverride", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AssigneeName")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("assignee_name");
+
+                    b.Property<Guid?>("AssigneeUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assignee_user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<TimeOnly?>("Time")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("time");
+
+                    b.HasKey("Id")
+                        .HasName("pk_duty_overrides");
+
+                    b.HasIndex("AssigneeUserId")
+                        .HasDatabaseName("ix_duty_overrides_assignee_user_id");
+
+                    b.HasIndex("FamilyId", "Date", "Kind")
+                        .IsUnique()
+                        .HasDatabaseName("ix_duty_overrides_family_id_date_kind");
+
+                    b.ToTable("duty_overrides", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Duties.DutyRule", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AssigneeName")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("assignee_name");
+
+                    b.Property<Guid?>("AssigneeUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assignee_user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<TimeOnly?>("Time")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("time");
+
+                    b.Property<int>("Weekday")
+                        .HasColumnType("integer")
+                        .HasColumnName("weekday");
+
+                    b.HasKey("Id")
+                        .HasName("pk_duty_rules");
+
+                    b.HasIndex("AssigneeUserId")
+                        .HasDatabaseName("ix_duty_rules_assignee_user_id");
+
+                    b.HasIndex("FamilyId", "Weekday", "Kind")
+                        .IsUnique()
+                        .HasDatabaseName("ix_duty_rules_family_id_weekday_kind");
+
+                    b.ToTable("duty_rules", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Families.Child", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2022,6 +2163,54 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_proposals_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Duties.DutyDone", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_duty_dones_users_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_duty_dones_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Duties.DutyOverride", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_duty_overrides_users_assignee_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_duty_overrides_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Duties.DutyRule", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AssigneeUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_duty_rules_users_assignee_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_duty_rules_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Families.Child", b =>

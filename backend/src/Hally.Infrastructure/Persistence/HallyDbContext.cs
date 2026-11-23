@@ -2,6 +2,7 @@ using Hally.Domain.Assistant;
 using Hally.Domain.Billing;
 using Hally.Domain.Capture;
 using Hally.Domain.Common;
+using Hally.Domain.Duties;
 using Hally.Domain.Families;
 using Hally.Domain.Feeding;
 using Hally.Domain.Habits;
@@ -59,6 +60,9 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<PointEntry> PointEntries => Set<PointEntry>();
     public DbSet<Habit> Habits => Set<Habit>();
     public DbSet<HabitCheck> HabitChecks => Set<HabitCheck>();
+    public DbSet<DutyRule> DutyRules => Set<DutyRule>();
+    public DbSet<DutyOverride> DutyOverrides => Set<DutyOverride>();
+    public DbSet<DutyDone> DutyDones => Set<DutyDone>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -347,6 +351,32 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StartedByUserId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.EndedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<DutyRule>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.AssigneeName).HasMaxLength(40);
+            e.HasIndex(x => new { x.FamilyId, x.Weekday, x.Kind }).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.AssigneeUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<DutyOverride>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.AssigneeName).HasMaxLength(40);
+            e.HasIndex(x => new { x.FamilyId, x.Date, x.Kind }).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.AssigneeUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<DutyDone>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            e.HasIndex(x => new { x.FamilyId, x.Date, x.Kind }).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<Habit>(e =>
