@@ -271,7 +271,7 @@ class _Legend extends StatelessWidget {
 
 /// Add a finished sleep: start and wake-up times; when the start is later than the wake-up it began the day before.
 Future<bool?> showAddSleepSheet(BuildContext context, WidgetRef ref, {required String familyId, required String childId}) =>
-    showModalBottomSheet<bool>(context: context, showDragHandle: true, isScrollControlled: true, builder: (_) => _AddSleepSheet(familyId: familyId, childId: childId));
+    showModalBottomSheet<bool>(context: context, useRootNavigator: true, showDragHandle: true, isScrollControlled: true, builder: (_) => _AddSleepSheet(familyId: familyId, childId: childId));
 
 class _AddSleepSheet extends ConsumerStatefulWidget {
   const _AddSleepSheet({required this.familyId, required this.childId});

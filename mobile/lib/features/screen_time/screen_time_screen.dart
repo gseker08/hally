@@ -287,6 +287,7 @@ Future<void> _showGoalSheet(BuildContext context, WidgetRef ref, String familyId
   final tr = _turkish(context);
   final picked = await showModalBottomSheet<int>(
     context: context,
+    useRootNavigator: true,
     showDragHandle: true,
     builder: (context) => SafeArea(
       child: Padding(
@@ -329,6 +330,7 @@ Future<void> _showAddSheet(BuildContext context, WidgetRef ref, String familyId,
   final tr = _turkish(context);
   final picked = await showModalBottomSheet<int>(
     context: context,
+    useRootNavigator: true,
     showDragHandle: true,
     builder: (context) => SafeArea(
       child: Padding(

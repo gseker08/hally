@@ -22,6 +22,7 @@ Future<void> showTaskSheet(BuildContext context, WidgetRef ref, {required String
   final container = ProviderScope.containerOf(context);
   final result = await showModalBottomSheet<(_TaskAction, _TaskEdit?)>(
     context: context,
+    useRootNavigator: true,
     showDragHandle: true,
     isScrollControlled: true,
     useSafeArea: true,

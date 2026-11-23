@@ -38,7 +38,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
     ref.invalidate(healthCardProvider((familyId, childId)));
   }
 
-  Future<void> _sheet(Widget child) => showModalBottomSheet<void>(context: context, showDragHandle: true, isScrollControlled: true, builder: (_) => child);
+  Future<void> _sheet(Widget child) => showModalBottomSheet<void>(context: context, useRootNavigator: true, showDragHandle: true, isScrollControlled: true, builder: (_) => child);
 
   @override
   Widget build(BuildContext context) {

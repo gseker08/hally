@@ -24,6 +24,7 @@ Future<void> showReminderSheet(
   final router = GoRouter.maybeOf(context);
   final picked = await showModalBottomSheet<(DateTime, bool)>(
     context: context,
+    useRootNavigator: true,
     showDragHandle: true,
     isScrollControlled: true,
     builder: (_) => _ReminderSheet(title: title, at: at, allDay: allDay),

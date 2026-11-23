@@ -219,6 +219,7 @@ Future<void> showDoseHistory(BuildContext context, WidgetRef ref,
     {required String familyId, required Medication medication, required ChildProfile child, required List<ChildProfile> children}) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (_) => _DoseHistory(familyId: familyId, medication: medication, child: child, children: children),
@@ -339,6 +340,7 @@ Future<void> showMedicationSheet(BuildContext context, WidgetRef ref,
     {required String familyId, required List<ChildProfile> children, Medication? medication}) async {
   final saved = await showModalBottomSheet<bool>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (_) => _MedicationSheet(familyId: familyId, children: children, medication: medication),

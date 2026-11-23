@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,6 +51,12 @@ class _RecordingFamilyRepository implements FamilyRepository {
       throw UnimplementedError();
   @override
   Future<void> deleteChild(String familyId, String childId) => throw UnimplementedError();
+  @override
+  Future<ChildProfile> setChildPhoto(String familyId, String childId, Uint8List bytes) => throw UnimplementedError();
+  @override
+  Future<ChildProfile> deleteChildPhoto(String familyId, String childId) => throw UnimplementedError();
+  @override
+  Future<Uint8List> childPhoto(String photoUrl) => throw UnimplementedError();
 }
 
 void main() {

@@ -219,6 +219,7 @@ class DutyChoice {
 
 Future<DutyChoice?> showDutySheet(BuildContext context, {required DutyWeek week, required DutyDay day, required String kind}) => showModalBottomSheet<DutyChoice>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _DutySheet(week: week, day: day, kind: kind),

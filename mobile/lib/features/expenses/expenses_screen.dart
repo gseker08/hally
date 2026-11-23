@@ -253,6 +253,7 @@ Future<DateTime?> showAddExpenseSheet(BuildContext context,
         {required String familyId, required String meId, required List<ExpenseBalance> adults, required DateTime initialDate}) =>
     showModalBottomSheet<DateTime>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _AddExpenseSheet(familyId: familyId, meId: meId, adults: adults, initialDate: initialDate),

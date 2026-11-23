@@ -1540,5 +1540,14 @@
       }
     }
   },
-  "nowWidgetStop": "Durdur"
+  "nowWidgetStop": "Durdur",
+  "childPhoto": "Fotoğraf",
+  "childPhotoAdd": "Fotoğraf ekle",
+  "childPhotoChange": "Fotoğrafı değiştir",
+  "childPhotoRemove": "Fotoğrafı kaldır",
+  "childPhotoPrivacy": "Fotoğraf şifreli saklanır, yalnızca ailen görür.",
+  "childPhotoCropTitle": "Fotoğrafı yerleştir",
+  "childPhotoCropHint": "Yakınlaştırmak için iki parmakla aç, kaydırarak ortala.",
+  "childPhotoUse": "Kullan",
+  "childPhotoFailed": "Çocuk kaydedildi ama fotoğraf yüklenemedi. Tekrar dene."
 }

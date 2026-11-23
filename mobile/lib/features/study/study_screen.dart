@@ -345,6 +345,7 @@ class StudyHistoryScreen extends ConsumerWidget {
     final tr = _tr(context);
     final picked = await showModalBottomSheet<int>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       builder: (context) => SafeArea(
         child: Padding(
@@ -407,6 +408,7 @@ class _Legend extends StatelessWidget {
 /// Add finished minutes (ending now) for when nobody started the timer.
 Future<bool?> showAddStudySheet(BuildContext context, {required String familyId, required String childId}) => showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _AddStudySheet(familyId: familyId, childId: childId),

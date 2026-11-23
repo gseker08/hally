@@ -42,6 +42,7 @@ Future<ImageSource?> askPhotoSource(BuildContext context) {
   final l10n = AppLocalizations.of(context);
   return showModalBottomSheet<ImageSource>(
     context: context,
+    useRootNavigator: true,
     showDragHandle: true,
     builder: (context) => SafeArea(
       child: Column(

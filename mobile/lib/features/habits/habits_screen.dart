@@ -189,6 +189,7 @@ class _DayDot extends StatelessWidget {
 /// Add a habit for one child on chosen weekdays.
 Future<bool?> showAddHabitSheet(BuildContext context, {required String familyId, required List<ChildProfile> children}) => showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _AddHabitSheet(familyId: familyId, children: children),

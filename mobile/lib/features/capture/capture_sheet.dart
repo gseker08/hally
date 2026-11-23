@@ -23,6 +23,7 @@ Future<void> showCaptureSheet(BuildContext context, WidgetRef ref) {
   final messenger = ScaffoldMessenger.of(context);
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     builder: (sheetContext) {
       final theme = Theme.of(sheetContext);

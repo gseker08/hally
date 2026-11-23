@@ -644,5 +644,14 @@
   "nowWidgetTitle": "Right now",
   "nowWidgetEmpty": "No timer running",
   "nowWidgetCount": "{count} running",
-  "nowWidgetStop": "Stop"
+  "nowWidgetStop": "Stop",
+  "childPhoto": "Photo",
+  "childPhotoAdd": "Add photo",
+  "childPhotoChange": "Change photo",
+  "childPhotoRemove": "Remove photo",
+  "childPhotoPrivacy": "The photo is stored encrypted and only your family sees it.",
+  "childPhotoCropTitle": "Position the photo",
+  "childPhotoCropHint": "Pinch to zoom, drag to centre.",
+  "childPhotoUse": "Use",
+  "childPhotoFailed": "The child was saved but the photo could not be uploaded. Try again."
 }
