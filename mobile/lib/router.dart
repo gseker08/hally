@@ -14,6 +14,7 @@ import 'features/demo/demo_scan_screen.dart';
 import 'features/duties/duties_screen.dart';
 import 'features/expenses/expenses_screen.dart';
 import 'features/family/family_screen.dart';
+import 'features/health/health_screen.dart';
 import 'features/feeding/feeding_screen.dart';
 import 'features/family/family_setup_screen.dart';
 import 'features/family/invite_partner_screen.dart';
@@ -105,6 +106,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/habits', builder: (_, __) => const HabitsScreen()),
       GoRoute(path: '/school-run', builder: (_, __) => const DutiesScreen()),
       GoRoute(path: '/expenses', builder: (_, __) => const ExpensesScreen()),
+      GoRoute(path: '/health', builder: (_, __) => const HealthScreen()),
       GoRoute(path: '/shopping', builder: (_, __) => const ShoppingScreen()),
       GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimeScreen()),

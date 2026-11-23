@@ -66,6 +66,10 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<DutyDone> DutyDones => Set<DutyDone>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Settlement> Settlements => Set<Settlement>();
+    public DbSet<HealthProfile> HealthProfiles => Set<HealthProfile>();
+    public DbSet<VaccineRecord> Vaccines => Set<VaccineRecord>();
+    public DbSet<GrowthMeasurement> GrowthMeasurements => Set<GrowthMeasurement>();
+    public DbSet<HealthAppointment> HealthAppointments => Set<HealthAppointment>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -366,6 +370,52 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<HealthProfile>(e =>
+        {
+            e.Property(x => x.BloodType).HasMaxLength(4);
+            e.Property(x => x.Allergies).HasMaxLength(300);
+            e.Property(x => x.Conditions).HasMaxLength(300);
+            e.Property(x => x.Notes).HasMaxLength(300);
+            e.Property(x => x.DoctorName).HasMaxLength(60);
+            e.Property(x => x.DoctorPhone).HasMaxLength(30);
+            e.HasIndex(x => x.ChildId).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<VaccineRecord>(e =>
+        {
+            e.ToTable("vaccines");
+            e.Property(x => x.Name).HasMaxLength(60);
+            e.Property(x => x.Note).HasMaxLength(200);
+            e.Ignore(x => x.IsGiven);
+            e.HasIndex(x => x.ChildId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<GrowthMeasurement>(e =>
+        {
+            e.Property(x => x.HeightCm).HasPrecision(5, 1);
+            e.Property(x => x.WeightKg).HasPrecision(6, 2);
+            e.Property(x => x.HeadCm).HasPrecision(4, 1);
+            e.HasIndex(x => new { x.ChildId, x.MeasuredOn });
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<HealthAppointment>(e =>
+        {
+            e.Property(x => x.Doctor).HasMaxLength(60);
+            e.HasIndex(x => x.EventId).IsUnique();
+            e.HasIndex(x => x.ChildId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<CalendarEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<Settlement>(e =>

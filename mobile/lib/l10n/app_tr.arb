@@ -1023,5 +1023,71 @@
   "expensesCatClothes": "Giyim",
   "expensesCatActivity": "Etkinlik",
   "expensesCatFood": "Yemek",
-  "expensesCatOther": "Diğer"
+  "expensesCatOther": "Diğer",
+  "healthTitle": "Sağlık kartı",
+  "healthBody": "Kan grubu, alerjiler, aşılar, randevular ve boy-kilo",
+  "healthNoChildren": "Sağlık kartı için Aile sekmesinden çocuk ekleyin.",
+  "healthBasics": "Temel bilgiler",
+  "healthEdit": "Düzenle",
+  "healthBasicsEmpty": "Kan grubu, alerji ve doktor bilgisini ekleyin; doktorda, okulda veya bakıcıya sorulduğunda elinizin altında olsun.",
+  "healthBloodType": "Kan grubu",
+  "healthAllergies": "Alerjiler",
+  "healthConditions": "Süregelen durumlar",
+  "healthDoctor": "Doktor",
+  "healthDoctorName": "Doktor adı",
+  "healthDoctorPhone": "Doktor telefonu",
+  "healthNotes": "Notlar",
+  "healthAppointments": "Randevular",
+  "healthNoAppointments": "Yaklaşan randevu yok.",
+  "healthReminderNote": "Randevular takvimde de görünür; hatırlatma bir önceki akşam 19:00'da gelir.",
+  "healthVaccines": "Aşılar",
+  "healthNoVaccines": "Henüz aşı yok. Aşı kartındaki tarihleri ekleyebilirsiniz.",
+  "healthGivenOn": "{date} tarihinde yapıldı",
+  "@healthGivenOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "healthDueOn": "{date} tarihinde yapılacak",
+  "@healthDueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "healthOverdue": "{date} tarihindeydi, gecikti",
+  "@healthOverdue": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "healthMarkGiven": "Yapıldı",
+  "healthGrowth": "Boy ve kilo",
+  "healthNoGrowth": "Henüz ölçüm yok.",
+  "healthHeadValue": "baş {value} cm",
+  "@healthHeadValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "healthMedicationsLink": "İlaçlar",
+  "healthDisclaimer": "Hally yalnızca girdiğiniz bilgileri saklar; tıbbi tavsiye vermez. Aşı takvimi ve gelişim için doktorunuza danışın.",
+  "healthAdd": "Ekle",
+  "healthVaccineName": "Aşının adı",
+  "healthPlanned": "Yapılacak",
+  "healthGiven": "Yapıldı",
+  "healthHeight": "Boy (cm)",
+  "healthWeight": "Kilo (kg)",
+  "healthHead": "Baş çevresi (cm)",
+  "healthGrowthRequired": "En az bir ölçüm yazın.",
+  "healthAppointmentTitle": "Ne için? (ör. diş kontrolü)",
+  "healthPlace": "Yer",
+  "healthRemind": "Önceki akşam hatırlat"
 }
