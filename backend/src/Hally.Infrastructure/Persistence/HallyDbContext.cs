@@ -12,6 +12,7 @@ using Hally.Domain.ScreenTime;
 using Hally.Domain.Sharing;
 using Hally.Domain.Shopping;
 using Hally.Domain.Sleep;
+using Hally.Domain.Study;
 using Hally.Domain.Users;
 using Hally.Infrastructure.Analytics;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<ShoppingItem> ShoppingItems => Set<ShoppingItem>();
     public DbSet<SleepEntry> SleepEntries => Set<SleepEntry>();
     public DbSet<FeedingEntry> FeedingEntries => Set<FeedingEntry>();
+    public DbSet<StudySession> StudySessions => Set<StudySession>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -334,6 +336,19 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasIndex(x => new { x.ChildId, x.StartedAt });
             // One open sleep per child, even when both parents tap "asleep" at once.
             e.HasIndex(x => x.ChildId).IsUnique().HasFilter("ended_at IS NULL").HasDatabaseName("ix_sleep_entries_open");
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.StartedByUserId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.EndedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<StudySession>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Note).HasMaxLength(120);
+            e.HasIndex(x => new { x.ChildId, x.StartedAt });
+            // At most one running homework/reading timer per child.
+            e.HasIndex(x => x.ChildId).IsUnique().HasFilter("ended_at IS NULL").HasDatabaseName("ix_study_sessions_running");
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StartedByUserId).OnDelete(DeleteBehavior.SetNull);

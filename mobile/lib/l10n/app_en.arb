@@ -396,5 +396,21 @@
   "feedingFood": "What did they eat?",
   "feedingFoodRequired": "Enter what was eaten.",
   "feedingTime": "Time",
-  "feedingNow": "Now"
+  "feedingNow": "Now",
+  "studyTitle": "Homework & reading",
+  "studyBody": "Homework/reading timer, daily minimum and streak",
+  "studyNoChildren": "Add a child on the Family tab to track homework and reading.",
+  "studyHomework": "Homework",
+  "studyReading": "Reading",
+  "studyStop": "Done",
+  "studyToday": "Today {time}",
+  "studyOfGoal": "Today {time} of {goal}",
+  "studyStreak": "Streak: {days} days",
+  "studySetGoal": "Set a daily goal",
+  "studyGoalLabel": "Daily goal: {goal}",
+  "studyGoalTitle": "Daily goal",
+  "studyGoalHint": "Homework and reading together, at least this much. You both get a notification when it is met.",
+  "studyAdd": "Add time",
+  "studyNote": "Note (e.g. the book)",
+  "studyNoRecord": "Nothing yet"
 }
