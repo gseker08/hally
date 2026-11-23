@@ -202,6 +202,8 @@ class _TaskDialogState extends State<_TaskDialog> {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     return AlertDialog(
+      // Scrolls instead of overflowing on short screens, with the keyboard open or large text.
+      scrollable: true,
       title: Text(l10n.taskAdd),
       content: Column(
         mainAxisSize: MainAxisSize.min,

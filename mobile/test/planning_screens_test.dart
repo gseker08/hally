@@ -223,6 +223,29 @@ void main() {
     expect(find.textContaining('Her hafta'), findsOneWidget);
   });
 
+  testWidgets('calendar: add-event dialog scrolls instead of overflowing on a short screen with large text', (tester) async {
+    tester.view.physicalSize = const Size(1080, 1500);
+    tester.view.devicePixelRatio = 2.625;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final repo = _FakePlanning();
+    await tester.pumpWidget(_app(const CalendarScreen(), [planningRepositoryProvider.overrideWithValue(repo)], family: _kids));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('calendar.add')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.enterText(find.byKey(const Key('event.title')), 'Yüzme');
+    await tester.ensureVisible(find.byKey(const Key('childPicker.c2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('childPicker.c2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kaydet'));
+    await tester.pumpAndSettle();
+    expect(repo.saved.single.childIds, ['c2']);
+  });
+
   testWidgets('calendar: month view shows the whole month and keeps the selected day', (tester) async {
     final repo = _FakePlanning();
     final now = DateTime.now();

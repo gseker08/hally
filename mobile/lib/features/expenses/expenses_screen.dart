@@ -60,6 +60,8 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
+        // Scrolls instead of overflowing on short screens, with the keyboard open or large text.
+        scrollable: true,
         title: Text(l10n.expensesSettleTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,

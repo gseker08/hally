@@ -390,6 +390,8 @@ class _EventDialogState extends State<_EventDialog> {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     return AlertDialog(
+      // Scrolls instead of overflowing on short screens, with the keyboard open or large text.
+      scrollable: true,
       title: Text(l10n.calendarAdd),
       content: Column(
         mainAxisSize: MainAxisSize.min,
