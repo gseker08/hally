@@ -47,9 +47,13 @@ class AuthRepository {
 
   bool get appleAvailable => !kIsWeb && (Platform.isIOS || Platform.isMacOS);
 
+  /// On iPhone Google sign-in needs its iOS client id; without it the SDK would crash, so the button is hidden.
+  bool get googleAvailable => kIsWeb || !Platform.isIOS || AppConfig.googleIosClientId.isNotEmpty;
+
   Future<void> signInWithGoogle(String locale) async {
     final google = GoogleSignIn(
       scopes: const ['email', 'profile'],
+      clientId: !kIsWeb && Platform.isIOS ? AppConfig.googleIosClientId : null,
       serverClientId: AppConfig.googleServerClientId.isEmpty ? null : AppConfig.googleServerClientId,
     );
     final account = await google.signIn();

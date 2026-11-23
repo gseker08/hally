@@ -11,6 +11,10 @@ class AppConfig {
   /// Google OAuth web client id used as serverClientId so the backend receives an ID token.
   static const googleServerClientId = String.fromEnvironment('HALLY_GOOGLE_SERVER_CLIENT_ID');
 
+  /// Google OAuth iOS client id. The iPhone app shows Google sign-in only with it (plus the URL scheme in
+  /// ios/Flutter/Secrets.xcconfig, see docs/mobile/ios.md); Android does not need it.
+  static const googleIosClientId = String.fromEnvironment('HALLY_GOOGLE_IOS_CLIENT_ID');
+
   /// Shows the developer sign-in (backend dev provider). Never enable for store builds.
   static const enableDevSignIn = bool.fromEnvironment('HALLY_DEV_SIGN_IN', defaultValue: true);
 

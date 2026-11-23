@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using FluentAssertions;
 using Hally.Api.Features.ScreenTime;
+using Hally.Domain.Common;
 using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,8 +73,19 @@ public class ScreenTimeTests(HallyApiFactory api)
         (await owner.PostAsync(Url(familyId, childId, "stop"), null)).StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    /// How far to move the clock so the family's day has hours left: tests that add 30+ minutes would otherwise
+    /// cross midnight when CI runs late in the evening (Istanbul time) and see a fresh day.
+    private TimeSpan ToDaytime()
+    {
+        var local = FamilyTimeZone.ToFamilyTime(api.Clock.GetUtcNow(), FamilyTimeZone.Default);
+        return local.Hour < 20 ? TimeSpan.Zero : TimeSpan.FromHours(24 - local.Hour + 8);
+    }
+
     [Fact]
-    public async Task Reaching_the_goal_notifies_every_adult_once_in_their_language()
+    public Task Reaching_the_goal_notifies_every_adult_once_in_their_language() =>
+        WithClockAdvanced(ToDaytime(), GoalNotifiesEveryAdultOnce);
+
+    private async Task GoalNotifiesEveryAdultOnce()
     {
         var (owner, partner, familyId, childId) = await FamilyWithChild();
         await partner.PutAsJsonAsync("/api/v1/me/devices", new { platform = "android", token = $"tok-{Guid.NewGuid():N}" });

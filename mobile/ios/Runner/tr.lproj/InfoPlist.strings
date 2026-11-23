@@ -1,0 +1,3 @@
+/* iOS'un Türkçe gösterdiği izin metinleri. */
+"NSCameraUsageDescription" = "Okul duyurusunu ya da belgeyi çekip planına eklemek için kamerayı kullanırız.";
+"NSPhotoLibraryUsageDescription" = "Seçtiğin ekran görüntüsünü ya da fotoğrafı planına eklemek için kullanırız.";

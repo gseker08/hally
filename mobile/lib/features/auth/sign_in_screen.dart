@@ -64,14 +64,15 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
           const SizedBox(height: HallySpace.xl),
           if (_busy) const HallyLoading(),
           if (!_busy) ...[
-            FilledButton.icon(
-              key: const Key('signIn.google'),
-              icon: const Icon(Icons.g_mobiledata, size: 30),
-              onPressed: () => _run('google', (r, l) => r.signInWithGoogle(l)),
-              label: Text(l10n.signInGoogle),
-            ),
+            if (repo.googleAvailable)
+              FilledButton.icon(
+                key: const Key('signIn.google'),
+                icon: const Icon(Icons.g_mobiledata, size: 30),
+                onPressed: () => _run('google', (r, l) => r.signInWithGoogle(l)),
+                label: Text(l10n.signInGoogle),
+              ),
             if (repo.appleAvailable) ...[
-              const SizedBox(height: HallySpace.sm),
+              if (repo.googleAvailable) const SizedBox(height: HallySpace.sm),
               OutlinedButton.icon(
                 key: const Key('signIn.apple'),
                 icon: const Icon(Icons.apple),

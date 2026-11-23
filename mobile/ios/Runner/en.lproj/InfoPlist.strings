@@ -1,0 +1,3 @@
+/* Permission texts iOS shows in English. The Turkish ones are in tr.lproj. */
+"NSCameraUsageDescription" = "Hally uses the camera to snap a school notice or a document and add it to your plan.";
+"NSPhotoLibraryUsageDescription" = "Hally adds the screenshot or photo you pick to your plan.";
