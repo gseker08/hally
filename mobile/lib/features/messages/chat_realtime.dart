@@ -29,6 +29,9 @@ class ChatMessageEvent {
 /// Live chat events. Screens listen to [events]; while [isConnected] they can poll much less often.
 abstract interface class ChatRealtime {
   Stream<ChatMessageEvent> get events;
+
+  /// Raw `ScreenTimeChanged` payloads (`{familyId, status}`); the screen time feature parses them.
+  Stream<Map<String, dynamic>> get screenTimeEvents;
   bool get isConnected;
   Future<void> dispose();
 }
@@ -48,6 +51,10 @@ class SignalRChatRealtime implements ChatRealtime {
       final payload = args?.firstOrNull;
       if (payload is Map) _events.add(ChatMessageEvent.fromJson(Map<String, dynamic>.from(payload)));
     });
+    _connection.on('ScreenTimeChanged', (args) {
+      final payload = args?.firstOrNull;
+      if (payload is Map) _screenTime.add(Map<String, dynamic>.from(payload));
+    });
     _connection.onclose(({error}) => _scheduleRetry());
     unawaited(_start());
   }
@@ -58,11 +65,15 @@ class SignalRChatRealtime implements ChatRealtime {
   final Duration retryAfter;
   late final HubConnection _connection;
   final _events = StreamController<ChatMessageEvent>.broadcast();
+  final _screenTime = StreamController<Map<String, dynamic>>.broadcast();
   Timer? _retry;
   bool _disposed = false;
 
   @override
   Stream<ChatMessageEvent> get events => _events.stream;
+
+  @override
+  Stream<Map<String, dynamic>> get screenTimeEvents => _screenTime.stream;
 
   @override
   bool get isConnected => _connection.state == HubConnectionState.Connected;
@@ -115,6 +126,7 @@ class SignalRChatRealtime implements ChatRealtime {
     _retry?.cancel();
     await _connection.stop().catchError((_) {});
     await _events.close();
+    await _screenTime.close();
   }
 }
 
@@ -122,6 +134,9 @@ class SignalRChatRealtime implements ChatRealtime {
 class NoChatRealtime implements ChatRealtime {
   @override
   Stream<ChatMessageEvent> get events => const Stream.empty();
+
+  @override
+  Stream<Map<String, dynamic>> get screenTimeEvents => const Stream.empty();
 
   @override
   bool get isConnected => false;

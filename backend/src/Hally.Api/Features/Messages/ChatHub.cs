@@ -13,10 +13,13 @@ public record ChatMessageEvent(Guid FamilyId, string ChatKey, MessageDto Message
 public interface IChatClient
 {
     Task MessageReceived(ChatMessageEvent e);
+
+    /// <summary>A child's screen time timer started, stopped or changed (see ScreenTime feature).</summary>
+    Task ScreenTimeChanged(ScreenTime.ScreenTimeEvent e);
 }
 
 /// <summary>
-/// Live channel for chat messages at <c>/hubs/chat</c>. Apps only listen: sending still goes through the REST API,
+/// Live channel at <c>/hubs/chat</c> for chat messages and other family events (screen time). Apps only listen: sending still goes through the REST API,
 /// which validates, stores and then announces the message here. Every connection joins its user's group, so all
 /// of a person's devices get the event. The JWT comes in the <c>access_token</c> query string (WebSockets cannot
 /// send headers from browsers and most mobile clients), see Program.cs.

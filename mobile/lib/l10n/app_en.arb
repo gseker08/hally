@@ -291,5 +291,22 @@
   "languageTitle": "Language",
   "languageSystem": "Phone language",
   "languageSystemBody": "Turkish when the phone is in neither Turkish nor English",
-  "pushOpen": "Open"
+  "pushOpen": "Open",
+  "screenTimeTitle": "Screen time",
+  "screenTimeBody": "A timer you start and stop by hand. It does not lock the device; both parents see the same time right away.",
+  "screenTimeStart": "Start",
+  "screenTimeStop": "Stop",
+  "screenTimeToday": "Today {time}",
+  "screenTimeOfGoal": "Today {time} / {goal}",
+  "screenTimeOverGoal": "Daily goal reached",
+  "screenTimeStartedBy": "Started by {name}",
+  "screenTimeWeek": "This week",
+  "screenTimeWeekSummary": "Total {total} · daily average {average}",
+  "screenTimeDaysOver": "{count, plural, =1{Over the goal on 1 day} other{Over the goal on {count} days}}",
+  "screenTimeGoal": "Daily goal",
+  "screenTimeNoGoal": "No goal",
+  "screenTimeSetGoal": "Set a daily goal",
+  "screenTimeAddMinutes": "Add time",
+  "screenTimeAddMinutesBody": "Forgot to start the timer? Add the time here.",
+  "screenTimeNoChildren": "Add a child on the Family tab to track screen time."
 }

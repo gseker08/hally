@@ -543,5 +543,65 @@
   "languageSystem": "Telefonun dili",
   "languageSystemBody": "Telefon Türkçe ya da İngilizce değilse Türkçe",
   "pushOpen": "Aç",
-  "@pushOpen": {"description": "Snack bar action that opens what a notification is about"}
+  "@pushOpen": {
+    "description": "Snack bar action that opens what a notification is about"
+  },
+  "screenTimeTitle": "Ekran süresi",
+  "screenTimeBody": "Elle başlatıp durdurduğunuz sayaç. Telefonu kısıtlamaz; iki ebeveyn de aynı süreyi anında görür.",
+  "screenTimeStart": "Başlat",
+  "screenTimeStop": "Durdur",
+  "screenTimeToday": "Bugün {time}",
+  "screenTimeOfGoal": "Bugün {time} / {goal}",
+  "screenTimeOverGoal": "Günlük hedef doldu",
+  "screenTimeStartedBy": "{name} başlattı",
+  "screenTimeWeek": "Bu hafta",
+  "screenTimeWeekSummary": "Toplam {total} · günlük ortalama {average}",
+  "screenTimeDaysOver": "{count} gün hedef aşıldı",
+  "screenTimeGoal": "Günlük hedef",
+  "screenTimeNoGoal": "Hedef yok",
+  "screenTimeSetGoal": "Günlük hedef koy",
+  "screenTimeAddMinutes": "Süre ekle",
+  "screenTimeAddMinutesBody": "Sayacı başlatmayı unuttuysanız geçen süreyi buradan ekleyin.",
+  "screenTimeNoChildren": "Ekran süresini takip etmek için Aile sekmesinden çocuk ekleyin.",
+  "@screenTimeToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@screenTimeOfGoal": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "@screenTimeStartedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@screenTimeWeekSummary": {
+    "placeholders": {
+      "total": {
+        "type": "String"
+      },
+      "average": {
+        "type": "String"
+      }
+    }
+  },
+  "@screenTimeDaysOver": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
