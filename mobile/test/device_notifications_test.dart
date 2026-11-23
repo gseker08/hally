@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -19,15 +20,16 @@ class _Tokens implements TokenStorage {
 }
 
 class _Api implements HttpClientAdapter {
-  _Api(this.status);
+  _Api(this.status, [this.body = '{}']);
 
   final int status;
+  final String body;
   final calls = <String>[];
 
   @override
   Future<ResponseBody> fetch(RequestOptions o, Stream<Uint8List>? body, Future<void>? cancel) async {
-    calls.add('${o.method} ${o.path}');
-    return ResponseBody.fromString('{}', status, headers: {
+    calls.add('${o.method} ${o.path}${o.data == null ? '' : ' ${jsonEncode(o.data)}'}');
+    return ResponseBody.fromString(this.body, status, headers: {
       Headers.contentTypeHeader: ['application/json'],
     });
   }
@@ -90,7 +92,7 @@ void main() {
 
     final ok = await runNotificationAction(client, stopScreenTimeAction, const NotificationTarget(type: 'screen', familyId: 'f1', id: 'c1'));
 
-    expect(ok, isTrue);
+    expect(ok, isA<ActionDone>());
     expect(api.calls, ['POST /api/v1/families/f1/children/c1/screen-time/stop']);
   });
 
@@ -98,7 +100,56 @@ void main() {
     final api = _Api(500);
     final client = ApiClient(_Tokens(), dio: Dio(BaseOptions(baseUrl: 'http://x'))..httpClientAdapter = api);
 
-    expect(await runNotificationAction(client, stopScreenTimeAction, const NotificationTarget(type: 'screen', familyId: 'f1', id: 'c1')), isFalse);
-    expect(await runNotificationAction(client, 'unknown', const NotificationTarget(type: 'screen', familyId: 'f1', id: 'c1')), isFalse);
+    expect(await runNotificationAction(client, stopScreenTimeAction, const NotificationTarget(type: 'screen', familyId: 'f1', id: 'c1')), isA<ActionFailed>());
+    expect(await runNotificationAction(client, 'unknown', const NotificationTarget(type: 'screen', familyId: 'f1', id: 'c1')), isA<ActionFailed>());
   });
+
+  const med = NotificationTarget(type: 'med', familyId: 'f1', id: 'm1');
+  const medJson = '{"id":"m1","childId":"c1","name":"Ateş şurubu","minIntervalMinutes":360}';
+
+  test('Verdim saves a dose without overriding the spacing rule', () async {
+    final api = _Api(201, medJson);
+    final client = ApiClient(_Tokens(), dio: Dio(BaseOptions(baseUrl: 'http://x'))..httpClientAdapter = api);
+
+    expect(await runNotificationAction(client, giveMedicationAction, med), isA<ActionDone>());
+    expect(api.calls.single, 'POST /api/v1/families/f1/medications/m1/doses {"givenAt":null,"note":null,"force":false}');
+    expect(med.route, '/medications');
+  });
+
+  test('Verdim on a dose someone already gave is refused with who and when', () async {
+    final api = _Api(409,
+        '{"code":"medication.too_soon","lastDose":{"id":"d1","givenAt":"2026-11-23T11:05:00Z","givenByName":"Mehmet"},"nextAllowedAt":"2026-11-23T17:05:00Z"}');
+    final client = ApiClient(_Tokens(), dio: Dio(BaseOptions(baseUrl: 'http://x'))..httpClientAdapter = api);
+
+    final result = await runNotificationAction(client, giveMedicationAction, med);
+
+    expect(result, isA<ActionDoseRefused>());
+    expect((result as ActionDoseRefused).warning.lastDose.givenByName, 'Mehmet');
+    expect(result.warning.isDailyLimit, isFalse);
+  });
+
+  test('a due push becomes a tray notification; a given push clears it', () async {
+    final tray = _Tray();
+    final due = {'kind': 'MedicationDue', 'familyId': 'f1', 'medicationId': 'm1', 'title': 'Ela: Ateş şurubu zamanı', 'body': 'Son doz: 14:05'};
+
+    expect(await handleNotificationPush(due, tray, tr), isTrue);
+    expect(tray.log, ['show med:m1 Ela: Ateş şurubu zamanı / Son doz: 14:05']);
+
+    await handleNotificationPush({'kind': 'MedicationGiven', 'familyId': 'f1', 'medicationId': 'm1'}, tray, tr);
+    expect(tray.log.last, 'cancel med:m1');
+
+    expect(await handleNotificationPush({'kind': 'Message', 'familyId': 'f1'}, tray, tr), isFalse);
+    expect(tray.log, hasLength(2));
+  });
+}
+
+class _Tray extends NoDeviceNotifications {
+  final log = <String>[];
+
+  @override
+  Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n) async =>
+      log.add('show ${target.type}:${target.id} $title / $body');
+
+  @override
+  Future<void> cancel(NotificationTarget target) async => log.add('cancel ${target.type}:${target.id}');
 }

@@ -621,5 +621,11 @@
   "screenNoticeChannelDescription": "Shown while a screen time timer you started is running",
   "noticeActionFailedTitle": "Not saved",
   "noticeActionFailedBody": "No connection. Open Hally and try again.",
-  "noticeActionChannel": "Notification buttons"
+  "noticeActionChannel": "Notification buttons",
+  "medNoticeGiven": "Given",
+  "medNoticeChannel": "Medication reminders",
+  "medNoticeChannelDescription": "When the next dose is due, with a Given button",
+  "medNoticeRefusedTitle": "Dose not saved",
+  "medNoticeRefusedBody": "Last dose: {time} · {name}. Save it in the app if needed.",
+  "medNoticeRefusedDailyLimit": "The daily limit is reached. Save it in the app if needed."
 }

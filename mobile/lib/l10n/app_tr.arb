@@ -1471,5 +1471,21 @@
   "screenNoticeChannelDescription": "Başlattığın ekran süresi sayacı çalışırken görünür",
   "noticeActionFailedTitle": "Kaydedilemedi",
   "noticeActionFailedBody": "Bağlantı olmadı. Hally'yi açıp tekrar dene.",
-  "noticeActionChannel": "Bildirim düğmeleri"
+  "noticeActionChannel": "Bildirim düğmeleri",
+  "medNoticeGiven": "Verdim",
+  "medNoticeChannel": "İlaç hatırlatmaları",
+  "medNoticeChannelDescription": "Sonraki doz zamanı geldiğinde, Verdim düğmesiyle",
+  "medNoticeRefusedTitle": "Doz kaydedilmedi",
+  "medNoticeRefusedBody": "Son doz: {time} · {name}. Gerekirse uygulamadan kaydet.",
+  "@medNoticeRefusedBody": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "medNoticeRefusedDailyLimit": "Günlük sınıra ulaşıldı. Gerekirse uygulamadan kaydet."
 }
