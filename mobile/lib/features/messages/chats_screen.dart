@@ -211,7 +211,7 @@ class _ChatsButtonState extends ConsumerState<ChatsButton> {
       icon: Badge(
         isLabelVisible: unread > 0,
         label: Text('$unread'),
-        backgroundColor: HallyColors.rose,
+        backgroundColor: HallyColors.cherry,
         child: Icon(Icons.chat_bubble_outline_rounded, color: widget.color),
       ),
     );

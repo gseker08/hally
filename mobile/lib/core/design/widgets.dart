@@ -334,3 +334,31 @@ class HallyLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Center(child: CircularProgressIndicator(strokeCap: StrokeCap.round));
 }
+
+/// Two-column grid whose rows grow with their content, so tiles never overflow with large text.
+class HallyTileGrid extends StatelessWidget {
+  const HallyTileGrid({super.key, required this.children, this.gap = HallySpace.sm + 2});
+
+  final List<Widget> children;
+  final double gap;
+
+  @override
+  Widget build(BuildContext context) => Column(
+        children: [
+          for (var i = 0; i < children.length; i += 2)
+            Padding(
+              padding: EdgeInsets.only(top: i == 0 ? 0 : gap),
+              child: IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(child: children[i]),
+                    SizedBox(width: gap),
+                    Expanded(child: i + 1 < children.length ? children[i + 1] : const SizedBox()),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      );
+}

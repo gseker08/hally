@@ -10,11 +10,11 @@ import '../../core/design/widgets.dart';
 import '../../core/text/locale_case.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_repository.dart';
-import '../capture/capture_sheet.dart';
 import '../family/children.dart';
 import '../messages/chats_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../planning/planning_repository.dart';
+import '../profile/profile_screen.dart';
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
@@ -28,7 +28,7 @@ class TodayScreen extends ConsumerWidget {
 
     return Scaffold(
       body: RefreshIndicator(
-        edgeOffset: 120,
+        edgeOffset: 60,
         onRefresh: () => ref.refresh(todayProvider(familyId).future),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
@@ -66,11 +66,7 @@ class TodayScreen extends ConsumerWidget {
     );
     var i = 0;
     return [
-      HallyEntrance(index: i++, child: const _QuickCapture()),
-      Padding(
-        padding: const EdgeInsets.only(top: HallySpace.sm),
-        child: ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
-      ),
+      ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
       if (d.waiting.isNotEmpty)
         HallyEntrance(
           index: i++,
@@ -112,7 +108,7 @@ class TodayScreen extends ConsumerWidget {
   }
 }
 
-/// Gradient header with greeting, date and a summary of the day.
+/// Header with date, greeting, the day's counts and the "Ask Hally" bar that opens the assistant.
 class TodayHero extends StatelessWidget {
   const TodayHero({super.key, required this.name, required this.data});
 
@@ -133,65 +129,94 @@ class TodayHero extends StatelessWidget {
     final locale = Localizations.localeOf(context);
     final date = upperCaseFor(DateFormat('d MMMM EEEE', locale.toLanguageTag()).format(now), locale);
     final d = data;
+    final ink = theme.colorScheme.onSurface;
+    final accent = theme.brightness == Brightness.dark ? HallyColors.cherryDark : HallyColors.cherry;
 
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: HallyGradients.hero,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(HallyRadius.xl + 4)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          const Positioned(top: -60, right: -40, child: HallyGlow(color: Color(0xFFF0A36A), size: 220)),
-          const Positioned(bottom: -80, left: -50, child: HallyGlow(color: Color(0xFF6FD3B4), size: 200)),
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(HallySpace.lg, HallySpace.md, HallySpace.lg, HallySpace.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return SafeArea(
+      bottom: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(HallySpace.md + 4, HallySpace.sm, HallySpace.md, 0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(date, style: theme.textTheme.labelMedium?.copyWith(color: accent, letterSpacing: 1.2, fontWeight: FontWeight.w700)),
+                ),
+                IconButton(
+                  key: const Key('today.tasks'),
+                  tooltip: l10n.todayAllTasks,
+                  onPressed: () => context.push('/tasks'),
+                  icon: Icon(Icons.checklist_rounded, color: ink),
+                ),
+                ChatsButton(color: ink),
+                NotificationBell(color: ink),
+                const SizedBox(width: HallySpace.xs),
+                const ProfileButton(),
+              ],
+            ),
+            Text(greeting, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, height: 1.1)),
+            const SizedBox(height: HallySpace.md),
+            const AskHallyBar(),
+            const SizedBox(height: HallySpace.sm + 2),
+            AnimatedOpacity(
+              opacity: d == null ? 0 : 1,
+              duration: HallyMotion.medium,
+              child: Wrap(
+                spacing: HallySpace.sm,
+                runSpacing: HallySpace.sm,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          date,
-                          style: theme.textTheme.labelMedium?.copyWith(color: Colors.white70, letterSpacing: 1.2, fontWeight: FontWeight.w700),
-                        ),
-                      ),
-                      IconButton(
-                        key: const Key('today.tasks'),
-                        tooltip: l10n.todayAllTasks,
-                        onPressed: () => context.push('/tasks'),
-                        icon: const Icon(Icons.checklist_rounded, color: Colors.white),
-                      ),
-                      const ChatsButton(),
-                      const NotificationBell(),
-                      const SizedBox(width: HallySpace.xs),
-                      HallyAvatar(name: name, size: 40, ring: true),
-                    ],
-                  ),
-                  const SizedBox(height: HallySpace.sm),
-                  Text(greeting, style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white, height: 1.1)),
-                  const SizedBox(height: HallySpace.md),
-                  AnimatedOpacity(
-                    opacity: d == null ? 0 : 1,
-                    duration: HallyMotion.medium,
-                    child: Wrap(
-                      spacing: HallySpace.sm,
-                      runSpacing: HallySpace.sm,
-                      children: [
-                        _Stat(icon: Icons.check_circle_outline_rounded, label: l10n.todayStatTasks((d?.overdue.length ?? 0) + (d?.dueToday.length ?? 0))),
-                        _Stat(icon: Icons.event_rounded, label: l10n.todayStatEvents(d?.events.length ?? 0)),
-                        if ((d?.waiting.length ?? 0) > 0) _Stat(icon: Icons.auto_awesome, label: l10n.todayStatWaiting(d!.waiting.length), hot: true),
-                      ],
-                    ),
-                  ),
+                  _Stat(icon: Icons.check_circle_outline_rounded, label: l10n.todayStatTasks((d?.overdue.length ?? 0) + (d?.dueToday.length ?? 0))),
+                  _Stat(icon: Icons.event_rounded, label: l10n.todayStatEvents(d?.events.length ?? 0)),
+                  if ((d?.waiting.length ?? 0) > 0) _Stat(icon: Icons.auto_awesome, label: l10n.todayStatWaiting(d!.waiting.length), hot: true),
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tappable "Ask Hally or type…" field. The assistant used to have its own tab; now it is one tap from Today.
+class AskHallyBar extends StatelessWidget {
+  const AskHallyBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final accent = theme.brightness == Brightness.dark ? HallyColors.cherryDark : HallyColors.cherry;
+    return Semantics(
+      button: true,
+      label: l10n.askHally,
+      excludeSemantics: true,
+      child: HallyPressable(
+        key: const Key('today.askHally'),
+        onTap: () => context.push('/assistant'),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(HallySpace.md, 10, 10, 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(HallyRadius.lg),
+            border: Border.all(color: accent.withValues(alpha: 0.28), width: 1.5),
           ),
-        ],
+          child: Row(
+            children: [
+              Icon(Icons.auto_awesome_rounded, color: accent, size: 20),
+              const SizedBox(width: HallySpace.sm + 2),
+              Expanded(child: Text(l10n.askHally, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(color: HallyColors.cherry, borderRadius: BorderRadius.circular(11)),
+                child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 18),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -205,76 +230,24 @@ class _Stat extends StatelessWidget {
   final bool hot;
 
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          color: hot ? Colors.white : Colors.white.withValues(alpha: 0.16),
-          borderRadius: BorderRadius.circular(HallyRadius.pill),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: hot ? HallyColors.rose : Colors.white),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(color: hot ? HallyColors.ink : Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
-            ),
-          ],
-        ),
-      );
-}
-
-/// Three one-tap capture shortcuts so the core action is never more than a tap away.
-class _QuickCapture extends ConsumerWidget {
-  const _QuickCapture();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    Widget tile(IconData icon, Gradient g, Color c, String label, VoidCallback onTap) => Expanded(
-          child: HallyPressable(
-            onTap: onTap,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: HallySpace.md - 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(HallyRadius.lg),
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-                boxShadow: HallyShadows.soft(theme.brightness),
-              ),
-              child: Column(
-                children: [
-                  HallyIconBadge(icon: icon, color: c, gradient: g, size: 42),
-                  const SizedBox(height: HallySpace.sm),
-                  Text(label, style: theme.textTheme.labelLarge?.copyWith(fontSize: 13), textAlign: TextAlign.center, maxLines: 1),
-                ],
-              ),
-            ),
-          ),
-        );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(HallySpace.xs, HallySpace.xs, 0, HallySpace.sm + 2),
-          child: Text(l10n.todayQuickCapture, style: theme.textTheme.titleMedium?.copyWith(fontSize: 17)),
-        ),
-        Row(
-          children: [
-            tile(Icons.photo_camera_rounded, HallyGradients.cherry, HallyColors.cherry, l10n.captureCamera,
-                () => startPhotoCapture(context, ref, camera: true)),
-            const SizedBox(width: HallySpace.sm + 2),
-            tile(Icons.photo_library_rounded, HallyGradients.mint, HallyColors.mint, l10n.captureGallery,
-                () => startPhotoCapture(context, ref, camera: false)),
-            const SizedBox(width: HallySpace.sm + 2),
-            tile(Icons.chat_rounded, HallyGradients.apricot, HallyColors.apricot, l10n.captureText, () => context.push('/capture/text')),
-          ],
-        ),
-      ],
+    final color = hot ? HallyColors.cherry : theme.colorScheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: hot ? HallyColors.softOf(HallyColors.cherry, theme.brightness) : theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(HallyRadius.pill),
+        border: Border.all(color: hot ? Colors.transparent : theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: hot ? HallyColors.readableOn(HallyColors.cherry, theme.brightness) : color),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(color: hot ? HallyColors.readableOn(HallyColors.cherry, theme.brightness) : theme.colorScheme.onSurface, fontWeight: FontWeight.w700, fontSize: 13)),
+        ],
+      ),
     );
   }
 }

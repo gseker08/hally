@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
+import 'features/kids/kids_screen.dart';
+import 'features/profile/profile_screen.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'features/billing/paywall_screen.dart';
 import 'features/points/points_screen.dart';
@@ -122,13 +124,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/plan', builder: (_, __) => const PlanScreen()),
+      GoRoute(path: '/assistant', builder: (_, __) => const AssistantScreen()),
+      GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/privacy', builder: (_, __) => const PrivacyScreen()),
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => HomeShell(shell: shell),
         branches: [
           StatefulShellBranch(routes: [GoRoute(path: '/today', builder: (_, __) => const TodayScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: '/assistant', builder: (_, __) => const AssistantScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: '/calendar', builder: (_, __) => const CalendarScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: '/kids', builder: (_, __) => const KidsScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: '/family', builder: (_, __) => const FamilyScreen())]),
         ],
       ),

@@ -8,7 +8,8 @@ import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_sheet.dart';
 import '../share/share_listener.dart';
 
-/// Tabs: Today · Hally (chat) · Capture (raised centre action, opens the capture sheet) · Calendar · Family.
+/// Tabs: Today · Calendar · Add (raised centre action, opens the add sheet) · Kids · Family.
+/// The assistant opens from the "Ask Hally" bar on Today; settings open from the avatar on every tab.
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.shell});
 
@@ -29,9 +30,9 @@ class HomeShell extends ConsumerWidget {
         currentIndex: shell.currentIndex,
         items: [
           HallyNavItem(icon: Icons.wb_sunny_outlined, activeIcon: Icons.wb_sunny_rounded, label: l10n.tabToday),
-          HallyNavItem(icon: Icons.auto_awesome_outlined, activeIcon: Icons.auto_awesome_rounded, label: l10n.tabAssistant),
           HallyNavItem(icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month_rounded, label: l10n.tabCalendar),
-          HallyNavItem(icon: Icons.people_alt_outlined, activeIcon: Icons.people_alt_rounded, label: l10n.tabFamily),
+          HallyNavItem(icon: Icons.child_care_outlined, activeIcon: Icons.child_care_rounded, label: l10n.tabKids),
+          HallyNavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: l10n.tabFamily),
         ],
         centerLabel: l10n.tabCapture,
         onTap: go,
@@ -52,7 +53,7 @@ class HallyNavItem {
   final String label;
 }
 
-/// Floating rounded bar with tabs split evenly around a raised gradient capture button.
+/// Floating rounded bar with tabs split evenly around a raised cherry add button.
 class HallyNavBar extends StatelessWidget {
   const HallyNavBar({
     super.key,
@@ -115,10 +116,10 @@ class HallyNavBar extends StatelessWidget {
                         width: 62,
                         height: 62,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: HallyGradients.magic,
+                          color: HallyColors.cherry,
+                          borderRadius: BorderRadius.circular(22),
                           border: Border.all(color: theme.colorScheme.surface, width: 4),
-                          boxShadow: HallyShadows.glow(HallyColors.rose),
+                          boxShadow: [BoxShadow(color: HallyColors.cherry.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
                         ),
                         child: const Icon(Icons.add_rounded, color: Colors.white, size: 32),
                       ),

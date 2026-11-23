@@ -72,7 +72,7 @@
   "errorGeneric": "Bir şeyler ters gitti. Tekrar dener misin?",
   "retry": "Tekrar dene",
   "loading": "Yükleniyor…",
-  "tabCapture": "Yakala",
+  "tabCapture": "Ekle",
   "captureTitle": "Ne yakalayalım?",
   "captureCamera": "Fotoğraf çek",
   "captureGallery": "Galeriden seç",
@@ -1251,5 +1251,87 @@
       }
     }
   },
-  "insightsEmpty": "Bu aralıkta kayıt yok. Ekran süresi, uyku, ödev gibi kayıtlar girildikçe burada özetlenir."
+  "insightsEmpty": "Bu aralıkta kayıt yok. Ekran süresi, uyku, ödev gibi kayıtlar girildikçe burada özetlenir.",
+  "tabKids": "Çocuklar",
+  "askHally": "Hally'ye sor ya da yaz…",
+  "profileTitle": "Profil ve ayarlar",
+  "familyTogether": "Birlikte yönetin",
+  "kidsEmptyTitle": "Çocuğunu ekle",
+  "kidsTodayOf": "Bugün · {name}",
+  "@kidsTodayOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kidsGrowth": "Gelişim",
+  "kidsCare": "Bakım ve sağlık",
+  "kidsAge": "{age, plural, =0{1 yaşından küçük} other{{age} yaş}}",
+  "@kidsAge": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "kidsMoreTrackers": "Diğer takipler ({count})",
+  "@kidsMoreTrackers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kidsStreakDays": "{count} gün seri",
+  "@kidsStreakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kidsDoneOf": "Bugün {done}/{total}",
+  "@kidsDoneOf": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "kidsFeeds": "{count} öğün",
+  "@kidsFeeds": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kidsDoses": "{count} doz",
+  "@kidsDoses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kidsVaccinesOverdue": "{count} aşı gecikti",
+  "@kidsVaccinesOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kidsVaccinesSoon": "{count} aşı yaklaşıyor",
+  "@kidsVaccinesSoon": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
