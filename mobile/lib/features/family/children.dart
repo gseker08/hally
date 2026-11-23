@@ -52,7 +52,8 @@ class ChildBadge extends StatelessWidget {
   }
 }
 
-/// Small overlapping badges for the children an item is tagged with. Renders nothing for whole-family items.
+/// Small overlapping badges for the children an item is tagged with. Whole-family items render nothing, except
+/// while the child filter is on: then they get a "Tüm aile" pill, so it is clear why they show up under every child.
 class ChildBadges extends ConsumerWidget {
   const ChildBadges({super.key, required this.familyId, required this.childIds, this.size = 22});
 
@@ -62,7 +63,9 @@ class ChildBadges extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (childIds.isEmpty) return const SizedBox.shrink();
+    if (childIds.isEmpty) {
+      return ref.watch(childFilterProvider) == null ? const SizedBox.shrink() : FamilyWideBadge(height: size);
+    }
     final byId = {for (final c in watchChildren(ref, familyId)) c.id: c};
     final tagged = [for (final id in childIds) if (byId[id] != null) byId[id]!];
     if (tagged.isEmpty) return const SizedBox.shrink();
@@ -80,6 +83,33 @@ class ChildBadges extends ConsumerWidget {
                 child: ChildBadge(child: c, size: size),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Grey "Tüm aile" pill for items that are not tagged with any child.
+class FamilyWideBadge extends StatelessWidget {
+  const FamilyWideBadge({super.key, this.height = 22});
+
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      key: const Key('familyWideBadge'),
+      height: height,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      decoration: BoxDecoration(color: scheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(height / 2)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.groups_rounded, size: height * 0.65, color: scheme.onSurfaceVariant),
+          const SizedBox(width: 4),
+          Text(AppLocalizations.of(context).childFamilyWide,
+              style: TextStyle(fontSize: height * 0.5, height: 1, fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant)),
         ],
       ),
     );

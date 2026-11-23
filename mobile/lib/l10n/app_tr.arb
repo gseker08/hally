@@ -530,6 +530,7 @@
   },
   "childDeleteBody": "Görevler ve etkinlikler silinmez, yalnızca bu çocuğun etiketi kalkar.",
   "childFilterAll": "Hepsi",
+  "childFamilyWide": "Tüm aile",
   "childPickerLabel": "Kimin için?",
   "childPickerWholeFamily": "Seçilmezse tüm aile için.",
   "chatsTitle": "Mesajlar",
