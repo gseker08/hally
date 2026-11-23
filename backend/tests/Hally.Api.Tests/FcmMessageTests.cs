@@ -28,4 +28,19 @@ public class FcmMessageTests
         m.GetProperty("android").GetProperty("priority").GetString().Should().Be("HIGH");
         m.GetProperty("apns").GetProperty("payload").GetProperty("aps").GetProperty("alert").GetProperty("body").GetString().Should().Be("Son doz: 14:05");
     }
+
+    [Fact]
+    public void Medication_pushes_carry_the_Verdim_category_and_replace_each_other_on_iOS()
+    {
+        static JsonElement Med(string kind, bool appDraws) => JsonSerializer.SerializeToElement(FcmPushSender.BuildMessage("tok",
+            new PushMessage("t", "b", new Dictionary<string, string> { ["kind"] = kind, ["familyId"] = "f", ["medicationId"] = "m1" }, appDraws)));
+
+        var due = Med("MedicationDue", appDraws: true).GetProperty("apns");
+        due.GetProperty("headers").GetProperty("apns-collapse-id").GetString().Should().Be("med-m1");
+        due.GetProperty("payload").GetProperty("aps").GetProperty("category").GetString().Should().Be(FcmPushSender.MedicationCategory);
+
+        var given = Med("MedicationGiven", appDraws: false).GetProperty("apns");
+        given.GetProperty("headers").GetProperty("apns-collapse-id").GetString().Should().Be("med-m1");
+        given.GetProperty("payload").GetProperty("aps").TryGetProperty("category", out _).Should().BeFalse();
+    }
 }

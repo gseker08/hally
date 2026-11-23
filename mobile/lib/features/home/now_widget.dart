@@ -48,26 +48,32 @@ abstract interface class NowWidgetStore {
 
 class HomeWidgetNowStore implements NowWidgetStore {
   static const provider = 'app.hally.hally.NowWidgetProvider';
+
+  /// The WidgetKit kind of the iPhone widget (ios/HallyWidgets/NowWidget.swift).
+  static const iosKind = 'NowWidget';
   bool _registered = false;
 
   @override
   Future<void> save(Map<String, String> data, List<DateTime> refreshAt) async {
-    if (!_registered) {
+    // Android's Durdur calls back through home_widget; the iPhone runs its own background engine
+    // (ios/Runner/BackgroundDart.swift → notifications/ios_background.dart).
+    if (!_registered && Platform.isAndroid) {
       _registered = true;
       await HomeWidget.registerInteractivityCallback(hallyWidgetAction);
     }
     for (final e in data.entries) {
       await HomeWidget.saveWidgetData<String>(e.key, e.value);
     }
-    await HomeWidget.updateWidget(qualifiedAndroidName: provider);
-    // A forgotten timer leaves the widget at the server's cap, also while the app is closed.
-    if (refreshAt.isNotEmpty) await HomeWidget.scheduleWidgetUpdates(refreshAt, qualifiedAndroidName: provider);
+    await HomeWidget.updateWidget(qualifiedAndroidName: provider, iOSName: iosKind);
+    // A forgotten timer leaves the widget at the server's cap, also while the app is closed. (The iPhone widget
+    // plans that itself in its timeline.)
+    if (refreshAt.isNotEmpty && Platform.isAndroid) await HomeWidget.scheduleWidgetUpdates(refreshAt, qualifiedAndroidName: provider);
   }
 
   @override
   Future<void> clear() async {
     await HomeWidget.saveWidgetData<String>('now.items', null);
-    await HomeWidget.updateWidget(qualifiedAndroidName: provider);
+    await HomeWidget.updateWidget(qualifiedAndroidName: provider, iOSName: iosKind);
   }
 }
 
@@ -79,7 +85,7 @@ class NoNowWidgetStore implements NowWidgetStore {
 }
 
 final nowWidgetStoreProvider = Provider<NowWidgetStore>((ref) {
-  if (kIsWeb || !Platform.isAndroid || Platform.environment.containsKey('FLUTTER_TEST')) return NoNowWidgetStore();
+  if (kIsWeb || !(Platform.isAndroid || Platform.isIOS) || Platform.environment.containsKey('FLUTTER_TEST')) return NoNowWidgetStore();
   return HomeWidgetNowStore();
 });
 
@@ -112,7 +118,8 @@ final nowWidgetSyncProvider = Provider<void>((ref) {
   }, fireImmediately: true);
 });
 
-/// Durdur on the widget. Runs in a background isolate, also when the app is closed.
+/// Durdur on the widget (and on the iPhone, on a timer's Live Activity). Runs in a background isolate, also when the
+/// app is closed.
 @pragma('vm:entry-point')
 Future<void> hallyWidgetAction(Uri? uri) async {
   final target = nowWidgetStopTarget(uri);
@@ -125,11 +132,12 @@ Future<void> hallyWidgetAction(Uri? uri) async {
   final items = await HomeWidget.getWidgetData<String>('now.items');
   if (items != null && (result is ActionDone || await _notRunning(target))) {
     await HomeWidget.saveWidgetData<String>('now.items', nowWidgetWithout(items, target));
-    await HomeWidget.updateWidget(qualifiedAndroidName: HomeWidgetNowStore.provider);
+    await HomeWidget.updateWidget(qualifiedAndroidName: HomeWidgetNowStore.provider, iOSName: HomeWidgetNowStore.iosKind);
   }
-  if (result is ActionDone) {
+  // The iPhone ends the Live Activity natively once the row is gone (LiveActivities.syncWithWidgetData).
+  if (result is ActionDone && Platform.isAndroid) {
     final plugin = FlutterLocalNotificationsPlugin();
-    await plugin.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings(notificationIcon)));
+    await plugin.initialize(settings: notificationInitSettings);
     await plugin.cancel(id: notificationIdFor(target.type, target.id));
   }
 }

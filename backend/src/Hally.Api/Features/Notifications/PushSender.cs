@@ -70,27 +70,63 @@ public class FcmPushSender(HttpClient http, IOptions<PushOptions> options, ILogg
         return invalid;
     }
 
+    /// <summary>iOS action category of the medication reminder: the app registers it with a "Verdim" button.</summary>
+    public const string MedicationCategory = "hally.med";
+
     /// <summary>The FCM HTTP v1 <c>message</c> object for one device.</summary>
     public static object BuildMessage(string token, PushMessage message)
     {
+        var apns = Apns(message);
         if (!message.AppDrawsOnAndroid)
         {
-            return new
+            var normal = new Dictionary<string, object>
             {
-                token,
-                notification = new { title = message.Title, body = message.Body },
-                data = message.Data,
-                android = new { priority = "HIGH" },
+                ["token"] = token,
+                ["notification"] = new { title = message.Title, body = message.Body },
+                ["data"] = message.Data,
+                ["android"] = new { priority = "HIGH" },
             };
+            if (apns is not null)
+            {
+                normal["apns"] = apns;
+            }
+
+            return normal;
         }
 
         var data = new Dictionary<string, string>(message.Data) { ["title"] = message.Title, ["body"] = message.Body };
+        return new Dictionary<string, object>
+        {
+            ["token"] = token,
+            ["data"] = data,
+            ["android"] = new { priority = "HIGH" },
+            ["apns"] = apns ?? new { payload = new { aps = Aps(message, category: null) } },
+        };
+    }
+
+    private static object Aps(PushMessage message, string? category) => category is null
+        ? new { alert = new { title = message.Title, body = message.Body }, sound = "default" }
+        : new { alert = new { title = message.Title, body = message.Body }, sound = "default", category };
+
+    /// <summary>iPhone extras for medication pushes: the reminder gets the "Verdim" button, and "given" replaces the
+    /// reminder on the lock screen (same collapse id), so a dose the other parent gave does not stay open.</summary>
+    private static object? Apns(PushMessage message)
+    {
+        if (!message.Data.TryGetValue("medicationId", out var medicationId))
+        {
+            return null;
+        }
+
+        var kind = message.Data.GetValueOrDefault("kind");
+        if (kind is not ("MedicationDue" or "MedicationGiven"))
+        {
+            return null;
+        }
+
         return new
         {
-            token,
-            data,
-            android = new { priority = "HIGH" },
-            apns = new { payload = new { aps = new { alert = new { title = message.Title, body = message.Body }, sound = "default" } } },
+            headers = new Dictionary<string, string> { ["apns-collapse-id"] = $"med-{medicationId}" },
+            payload = new { aps = Aps(message, kind == "MedicationDue" ? MedicationCategory : null) },
         };
     }
 }

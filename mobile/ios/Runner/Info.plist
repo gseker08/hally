@@ -74,6 +74,8 @@
 	<string>Okul duyurusunu ya da belgeyi çekip planına eklemek için kamerayı kullanırız.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Seçtiğin ekran görüntüsünü ya da fotoğrafı planına eklemek için kullanırız.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

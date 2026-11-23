@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'dart:ui' show Color, PlatformDispatcher;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -63,9 +64,11 @@ List<LiveTimer> myTimers(List<LiveTimer> timers, String userId) => [for (final t
 
 /// The phone's notification tray. [LocalDeviceNotifications] on Android, a no-op elsewhere and in tests.
 abstract interface class DeviceNotifications {
-  /// [onTap] gets the target of a tapped notification, also the one that started the app.
-  Future<void> init(void Function(NotificationTarget target) onTap);
+  /// [onTap] gets the target of a tapped notification, also the one that started the app. [l10n] names the
+  /// buttons (iPhone registers them up front).
+  Future<void> init(void Function(NotificationTarget target) onTap, AppLocalizations l10n);
   /// An ongoing notification with a live clock and a Durdur button; on Android 16 also a chip in the status bar.
+  /// On iPhone a Live Activity (lock screen and Dynamic Island).
   Future<void> showTimer(LiveTimer timer, AppLocalizations l10n);
 
   /// A medication reminder from the server (`kind=MedicationDue`, data-only on Android) with a "Verdim" button.
@@ -79,7 +82,7 @@ abstract interface class DeviceNotifications {
 
 class NoDeviceNotifications implements DeviceNotifications {
   @override
-  Future<void> init(void Function(NotificationTarget target) onTap) async {}
+  Future<void> init(void Function(NotificationTarget target) onTap, AppLocalizations l10n) async {}
   @override
   Future<void> showTimer(LiveTimer timer, AppLocalizations l10n) async {}
   @override
@@ -100,17 +103,26 @@ const stopTimerAction = 'timer.stop';
 const stopScreenTimeAction = 'screen.stop';
 const giveMedicationAction = 'med.given';
 
+/// iPhone action category of the medication reminder (the server's push uses it too: PushSender.cs).
+const medicationCategory = 'hally.med';
+
+/// Settings for every `initialize` call. iPhone permission is asked by push (Firebase), not here.
+const notificationInitSettings = InitializationSettings(
+  android: AndroidInitializationSettings(notificationIcon),
+  iOS: DarwinInitializationSettings(requestAlertPermission: false, requestBadgePermission: false, requestSoundPermission: false),
+);
+
 class LocalDeviceNotifications implements DeviceNotifications {
   final _plugin = FlutterLocalNotificationsPlugin();
   Future<void>? _ready;
 
   @override
-  Future<void> init(void Function(NotificationTarget target) onTap) => _ready ??= _init(onTap);
+  Future<void> init(void Function(NotificationTarget target) onTap, AppLocalizations l10n) => _ready ??= _init(onTap);
 
   /// For a background isolate (a push while the app is closed): no tap handling, no permission prompt.
   Future<void> initBackground() => _ready ??= _plugin
       .initialize(
-        settings: const InitializationSettings(android: AndroidInitializationSettings(notificationIcon)),
+        settings: notificationInitSettings,
         onDidReceiveBackgroundNotificationResponse: hallyNotificationAction,
       )
       .then((_) {});
@@ -122,7 +134,7 @@ class LocalDeviceNotifications implements DeviceNotifications {
     }
 
     await _plugin.initialize(
-      settings: const InitializationSettings(android: AndroidInitializationSettings(notificationIcon)),
+      settings: notificationInitSettings,
       onDidReceiveNotificationResponse: open,
       onDidReceiveBackgroundNotificationResponse: hallyNotificationAction,
     );
@@ -212,9 +224,92 @@ class LocalDeviceNotifications implements DeviceNotifications {
   Future<void> cancelAll() => _plugin.cancelAll();
 }
 
+/// iPhone: running timers as Live Activities (app.hally/live_activities, ios/Runner/LiveActivities.swift) and the
+/// medication reminder with its "Verdim" button. The reminder push itself comes from the server with the
+/// `hally.med` category; this draws it only while the app is open (iOS hides pushes in the foreground).
+class IosDeviceNotifications implements DeviceNotifications {
+  static const _activities = MethodChannel('app.hally/live_activities');
+  final _plugin = FlutterLocalNotificationsPlugin();
+  Future<void>? _ready;
+
+  @override
+  Future<void> init(void Function(NotificationTarget target) onTap, AppLocalizations l10n) => _ready ??= () async {
+        void open(NotificationResponse r) {
+          final payload = r.payload;
+          if (payload != null && r.actionId == null) onTap(NotificationTarget.fromPayload(payload));
+        }
+
+        await _plugin.initialize(
+          settings: InitializationSettings(
+            iOS: DarwinInitializationSettings(
+              requestAlertPermission: false,
+              requestBadgePermission: false,
+              requestSoundPermission: false,
+              notificationCategories: [
+                DarwinNotificationCategory(medicationCategory, actions: [DarwinNotificationAction.plain(giveMedicationAction, l10n.medNoticeGiven)]),
+              ],
+            ),
+          ),
+          onDidReceiveNotificationResponse: open,
+          onDidReceiveBackgroundNotificationResponse: hallyNotificationAction,
+        );
+        final launch = await _plugin.getNotificationAppLaunchDetails();
+        if (launch?.didNotificationLaunchApp == true && launch!.notificationResponse != null) open(launch.notificationResponse!);
+      }();
+
+  @override
+  Future<void> showTimer(LiveTimer t, AppLocalizations l10n) async {
+    await _ready;
+    await _activities.invokeMethod<bool>('show', {
+      'key': t.key,
+      ...t.toJson(),
+      'stopLabel': l10n.screenNoticeStop,
+    });
+  }
+
+  @override
+  Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n) async {
+    await _ready;
+    await _plugin.show(
+      id: notificationIdFor(target.type, target.id),
+      title: title,
+      body: body,
+      payload: target.toPayload(),
+      notificationDetails: const NotificationDetails(iOS: DarwinNotificationDetails(categoryIdentifier: medicationCategory)),
+    );
+  }
+
+  @override
+  Future<void> cancel(NotificationTarget target) async {
+    if (liveTimerTypes.contains(target.type)) {
+      await _activities.invokeMethod<void>('end', {'key': '${target.type}:${target.id}'});
+    } else {
+      await _plugin.cancel(id: notificationIdFor(target.type, target.id));
+    }
+  }
+
+  @override
+  Future<List<NotificationTarget>> active(String type) async {
+    if (!liveTimerTypes.contains(type)) return const [];
+    final keys = await _activities.invokeListMethod<String>('keys') ?? const [];
+    return [
+      for (final key in keys)
+        if (key.split(':') case [final t, final id] when t == type) NotificationTarget(type: t, familyId: '', id: id),
+    ];
+  }
+
+  @override
+  Future<void> cancelAll() async {
+    await _activities.invokeMethod<void>('endAll');
+    await _plugin.cancelAll();
+  }
+}
+
 final deviceNotificationsProvider = Provider<DeviceNotifications>((ref) {
-  if (kIsWeb || !Platform.isAndroid || Platform.environment.containsKey('FLUTTER_TEST')) return NoDeviceNotifications();
-  return LocalDeviceNotifications();
+  if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) return NoDeviceNotifications();
+  if (Platform.isAndroid) return LocalDeviceNotifications();
+  if (Platform.isIOS) return IosDeviceNotifications();
+  return NoDeviceNotifications();
 });
 
 /// Keeps the tray in step with the app: an ongoing notification for each timer (screen time, homework/reading,
@@ -235,7 +330,7 @@ final deviceNotificationsSyncProvider = Provider<void>((ref) {
   final ready = notifications.init((target) {
     final router = ref.read(routerProvider);
     router.push(target.route);
-  });
+  }, l10n);
 
   // What is on screen now, by timer key, to skip identical re-posts.
   final shown = <String, String>{};
@@ -375,34 +470,40 @@ Future<void> hallyNotificationAction(NotificationResponse response) async {
   final result = await runNotificationAction(ApiClient(KeepSessionTokens(SecureTokenStorage())), actionId, target);
 
   final plugin = FlutterLocalNotificationsPlugin();
-  await plugin.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings(notificationIcon)));
-  if (result is ActionDone) {
+  await plugin.initialize(settings: notificationInitSettings);
+  if (result is ActionDone || result is ActionDoseRefused) {
+    // Done, or someone already gave the dose: the reminder is over either way.
     await plugin.cancel(id: notificationIdFor(target.type, target.id));
-    return;
   }
-  final l10n = await backgroundLocalizations();
-  final String title;
-  final String body;
-  if (result is ActionDoseRefused) {
-    // Someone already gave it, so the reminder is done; say who and when instead.
-    await plugin.cancel(id: notificationIdFor(target.type, target.id));
-    final last = result.warning.lastDose;
-    title = l10n.medNoticeRefusedTitle;
-    body = result.warning.isDailyLimit
-        ? l10n.medNoticeRefusedDailyLimit
-        : l10n.medNoticeRefusedBody(_clock(last.givenAt), last.givenByName ?? '');
-  } else {
-    // Leave the original in place and say why nothing happened.
-    title = l10n.noticeActionFailedTitle;
-    body = l10n.noticeActionFailedBody;
-  }
+  final notice = actionNotice(result, await backgroundLocalizations());
+  if (notice == null) return;
   await plugin.show(
     id: notificationIdFor('failed', target.id),
-    title: title,
-    body: body,
+    title: notice.title,
+    body: notice.body,
     payload: target.toPayload(),
     notificationDetails: NotificationDetails(
-      android: AndroidNotificationDetails('actions', l10n.noticeActionChannel, icon: notificationIcon, color: _cherry, importance: Importance.defaultImportance),
+      android: AndroidNotificationDetails('actions', notice.channel, icon: notificationIcon, color: _cherry, importance: Importance.defaultImportance),
+      iOS: const DarwinNotificationDetails(),
     ),
   );
+}
+
+/// What to tell the user after a notification button, or null when it simply worked.
+({String title, String body, String channel})? actionNotice(ActionResult result, AppLocalizations l10n) {
+  switch (result) {
+    case ActionDone():
+      return null;
+    case ActionDoseRefused(:final warning):
+      // Someone already gave it, so the reminder is done; say who and when instead.
+      final last = warning.lastDose;
+      return (
+        title: l10n.medNoticeRefusedTitle,
+        body: warning.isDailyLimit ? l10n.medNoticeRefusedDailyLimit : l10n.medNoticeRefusedBody(_clock(last.givenAt), last.givenByName ?? ''),
+        channel: l10n.noticeActionChannel,
+      );
+    case ActionFailed():
+      // Leave the original in place and say why nothing happened.
+      return (title: l10n.noticeActionFailedTitle, body: l10n.noticeActionFailedBody, channel: l10n.noticeActionChannel);
+  }
 }
