@@ -8,7 +8,7 @@ import '../messages/chat_realtime.dart';
 DateTime? _date(Object? v) => v is String ? DateTime.parse(v).toLocal() : null;
 
 class SleepEntry {
-  const SleepEntry({required this.id, required this.childId, required this.kind, required this.startedAt, this.endedAt, this.minutes = 0, this.startedByName, this.endedByName, this.note});
+  const SleepEntry({required this.id, required this.childId, required this.kind, required this.startedAt, this.endedAt, this.minutes = 0, this.startedByName, this.endedByName, this.note, this.startedByUserId});
 
   factory SleepEntry.fromJson(Map<String, dynamic> j) => SleepEntry(
         id: j['id'] as String,
@@ -18,6 +18,7 @@ class SleepEntry {
         endedAt: _date(j['endedAt']),
         minutes: j['minutes'] as int? ?? 0,
         startedByName: j['startedByName'] as String?,
+        startedByUserId: j['startedByUserId'] as String?,
         endedByName: j['endedByName'] as String?,
         note: j['note'] as String?,
       );
@@ -31,6 +32,7 @@ class SleepEntry {
   final DateTime? endedAt;
   final int minutes;
   final String? startedByName;
+  final String? startedByUserId;
   final String? endedByName;
   final String? note;
 

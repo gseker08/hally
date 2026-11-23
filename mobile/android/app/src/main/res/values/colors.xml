@@ -8,4 +8,6 @@
     <color name="widget_muted">#625A5E</color>
     <color name="widget_accent">#A8133C</color>
     <color name="widget_task">#23937A</color>
+    <color name="widget_chip">#FBF2F4</color>
+    <color name="widget_accent_soft">#FBE6EC</color>
 </resources>

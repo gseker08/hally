@@ -3,4 +3,7 @@
     <string name="today_widget_description">The next events and tasks of today</string>
     <string name="today_widget_title">Today</string>
     <string name="today_widget_stale">Open Hally to see today</string>
+    <string name="now_widget_description">Running timers with a live clock</string>
+    <string name="now_widget_title">Right now</string>
+    <string name="now_widget_empty">No timer running</string>
 </resources>

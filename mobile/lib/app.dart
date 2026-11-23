@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/config/app_config.dart';
 import 'core/design/theme.dart';
 import 'core/locale/app_language.dart';
+import 'features/home/now_widget.dart';
 import 'features/home/today_widget.dart';
 import 'features/notifications/device_notifications.dart';
 import 'features/notifications/push.dart';
@@ -20,8 +21,10 @@ class HallyApp extends ConsumerWidget {
     ref.watch(pushControllerProvider);
     // Keeps the Android home screen "Today" widget up to date (a no-op elsewhere).
     ref.watch(todayWidgetSyncProvider);
-    // Ongoing lock screen notification while a screen time timer this user started runs (Android).
+    // Ongoing lock screen / status bar notification while a timer this user started runs (Android).
     ref.watch(deviceNotificationsSyncProvider);
+    // Home screen "Şu an" widget with the family's running timers (Android).
+    ref.watch(nowWidgetSyncProvider);
     return MaterialApp.router(
       scaffoldMessengerKey: hallyMessengerKey,
       title: AppConfig.appName,

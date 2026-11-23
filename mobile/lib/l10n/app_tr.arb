@@ -1487,5 +1487,51 @@
       }
     }
   },
-  "medNoticeRefusedDailyLimit": "Günlük sınıra ulaşıldı. Gerekirse uygulamadan kaydet."
+  "medNoticeRefusedDailyLimit": "Günlük sınıra ulaşıldı. Gerekirse uygulamadan kaydet.",
+  "liveTimerReading": "{name} · kitap okuma",
+  "@liveTimerReading": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "liveTimerHomework": "{name} · ödev",
+  "@liveTimerHomework": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "liveTimerToday": "Bugünün toplamı",
+  "liveTimerSleep": "{name} uyuyor",
+  "@liveTimerSleep": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "liveTimerSleepSince": "Uyudu: {time}",
+  "@liveTimerSleepSince": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "liveTimerChannel": "Çalışan sayaçlar",
+  "liveTimerChannelDescription": "Başlattığın ekran süresi, ödev/okuma ve uyku sayaçları çalışırken görünür",
+  "nowWidgetTitle": "Şu an",
+  "nowWidgetEmpty": "Çalışan sayaç yok",
+  "nowWidgetCount": "{count} sayaç çalışıyor",
+  "@nowWidgetCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nowWidgetStop": "Durdur"
 }

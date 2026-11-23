@@ -19,6 +19,7 @@ class ChildStudyStatus {
     this.runningSince,
     this.runningUntil,
     this.startedByName,
+    this.startedByUserId,
     this.streak = 0,
     DateTime? receivedAt,
   }) : receivedAt = receivedAt ?? DateTime.now();
@@ -33,6 +34,7 @@ class ChildStudyStatus {
         runningSince: _date(j['runningSince']),
         runningUntil: _date(j['runningUntil']),
         startedByName: j['startedByName'] as String?,
+        startedByUserId: j['startedByUserId'] as String?,
         streak: j['streak'] as int? ?? 0,
       );
 
@@ -47,6 +49,7 @@ class ChildStudyStatus {
   final DateTime? runningSince;
   final DateTime? runningUntil;
   final String? startedByName;
+  final String? startedByUserId;
   final int streak;
   final DateTime receivedAt;
 
