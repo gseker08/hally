@@ -603,5 +603,92 @@
         "type": "int"
       }
     }
+  },
+  "medicationsTitle": "İlaç takibi",
+  "medicationsBody": "Kim, ne zaman verdi; erken doza uyarı",
+  "medicationsNoChildren": "İlaç takibi için Aile sekmesinden çocuk ekleyin.",
+  "medicationsEmpty": "Kayıtlı ilaç yok",
+  "medicationsEmptyBody": "Bir ilaç ekleyin; verdiğinizde işaretleyin, eşiniz anında görsün.",
+  "medicationAdd": "İlaç ekle",
+  "medicationEdit": "Düzenle",
+  "medicationEnd": "Kür bitti",
+  "medicationGive": "Verdim",
+  "medicationGiven": "{name} kaydedildi",
+  "medicationSomeone": "Biri",
+  "medicationLastGivenBy": "Son doz {time} · {name}",
+  "medicationNextAfter": "Sonraki doz {time} sonrası",
+  "medicationCanGiveNow": "Şimdi verilebilir",
+  "medicationNoDoseYet": "Henüz doz kaydı yok",
+  "medicationTooSoonTitle": "Erken olabilir",
+  "medicationLimitTitle": "Günlük sınır doldu",
+  "medicationSaveAnyway": "Yine de kaydet",
+  "medicationHistory": "Son dozlar",
+  "medicationUndoDose": "Bu kaydı geri al",
+  "medicationEvery": "{interval} arayla",
+  "medicationMaxPerDay": "günde en fazla {count}",
+  "medicationHours": "{count} sa",
+  "medicationMinutes": "{count} dk",
+  "medicationName": "İlaç adı",
+  "medicationNameHint": "ör. Ateş şurubu",
+  "medicationDose": "Doz (isteğe bağlı)",
+  "medicationDoseHint": "ör. 5 ml",
+  "medicationInterval": "İki doz arası en az",
+  "medicationMaxLabel": "24 saatte en fazla",
+  "medicationNoMax": "Sınır yok",
+  "medicationRemind": "Sonraki doz zamanı gelince hatırlat",
+  "medicationNotes": "Not (isteğe bağlı)",
+  "medicationMissing": "Çocuk, ilaç adı ve doz aralığını seçin.",
+  "medicationDisclaimer": "Hally doz önermez. Aralığı doktorunuzun ya da prospektüsün talimatına göre siz girersiniz; Hally yalnızca kaydı tutar ve erken doza karşı uyarır.",
+  "@medicationGiven": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@medicationLastGivenBy": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@medicationNextAfter": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@medicationEvery": {
+    "placeholders": {
+      "interval": {
+        "type": "String"
+      }
+    }
+  },
+  "@medicationMaxPerDay": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@medicationHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@medicationMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

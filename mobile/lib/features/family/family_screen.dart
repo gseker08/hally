@@ -145,6 +145,16 @@ class FamilyScreen extends ConsumerWidget {
               if (f.children.isNotEmpty) ...[
                 const SizedBox(height: HallySpace.sm),
                 ScreenTimeCard(familyId: f.id, children: f.children),
+                Card(
+                  child: ListTile(
+                    key: const Key('family.medications'),
+                    leading: const HallyIconBadge(icon: Icons.medication_rounded, color: HallyColors.rose),
+                    title: Text(l10n.medicationsTitle),
+                    subtitle: Text(l10n.medicationsBody),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push('/medications'),
+                  ),
+                ),
               ],
               const SizedBox(height: HallySpace.md),
               Card(
