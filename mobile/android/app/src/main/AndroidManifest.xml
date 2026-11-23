@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Re-arms the widgets' scheduled redraws after a reboot (home_widget). -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Android 16: running timers as "live updates" (a chip in the status bar). -->
     <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
     <application
@@ -59,6 +61,15 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/now_widget_info"/>
+        </receiver>
+        <!-- Scheduled widget redraws (scheduleWidgetUpdates): a Bugün item leaves when it ends, a new day starts
+             after midnight, a forgotten timer leaves Şu an at its cap. Without this receiver none of them fire. -->
+        <receiver android:name="es.antonborri.home_widget.HomeWidgetScheduledUpdateReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/>
+            </intent-filter>
         </receiver>
         <!-- Widget buttons (Durdur) handled in Dart without opening the app (home_widget). -->
         <receiver android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver" android:exported="false">
