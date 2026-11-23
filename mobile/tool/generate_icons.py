@@ -1,59 +1,66 @@
 """Generates the Hally app icon, Android adaptive icon layers and splash logos.
 
 Run from mobile/:  python3 tool/generate_icons.py   (needs Pillow)
-The mark is a white "H" in Bricolage Grotesque 800 on the brand hero gradient, with an apricot spark.
+The mark is two cherries on one branch (the parents), the joined stems draw a roof (home) and the leaf is the
+growing child. It is drawn in a 100x100 design space; lib/core/design/brand.dart paints the same geometry.
 """
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
-FONT = ROOT / "assets/fonts/BricolageGrotesque-800.ttf"
-GRADIENT = [(0x5A, 0x48, 0xC2), (0x7C, 0x6B, 0xD6), (0xB5, 0x7B, 0xD0)]
-SPARK = (0xF6, 0xB2, 0x7A)
+CHERRY = (0xA8, 0x13, 0x3C)
 SS = 4  # supersampling
 
-
-def gradient(size):
-    """Diagonal three-stop gradient, top-left to bottom-right."""
-    img = Image.new("RGB", (size, size))
-    px = img.load()
-    for y in range(size):
-        for x in range(size):
-            t = (x + y) / (2 * (size - 1))
-            if t < 0.5:
-                a, b, k = GRADIENT[0], GRADIENT[1], t / 0.5
-            else:
-                a, b, k = GRADIENT[1], GRADIENT[2], (t - 0.5) / 0.5
-            px[x, y] = tuple(round(a[i] + (b[i] - a[i]) * k) for i in range(3))
-    return img
+# Colour sets: (cherries, stems, leaf)
+ON_BRAND = ((255, 255, 255, 255), (0xFF, 0xD3, 0xDE, 255), (0x7F, 0xE0, 0xC4, 255))
+ON_LIGHT = (CHERRY + (255,), (0x5A, 0x0A, 0x20, 255), (0x3F, 0xB5, 0x9A, 255))
+WHITE = ((255, 255, 255, 255),) * 3
 
 
-def spark(draw, cx, cy, r, fill):
-    """Four-pointed spark with concave sides."""
-    w = r * 0.28
-    draw.polygon([(cx, cy - r), (cx + w, cy - w), (cx + r, cy), (cx + w, cy + w),
-                  (cx, cy + r), (cx - w, cy + w), (cx - r, cy), (cx - w, cy - w)], fill=fill)
+def bezier(p0, p1, p2, p3, n=40):
+    pts = []
+    for i in range(n + 1):
+        t = i / n
+        a, b, c, d = (1 - t) ** 3, 3 * (1 - t) ** 2 * t, 3 * (1 - t) * t ** 2, t ** 3
+        pts.append((a * p0[0] + b * p1[0] + c * p2[0] + d * p3[0], a * p0[1] + b * p1[1] + c * p2[1] + d * p3[1]))
+    return pts
 
 
-def mark(size, scale, colour=(255, 255, 255, 255), spark_colour=SPARK + (255,)):
-    """Transparent layer with the H and spark; scale is the H height as a fraction of size."""
+def mark(size, scale=1.0, colours=ON_BRAND):
+    """Transparent layer with the mark; scale 1.0 maps the 100-unit design space onto the whole layer."""
     big = size * SS
     layer = Image.new("RGBA", (big, big), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
-    font = ImageFont.truetype(str(FONT), int(big * scale * 1.38))
-    l, t, r, b = d.textbbox((0, 0), "H", font=font)
-    w, h = r - l, b - t
-    sr = h * 0.2
-    x, y = (big - w) / 2 - l - sr * 0.45, (big - h) / 2 - t + big * 0.01  # optically centre H + spark
-    d.text((x, y), "H", font=font, fill=colour)
-    spark(d, (big + w) / 2 + sr * 0.1, (big - h) / 2 - sr * 0.15, sr, spark_colour)
+    k = big * scale / 100
+    off = (big - big * scale) / 2
+
+    def p(x, y):
+        return (off + x * k, off + (y - 2) * k)
+
+    cherry, stem, leaf = colours
+    w = 5.5 * k
+    for c1, c2, end in (((45, 34), (37, 47), (32, 60)), ((55, 34), (63, 47), (68, 60))):
+        pts = [p(*q) for q in bezier((50, 22), c1, c2, end)]
+        d.line(pts, fill=stem, width=round(w), joint="curve")
+        for q in (pts[0], pts[-1]):
+            d.ellipse((q[0] - w / 2, q[1] - w / 2, q[0] + w / 2, q[1] + w / 2), fill=stem)
+    leaf_pts = bezier((50, 22), (57, 10), (72, 8), (81, 13)) + bezier((81, 13), (74, 23), (60, 26), (50, 22))
+    d.polygon([p(*q) for q in leaf_pts], fill=leaf)
+    for cx in (31, 69):
+        x, y = p(cx, 72)
+        r = 15 * k
+        d.ellipse((x - r, y - r, x + r, y + r), fill=cherry)
     return layer.resize((size, size), Image.LANCZOS)
 
 
+def solid(size, colour=CHERRY):
+    return Image.new("RGBA", (size, size), colour + (255,))
+
+
 def app_icon(size):
-    bg = gradient(size).convert("RGBA")
-    bg.alpha_composite(mark(size, 0.46))
+    bg = solid(size)
+    bg.alpha_composite(mark(size, 0.92))
     return bg.convert("RGB")  # App Store icons must not have alpha
 
 
@@ -67,6 +74,7 @@ def rounded(img, radius):
 
 def main():
     master = app_icon(1024)
+    master.save(ROOT.parent / "docs/design/app_icon_1024.png")  # store listing / marketing
 
     # iOS
     ios = ROOT / "ios/Runner/Assets.xcassets/AppIcon.appiconset"
@@ -83,9 +91,9 @@ def main():
         legacy = round(48 * k)
         rounded(app_icon(legacy * 4).resize((legacy, legacy), Image.LANCZOS), legacy * 0.22).save(d / "ic_launcher.png")
         adaptive = round(108 * k)
-        gradient(adaptive).save(d / "ic_launcher_background.png")
-        mark(adaptive, 0.32).save(d / "ic_launcher_foreground.png")
-        mark(adaptive, 0.32, spark_colour=(255, 255, 255, 255)).save(d / "ic_launcher_monochrome.png")
+        solid(adaptive).convert("RGB").save(d / "ic_launcher_background.png")
+        mark(adaptive, 0.62).save(d / "ic_launcher_foreground.png")
+        mark(adaptive, 0.62, WHITE).save(d / "ic_launcher_monochrome.png")
         # Splash logo: 96dp rounded icon
         logo = round(96 * k)
         rounded(app_icon(logo * 2).resize((logo, logo), Image.LANCZOS), logo * 0.24).save(d / "launch_image.png")
