@@ -73,3 +73,22 @@ jobs:
            "configuration_version":"1"}
           JSON
       - run: flutter build apk --debug
+
+  # Builds the iPhone app (with its widget and share extensions) without signing, so Xcode, CocoaPods/Swift package
+  # and Swift problems show up here too. Signing and TestFlight need an Apple Developer account: see docs/mobile/ios.md.
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign

@@ -5,7 +5,6 @@ The Dart side (`lib/features/share`) uses [`receive_sharing_intent`](https://pub
 and opens the approval screen. Only the first item of a multi-share is used, and video or other files are ignored.
 Nothing is created until a parent approves it.
 
-The native folders are not committed yet. After `flutter create --org app.hally --platforms android,ios .` in `mobile/`, do the following.
 
 ## Android
 
@@ -26,36 +25,11 @@ In `android/app/src/main/AndroidManifest.xml`, inside the main `<activity>` (kee
 
 ## iOS
 
-1. In Xcode: **File → New → Target → Share Extension**, name it `ShareExtension` and set its deployment target to the Runner's.
-2. Add an App Group (e.g. `group.app.hally`) to **both** Runner and ShareExtension under *Signing & Capabilities*.
-3. Replace `ShareExtension/ShareViewController.swift` with:
-
-   ```swift
-   import receive_sharing_intent
-   class ShareViewController: RSIShareViewController {
-     override func shouldAutoRedirect() -> Bool { true }
-   }
-   ```
-4. In `ShareExtension/Info.plist`, set `NSExtensionActivationRule` to accept text, URLs and up to one image:
-
-   ```xml
-   <key>NSExtensionActivationRule</key>
-   <dict>
-     <key>NSExtensionActivationSupportsText</key><true/>
-     <key>NSExtensionActivationSupportsWebURLWithMaxCount</key><integer>1</integer>
-     <key>NSExtensionActivationSupportsImageWithMaxCount</key><integer>1</integer>
-   </dict>
-   ```
-5. In `Runner/Info.plist` add `AppGroupId` = `$(CUSTOM_GROUP_ID)` and a `CFBundleURLTypes` entry with scheme `ShareMedia-$(PRODUCT_BUNDLE_IDENTIFIER)`.
-   Define the `CUSTOM_GROUP_ID` build setting on both targets.
-6. In `ios/Podfile` add the extension target:
-
-   ```ruby
-   target 'ShareExtension' do
-     use_frameworks!
-     pod 'receive_sharing_intent', :path => '.symlinks/plugins/receive_sharing_intent/ios'
-   end
-   ```
+Done in the project (`mobile/ios/ShareExtension`): a Share Extension that subclasses `RSIShareViewController` and
+opens the app right away, the App Group `group.app.hally` on Runner and the extension (`CUSTOM_GROUP_ID`), the
+`ShareMedia-app.hally` URL scheme, and the `receive-sharing-intent` Swift package linked into the extension.
+It accepts text, one link and one image. With an Apple Developer account, register `app.hally.ShareExtension` with
+the same App Group (see `ios.md`).
 
 ## Manual test
 

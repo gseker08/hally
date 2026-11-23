@@ -1,1 +1,5 @@
 #include "Generated.xcconfig"
+
+// Google Sign-In URL scheme. A placeholder until Flutter/Secrets.xcconfig (git-ignored) sets the real one: see docs/mobile/ios.md.
+GOOGLE_REVERSED_CLIENT_ID = app.hally.google-not-configured
+#include? "Secrets.xcconfig"

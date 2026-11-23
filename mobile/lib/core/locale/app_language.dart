@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../auth/auth_repository.dart';
+import '../auth/token_storage.dart';
 
 /// The language the user picked in settings. [system] follows the device, with Turkish as the fallback.
 enum AppLanguage {
@@ -36,7 +37,7 @@ abstract interface class LanguageStorage {
 }
 
 class SecureLanguageStorage implements LanguageStorage {
-  SecureLanguageStorage([FlutterSecureStorage? storage]) : _storage = storage ?? const FlutterSecureStorage();
+  SecureLanguageStorage([FlutterSecureStorage? storage]) : _storage = storage ?? hallySecureStorage;
 
   static const _key = 'hally.language';
   final FlutterSecureStorage _storage;

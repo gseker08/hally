@@ -47,14 +47,25 @@ class AuthRepository {
 
   bool get appleAvailable => !kIsWeb && (Platform.isIOS || Platform.isMacOS);
 
+  /// On iPhone Google sign-in needs its iOS client id; without it the SDK would crash, so the button is hidden.
+  bool get googleAvailable => kIsWeb || !Platform.isIOS || AppConfig.googleIosClientId.isNotEmpty;
+
+  static Future<void>? _googleReady;
+
   Future<void> signInWithGoogle(String locale) async {
-    final google = GoogleSignIn(
-      scopes: const ['email', 'profile'],
+    final google = GoogleSignIn.instance;
+    await (_googleReady ??= google.initialize(
+      clientId: !kIsWeb && Platform.isIOS ? AppConfig.googleIosClientId : null,
       serverClientId: AppConfig.googleServerClientId.isEmpty ? null : AppConfig.googleServerClientId,
-    );
-    final account = await google.signIn();
-    if (account == null) throw ApiException(null, 'auth.cancelled', 'cancelled');
-    final idToken = (await account.authentication).idToken;
+    ));
+    final GoogleSignInAccount account;
+    try {
+      account = await google.authenticate(scopeHint: const ['email', 'profile']);
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) throw ApiException(null, 'auth.cancelled', 'cancelled');
+      rethrow;
+    }
+    final idToken = account.authentication.idToken;
     if (idToken == null) throw ApiException(null, 'auth.no_id_token', 'Google returned no ID token');
     await _exchange('google', idToken, account.displayName, locale);
   }

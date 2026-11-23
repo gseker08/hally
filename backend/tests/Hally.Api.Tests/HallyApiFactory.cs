@@ -2,8 +2,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Hally.Api.Features.Notifications;
+using Hally.Domain.Common;
 using Hally.Infrastructure.Ai;
 using Hally.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -65,6 +67,9 @@ public sealed class HallyApiFactory : WebApplicationFactory<Program>, IAsyncLife
         {
             s.RemoveAll<TimeProvider>();
             s.AddSingleton<TimeProvider>(Clock);
+            // Tests move the clock by hours and days; access token lifetimes are not what they test.
+            s.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, o =>
+                o.TokenValidationParameters.LifetimeValidator = (_, _, _, _) => true);
             s.RemoveAll<IVisionModel>();
             s.AddSingleton<IVisionModel>(Ai);
             s.RemoveAll<IPushSender>();
@@ -120,11 +125,15 @@ public static class HttpExtensions
     }
 }
 
-/// <summary>System time plus an adjustable offset. Starts at real time because JWT lifetime
-/// validation in the bearer handler uses the system clock.</summary>
+/// <summary>System time plus an adjustable offset. Starts at noon of today in Istanbul (the default family time zone),
+/// so tests that add or backdate minutes never cross the family's midnight, whenever CI runs. Token lifetimes are not
+/// checked in tests (see ConfigureWebHost), so moving the clock never signs anyone out.</summary>
 public sealed class TestClock : TimeProvider
 {
-    public TimeSpan Offset { get; private set; }
+    public TimeSpan Offset { get; private set; } = ToFamilyNoon(TimeProvider.System.GetUtcNow());
+
+    private static TimeSpan ToFamilyNoon(DateTimeOffset now) =>
+        TimeSpan.FromHours(12) - FamilyTimeZone.ToFamilyTime(now, FamilyTimeZone.Default).TimeOfDay;
 
     public override DateTimeOffset GetUtcNow() => base.GetUtcNow() + Offset;
 

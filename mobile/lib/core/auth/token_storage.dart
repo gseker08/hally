@@ -16,7 +16,7 @@ abstract interface class TokenStorage {
 }
 
 class SecureTokenStorage implements TokenStorage {
-  SecureTokenStorage([FlutterSecureStorage? storage]) : _storage = storage ?? const FlutterSecureStorage();
+  SecureTokenStorage([FlutterSecureStorage? storage]) : _storage = storage ?? hallySecureStorage;
 
   static const _accessKey = 'hally.access_token';
   static const _refreshKey = 'hally.refresh_token';
@@ -42,5 +42,10 @@ class SecureTokenStorage implements TokenStorage {
     await _storage.delete(key: _refreshKey);
   }
 }
+
+/// The keychain/keystore Hally uses. On iPhone the items stay readable after the first unlock since a restart, so
+/// lock-screen buttons (Durdur, Verdim) and widgets can call the API while the phone is locked. They never leave
+/// this device (no iCloud Keychain sync, not in backups restored to another phone).
+const hallySecureStorage = FlutterSecureStorage(iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock_this_device));
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) => SecureTokenStorage());

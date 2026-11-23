@@ -100,8 +100,17 @@ class FirebasePushMessaging implements PushMessaging {
   // The server sends with FCM HTTP v1 `message.token`, which takes this registration token. The newer register()/
   // onRegistered API hands out an installation id for direct send instead; switch both sides together later.
   @override
-  // ignore: deprecated_member_use
-  Future<String?> token() => _fm.getToken();
+  Future<String?> token() async {
+    // On iPhone FCM needs the APNs token first; it arrives shortly after the permission prompt.
+    if (Platform.isIOS) {
+      for (var i = 0; i < 10 && await _fm.getAPNSToken() == null; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+      if (await _fm.getAPNSToken() == null) return null;
+    }
+    // ignore: deprecated_member_use
+    return _fm.getToken();
+  }
 
   @override
   // ignore: deprecated_member_use
