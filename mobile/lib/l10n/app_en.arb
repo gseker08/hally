@@ -592,5 +592,12 @@
   "liveNow": "Right now",
   "liveAsleep": "{name} is asleep",
   "liveScreen": "{name} · screen",
-  "liveStudy": "{name} · homework"
+  "liveStudy": "{name} · homework",
+  "taskEditTitle": "Task",
+  "taskNotes": "Notes",
+  "taskDelete": "Delete task",
+  "taskDeletedToast": "Task deleted",
+  "taskMarkOpen": "Reopen",
+  "taskClearDate": "Remove date",
+  "taskSavedToast": "Task saved"
 }

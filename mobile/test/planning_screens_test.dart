@@ -8,6 +8,7 @@ import 'package:hally/features/capture/capture_models.dart';
 import 'package:hally/features/demo/demo_repository.dart';
 import 'package:hally/features/demo/demo_scan_screen.dart';
 import 'package:hally/features/family/family_repository.dart';
+import 'package:hally/features/home/today_screen.dart';
 import 'package:hally/features/planning/calendar_screen.dart';
 import 'package:hally/features/planning/planning_repository.dart';
 import 'package:hally/features/planning/tasks_screen.dart';
@@ -38,13 +39,35 @@ class _FakePlanning implements PlanningRepository {
   }
 
   @override
-  Future<List<TaskItem>> tasks(String familyId, {required String state}) async => List.of(state == 'Done' ? done : open);
+  Future<List<TaskItem>> tasks(String familyId, {required String state}) async =>
+      state == 'Done' ? done.where((t) => t.state == 'Done').toList() : List.of(open);
 
   @override
   Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate, List<String> childIds = const []}) async {
     final t = TaskItem(id: 'n${open.length}', title: title, allDay: dueDate != null, dueAt: dueDate, state: 'Open', childIds: childIds);
     open.add(t);
     return t;
+  }
+
+  final updated = <String, String>{};
+  final cancelled = <String>[];
+
+  @override
+  Future<TaskItem> updateTask(String familyId, String taskId,
+      {required String title, String? notes, DateTime? dueAt, required bool allDay, String? assigneeUserId, List<String> childIds = const []}) async {
+    final i = open.indexWhere((t) => t.id == taskId);
+    final t = TaskItem(id: taskId, title: title, notes: notes, dueAt: dueAt, allDay: allDay, state: 'Open', childIds: childIds);
+    open[i] = t;
+    updated[taskId] = title;
+    return t;
+  }
+
+  @override
+  Future<void> cancelTask(String familyId, String taskId) async {
+    cancelled.add(taskId);
+    final t = open.firstWhere((t) => t.id == taskId);
+    open.remove(t);
+    done.add(TaskItem(id: t.id, title: t.title, allDay: t.allDay, state: 'Cancelled'));
   }
 
   @override
@@ -149,7 +172,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Beslenme çantası'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('task.t1')));
+    await tester.tap(find.byKey(const Key('task.t1.check')));
     await tester.pumpAndSettle();
     expect(repo.completed, ['t1']);
     expect(find.text('Açık görev yok'), findsOneWidget);
@@ -164,7 +187,7 @@ void main() {
     await tester.pumpWidget(_app(const TasksScreen(), [planningRepositoryProvider.overrideWithValue(repo)]));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('task.t1')));
+    await tester.tap(find.byKey(const Key('task.t1.check')));
     await tester.pumpAndSettle();
     expect(find.text('Açık görev yok'), findsOneWidget);
 
@@ -172,6 +195,78 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.open.map((t) => t.id), ['t1']);
     expect(find.text('Beslenme çantası'), findsOneWidget);
+  });
+
+  testWidgets('tasks: tapping a row opens the task instead of completing it', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final repo = _FakePlanning();
+    await tester.pumpWidget(_app(const TasksScreen(), [planningRepositoryProvider.overrideWithValue(repo)]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Beslenme çantası'));
+    await tester.pumpAndSettle();
+    expect(repo.completed, isEmpty);
+    expect(find.byKey(const Key('taskSheet.title')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('taskSheet.title')), 'Beslenme çantasını hazırla');
+    await tester.tap(find.byKey(const Key('taskSheet.save')));
+    await tester.pumpAndSettle();
+    expect(repo.updated, {'t1': 'Beslenme çantasını hazırla'});
+    expect(repo.completed, isEmpty);
+    expect(find.text('Beslenme çantasını hazırla'), findsOneWidget);
+  });
+
+  testWidgets('tasks: the task sheet can complete and delete, with undo', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final repo = _FakePlanning();
+    await tester.pumpWidget(_app(const TasksScreen(), [planningRepositoryProvider.overrideWithValue(repo)]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Beslenme çantası'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('taskSheet.toggle')));
+    await tester.pumpAndSettle();
+    expect(repo.completed, ['t1']);
+    await tester.tap(find.byKey(const Key('task.undo')));
+    await tester.pumpAndSettle();
+    expect(find.text('Beslenme çantası'), findsOneWidget);
+
+    await tester.tap(find.text('Beslenme çantası'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('taskSheet.delete')));
+    await tester.pumpAndSettle();
+    expect(repo.cancelled, ['t1']);
+    expect(find.text('Açık görev yok'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('task.undo')));
+    await tester.pumpAndSettle();
+    expect(find.text('Beslenme çantası'), findsOneWidget);
+  });
+
+  testWidgets('today: tapping a task row opens it, only the circle completes it', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2340);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    final repo = _FakePlanning();
+    await tester.pumpWidget(_app(
+      Scaffold(body: TaskTile(task: repo.open.first, familyId: 'f1', color: Colors.green)),
+      [planningRepositoryProvider.overrideWithValue(repo)],
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Beslenme çantası'));
+    await tester.pumpAndSettle();
+    expect(repo.completed, isEmpty);
+    expect(find.byKey(const Key('taskSheet.title')), findsOneWidget);
+    Navigator.of(tester.element(find.byKey(const Key('taskSheet.title')))).pop();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('task.t1.check')));
+    await tester.pumpAndSettle();
+    expect(repo.completed, ['t1']);
   });
 
   testWidgets('tasks: quick add creates an open task', (tester) async {

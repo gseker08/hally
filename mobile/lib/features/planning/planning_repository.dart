@@ -7,6 +7,7 @@ class TaskItem {
   const TaskItem({
     required this.id,
     required this.title,
+    this.notes,
     this.dueAt,
     required this.allDay,
     this.assigneeUserId,
@@ -17,6 +18,7 @@ class TaskItem {
   factory TaskItem.fromJson(Map<String, dynamic> j) => TaskItem(
         id: j['id'] as String,
         title: j['title'] as String,
+        notes: j['notes'] as String?,
         dueAt: j['dueAt'] == null ? null : DateTime.parse(j['dueAt'] as String).toLocal(),
         allDay: j['allDay'] as bool? ?? false,
         assigneeUserId: j['assigneeUserId'] as String?,
@@ -26,6 +28,7 @@ class TaskItem {
 
   final String id;
   final String title;
+  final String? notes;
   final DateTime? dueAt;
   final bool allDay;
   final String? assigneeUserId;
@@ -113,6 +116,13 @@ abstract interface class PlanningRepository {
   Future<void> reopenTask(String familyId, String taskId);
   Future<List<TaskItem>> tasks(String familyId, {required String state});
   Future<TaskItem> createTask(String familyId, {required String title, DateTime? dueDate, List<String> childIds = const []});
+
+  /// Saves edits to an open or done task. Every field is sent, so pass the unchanged ones through.
+  Future<TaskItem> updateTask(String familyId, String taskId,
+      {required String title, String? notes, DateTime? dueAt, required bool allDay, String? assigneeUserId, List<String> childIds = const []});
+
+  /// Removes a task from the lists; [reopenTask] brings it back.
+  Future<void> cancelTask(String familyId, String taskId);
   Future<List<EventItem>> events(String familyId, DateTime from, DateTime to);
   Future<SavedEvent> createEvent(String familyId,
       {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none, List<String> childIds = const []});
@@ -166,6 +176,25 @@ class ApiPlanningRepository implements PlanningRepository {
         });
         return TaskItem.fromJson(res.data!);
       });
+
+  @override
+  Future<TaskItem> updateTask(String familyId, String taskId,
+          {required String title, String? notes, DateTime? dueAt, required bool allDay, String? assigneeUserId, List<String> childIds = const []}) =>
+      _guard(() async {
+        final res = await _api.dio.put<Map<String, dynamic>>('/api/v1/families/$familyId/tasks/$taskId', data: {
+          'title': title,
+          'notes': notes,
+          'dueAt': dueAt?.toUtc().toIso8601String(),
+          'allDay': dueAt != null && allDay,
+          'assigneeUserId': assigneeUserId,
+          'childIds': childIds,
+        });
+        return TaskItem.fromJson(res.data!);
+      });
+
+  @override
+  Future<void> cancelTask(String familyId, String taskId) =>
+      _guard(() => _api.dio.post<dynamic>('/api/v1/families/$familyId/tasks/$taskId/cancel'));
 
   @override
   Future<List<EventItem>> events(String familyId, DateTime from, DateTime to) => _guard(() async {
