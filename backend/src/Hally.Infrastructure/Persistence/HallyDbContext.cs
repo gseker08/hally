@@ -8,6 +8,7 @@ using Hally.Domain.Health;
 using Hally.Domain.Messaging;
 using Hally.Domain.Notifications;
 using Hally.Domain.Planning;
+using Hally.Domain.Points;
 using Hally.Domain.ScreenTime;
 using Hally.Domain.Sharing;
 using Hally.Domain.Shopping;
@@ -52,6 +53,9 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<SleepEntry> SleepEntries => Set<SleepEntry>();
     public DbSet<FeedingEntry> FeedingEntries => Set<FeedingEntry>();
     public DbSet<StudySession> StudySessions => Set<StudySession>();
+    public DbSet<Chore> Chores => Set<Chore>();
+    public DbSet<Reward> Rewards => Set<Reward>();
+    public DbSet<PointEntry> PointEntries => Set<PointEntry>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -340,6 +344,35 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.StartedByUserId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.EndedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Chore>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(60);
+            e.HasIndex(x => x.FamilyId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Reward>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(60);
+            e.HasIndex(x => x.FamilyId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<PointEntry>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Title).HasMaxLength(60);
+            e.HasIndex(x => new { x.ChildId, x.CreatedAt });
+            // A chore counts once per child per day, even when both parents tick it.
+            e.HasIndex(x => new { x.ChoreId, x.ChildId, x.Day }).IsUnique().HasFilter("chore_id IS NOT NULL").HasDatabaseName("ix_point_entries_chore_day");
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Chore>().WithMany().HasForeignKey(x => x.ChoreId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<Reward>().WithMany().HasForeignKey(x => x.RewardId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<StudySession>(e =>

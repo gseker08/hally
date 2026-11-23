@@ -1211,6 +1211,152 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("tasks", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Points.Chore", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer")
+                        .HasColumnName("points");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_chores");
+
+                    b.HasIndex("ChildId")
+                        .HasDatabaseName("ix_chores_child_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_chores_family_id");
+
+                    b.ToTable("chores", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Points.PointEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("by_user_id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<Guid?>("ChoreId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("chore_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<int>("Points")
+                        .HasColumnType("integer")
+                        .HasColumnName("points");
+
+                    b.Property<Guid?>("RewardId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reward_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_point_entries");
+
+                    b.HasIndex("ByUserId")
+                        .HasDatabaseName("ix_point_entries_by_user_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_point_entries_family_id");
+
+                    b.HasIndex("RewardId")
+                        .HasDatabaseName("ix_point_entries_reward_id");
+
+                    b.HasIndex("ChildId", "CreatedAt")
+                        .HasDatabaseName("ix_point_entries_child_id_created_at");
+
+                    b.HasIndex("ChoreId", "ChildId", "Day")
+                        .IsUnique()
+                        .HasDatabaseName("ix_point_entries_chore_day")
+                        .HasFilter("chore_id IS NOT NULL");
+
+                    b.ToTable("point_entries", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Points.Reward", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Cost")
+                        .HasColumnType("integer")
+                        .HasColumnName("cost");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_rewards");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_rewards_family_id");
+
+                    b.ToTable("rewards", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.ScreenTime.ScreenTimeSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2008,6 +2154,67 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tasks_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Points.Chore", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_chores_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_chores_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Points.PointEntry", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_point_entries_users_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_point_entries_children_child_id");
+
+                    b.HasOne("Hally.Domain.Points.Chore", null)
+                        .WithMany()
+                        .HasForeignKey("ChoreId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_point_entries_chores_chore_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_point_entries_families_family_id");
+
+                    b.HasOne("Hally.Domain.Points.Reward", null)
+                        .WithMany()
+                        .HasForeignKey("RewardId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_point_entries_rewards_reward_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Points.Reward", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_rewards_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.ScreenTime.ScreenTimeSession", b =>

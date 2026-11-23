@@ -882,5 +882,48 @@
   "studyGoalHint": "Ödev ve okuma birlikte en az bu kadar olsun. Hedef dolunca ikinize de bildirim gelir.",
   "studyAdd": "Süre ekle",
   "studyNote": "Not (ör. kitabın adı)",
-  "studyNoRecord": "Henüz kayıt yok"
+  "studyNoRecord": "Henüz kayıt yok",
+  "pointsTitle": "Yıldızlar",
+  "pointsBody": "Görev yıldızları, ödüller ve harçlık",
+  "pointsNoChildren": "Yıldız toplamak için Aile sekmesinden çocuk ekleyin.",
+  "pointsBalance": "{count} yıldız",
+  "@pointsBalance": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pointsThisWeek": "Bu hafta +{count}",
+  "@pointsThisWeek": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pointsChoresToday": "Bugünün görevleri",
+  "pointsNoChores": "Henüz görev yok. Ekle ile görev koyun.",
+  "pointsRewards": "Ödüller",
+  "pointsNoRewards": "Henüz ödül yok. Ör. 20 TL harçlık, parka gitmek.",
+  "pointsRedeem": "Al",
+  "pointsMissing": "{count} yıldız daha lazım",
+  "@pointsMissing": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pointsNotEnough": "Yeterli yıldız yok.",
+  "pointsHistory": "Geçmiş",
+  "pointsNoHistory": "Henüz yıldız kazanılmadı.",
+  "pointsUndo": "Geri al",
+  "pointsAdd": "Ekle",
+  "pointsChore": "Görev",
+  "pointsReward": "Ödül",
+  "pointsChoreHint": "Görev (ör. Odanı topla)",
+  "pointsRewardHint": "Ödül (ör. 20 TL harçlık)",
+  "pointsEveryone": "Herkes",
+  "pointsTitleRequired": "Bir ad yazın."
 }

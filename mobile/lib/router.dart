@@ -6,6 +6,7 @@ import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
 import 'features/auth/sign_in_screen.dart';
 import 'features/billing/paywall_screen.dart';
+import 'features/points/points_screen.dart';
 import 'features/privacy/privacy_screen.dart';
 import 'features/capture/capture_text_screen.dart';
 import 'features/capture/review_screen.dart';
@@ -97,6 +98,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/sleep', builder: (_, __) => const SleepScreen()),
       GoRoute(path: '/feeding', builder: (_, __) => const FeedingScreen()),
       GoRoute(path: '/study', builder: (_, __) => const StudyScreen()),
+      GoRoute(path: '/stars', builder: (_, __) => const PointsScreen()),
       GoRoute(path: '/shopping', builder: (_, __) => const ShoppingScreen()),
       GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimeScreen()),
