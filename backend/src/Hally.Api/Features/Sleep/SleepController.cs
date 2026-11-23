@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Hally.Api.Features.Sleep;
 
 public record SleepEntryDto(Guid Id, Guid ChildId, string Kind, DateTimeOffset StartedAt, DateTimeOffset? EndedAt, int Minutes,
-    string? StartedByName, string? EndedByName, string? Note);
+    string? StartedByName, string? EndedByName, string? Note, Guid? StartedByUserId = null);
 
 /// <param name="Asleep">The open sleep, when the child is asleep now.</param>
 /// <param name="LastSleep">The most recent finished sleep ("awake for 2 h").</param>
@@ -216,7 +216,7 @@ public class SleepController(HallyDbContext db, IHubContext<ChatHub, IChatClient
     private static SleepEntryDto Dto(SleepEntry e, Dictionary<Guid, string> names, DateTimeOffset now) =>
         new(e.Id, e.ChildId, e.Kind.ToString(), e.StartedAt, e.EndedAt, (int)e.Duration(now).TotalMinutes,
             e.StartedByUserId is { } s ? names.GetValueOrDefault(s) : null,
-            e.EndedByUserId is { } en ? names.GetValueOrDefault(en) : null, e.Note);
+            e.EndedByUserId is { } en ? names.GetValueOrDefault(en) : null, e.Note, e.StartedByUserId);
 
     private async Task EnsureChild(Guid familyId, Guid childId, CancellationToken ct)
     {

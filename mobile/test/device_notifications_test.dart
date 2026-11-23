@@ -7,7 +7,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hally/core/api/api_client.dart';
 import 'package:hally/core/auth/token_storage.dart';
 import 'package:hally/features/notifications/device_notifications.dart';
+import 'package:hally/features/home/live_timers.dart';
+import 'package:hally/features/home/now_widget.dart';
 import 'package:hally/features/screen_time/screen_time_repository.dart';
+import 'package:hally/features/sleep/sleep_repository.dart';
+import 'package:hally/features/study/study_repository.dart';
 import 'package:hally/l10n/gen/app_localizations.dart';
 
 class _Tokens implements TokenStorage {
@@ -39,6 +43,7 @@ class _Api implements HttpClientAdapter {
 }
 
 void main() {
+  nowWidgetTests();
   final tr = lookupAppLocalizations(const Locale('tr'));
   final now = DateTime(2026, 11, 23, 18, 0);
 
@@ -53,26 +58,38 @@ void main() {
         runningUntil: DateTime.utc(2026, 11, 23, 22, 50),
       );
 
-  test('only timers this user started get a notification, counting today\'s total', () {
-    final notices = screenTimeNotices(
+  test('all running timers of the family; only mine get a notification', () {
+    final timers = liveTimers(
       familyId: 'f1',
-      userId: 'me',
-      statuses: {
+      screen: {
         'c1': status('c1', by: 'me', seconds: 1500, goal: 60),
         'c2': status('c2', by: 'partner'),
         'c3': status('c3'),
       },
-      childNames: {'c1': 'Ada', 'c2': 'Can'},
+      study: {
+        'c2': ChildStudyStatus(childId: 'c2', todaySeconds: 600, runningKind: 'Reading', runningSince: DateTime.utc(2026, 11, 23, 14, 55),
+            dailyGoalMinutes: 30, startedByUserId: 'me', receivedAt: now),
+      },
+      sleep: {
+        'c3': ChildSleepStatus(childId: 'c3', asleep: SleepEntry(id: 's1', childId: 'c3', kind: 'Nap', startedAt: DateTime(2026, 11, 23, 16, 55), startedByUserId: 'partner')),
+      },
+      childNames: {'c1': 'Ada', 'c2': 'Can', 'c3': 'Ela'},
       l10n: tr,
       now: now,
     );
 
-    final n = notices.single;
-    expect(n.childId, 'c1');
-    expect(n.title, 'Ada · ekran süresi');
-    expect(n.body, 'Günlük hedef: 60 dk');
-    expect(n.countingSince, now.subtract(const Duration(seconds: 1500)));
-    expect(n.until, now.add(const Duration(hours: 7, minutes: 50)));
+    expect([for (final t in timers) '${t.emoji} ${t.title} · ${t.body}'], [
+      '📱 Ada · ekran süresi · Günlük hedef: 60 dk',
+      '📱 Can · ekran süresi · Sayaç çalışıyor',
+      '📖 Can · kitap okuma · Günlük hedef: 30 dk',
+      '🌙 Ela uyuyor · Uyudu: 16:55',
+    ]);
+    final ada = timers.first;
+    expect(ada.countingSince, now.subtract(const Duration(seconds: 1500)));
+    expect(ada.until, now.add(const Duration(hours: 7, minutes: 50)));
+    expect(timers.last.countingSince, DateTime(2026, 11, 23, 16, 55));
+
+    expect([for (final t in myTimers(timers, 'me')) t.key], ['screen:c1', 'study:c2']);
   });
 
   test('payload round trip, route and stable ids', () {
@@ -90,10 +107,14 @@ void main() {
     final api = _Api(200);
     final client = ApiClient(_Tokens(), dio: Dio(BaseOptions(baseUrl: 'http://x'))..httpClientAdapter = api);
 
-    final ok = await runNotificationAction(client, stopScreenTimeAction, const NotificationTarget(type: 'screen', familyId: 'f1', id: 'c1'));
+    final ok = await runNotificationAction(client, stopTimerAction, const NotificationTarget(type: 'screen', familyId: 'f1', id: 'c1'));
 
     expect(ok, isA<ActionDone>());
-    expect(api.calls, ['POST /api/v1/families/f1/children/c1/screen-time/stop']);
+    expect(api.calls, ['POST /api/v1/families/f1/children/c1/screen-time/stop {}']);
+
+    await runNotificationAction(client, stopTimerAction, const NotificationTarget(type: 'study', familyId: 'f1', id: 'c2'));
+    await runNotificationAction(client, stopScreenTimeAction, const NotificationTarget(type: 'sleep', familyId: 'f1', id: 'c3'));
+    expect(api.calls.skip(1), ['POST /api/v1/families/f1/children/c2/study/stop {}', 'POST /api/v1/families/f1/children/c3/sleep/stop {}']);
   });
 
   test('a failed call reports false so the notification stays', () async {
@@ -140,6 +161,27 @@ void main() {
 
     expect(await handleNotificationPush({'kind': 'Message', 'familyId': 'f1'}, tray, tr), isFalse);
     expect(tray.log, hasLength(2));
+  });
+}
+
+void nowWidgetTests() {
+  final tr = lookupAppLocalizations(const Locale('tr'));
+
+  test('the Şu an widget gets every timer, texts, and its Durdur link is understood', () {
+    final t = LiveTimer(type: 'study', familyId: 'f1', childId: 'c2', title: 'Can · kitap okuma', body: 'x', emoji: '📖',
+        countingSince: DateTime(2026, 11, 23, 17, 47), until: DateTime(2026, 11, 23, 21));
+    final data = nowWidgetData([t], tr);
+
+    expect(data['now.title'], 'Şu an');
+    expect(data['now.count'], '%d sayaç çalışıyor');
+    final items = jsonDecode(data['now.items']!) as List;
+    expect(items.single['since'], DateTime(2026, 11, 23, 17, 47).millisecondsSinceEpoch);
+
+    final target = nowWidgetStopTarget(Uri.parse('hally://timer/stop?type=study&family=f1&child=c2'))!;
+    expect((target.type, target.familyId, target.id), ('study', 'f1', 'c2'));
+    expect(nowWidgetStopTarget(Uri.parse('hally://timer/stop?type=med&family=f1&child=c2')), isNull);
+    expect(nowWidgetStopTarget(null), isNull);
+    expect(jsonDecode(nowWidgetWithout(data['now.items']!, target)), isEmpty);
   });
 }
 

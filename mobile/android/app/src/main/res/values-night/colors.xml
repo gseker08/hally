@@ -6,4 +6,6 @@
     <color name="widget_muted">#BBAFB4</color>
     <color name="widget_accent">#E25C7C</color>
     <color name="widget_task">#3FB59A</color>
+    <color name="widget_chip">#33242A</color>
+    <color name="widget_accent_soft">#3A1520</color>
 </resources>

@@ -3,18 +3,35 @@
 Uygulamanın kendi gösterdiği bildirimler (`flutter_local_notifications`). Kod:
 `mobile/lib/features/notifications/device_notifications.dart`.
 
-## Ekran süresi sayacı
+## Çalışan sayaçlar (ekran süresi, ödev/okuma, uyku)
 
-- Bir çocuğun sayacını **sen başlattıysan**, sayaç çalıştığı sürece kilit ekranında ve bildirim panelinde
-  kaydırılamayan bir bildirim durur: "Ada · ekran süresi", canlı akan süre (bugünün toplamı) ve **Durdur** düğmesi.
-- Diğer ebeveynin başlattığı sayaç onun telefonunda görünür; senin telefonunda uygulama içinde görünür. Böylece
-  uygulama kapalıyken başka telefonda durdurulan bir sayaç burada eskimiş bildirim bırakmaz.
-- **Durdur** uygulamayı açmadan sunucuya `POST .../screen-time/stop` gönderir (arka plan isolate'i). Bağlantı yoksa
-  bildirim kalır ve "Kaydedilemedi" bildirimi çıkar.
-- Uygulama açıkken sayaç iki telefondan birinde durdurulursa (SignalR) bildirim kalkar. Sunucunun 8 saatlik üst
-  sınırında bildirim kendiliğinden kapanır. Uygulama açılınca eskimiş bildirimler temizlenir.
-- Çıkış yapınca Hally'nin tüm bildirimleri kaldırılır.
-- Android 13+ bildirim iznini ister. iPhone (Live Activities) henüz yok; Mac ve Apple hesabı gerekir.
+- Bir sayacı **sen başlattıysan** (ekran süresi, ödev, kitap okuma ya da uyku), sayaç çalıştığı sürece kilit
+  ekranında ve bildirim panelinde kaydırılamayan bir bildirim durur: "Ada · ekran süresi", canlı akan süre ve
+  **Durdur** düğmesi. Ekran süresi ve ödev/okuma için süre bugünün toplamıdır, uyku için bu uykunun süresi.
+- Android 16 ve sonrası: bildirim "canlı güncelleme" olarak istenir (`requestPromotedOngoing`,
+  `POST_PROMOTED_NOTIFICATIONS`), süre üst çubukta küçük bir rozet olarak da görünür. Eski sürümlerde yalnızca
+  bildirim vardır.
+- Emzirmenin çalışan bir sayacı yok (kayıt sonradan giriliyor), o yüzden burada değil.
+- Diğer ebeveynin başlattığı sayaç onun telefonunda bildirim olur; senin telefonunda uygulama içinde ve
+  "Şu an" widget'ında görünür. Böylece uygulama kapalıyken başka telefonda durdurulan bir sayaç burada eskimiş
+  bildirim bırakmaz. (Sunucu bunun için `startedByUserId` döner: ekran süresi, ödev/okuma, uyku.)
+- **Durdur** uygulamayı açmadan sunucuya ilgili `.../stop` isteğini gönderir (arka plan isolate'i). Bağlantı
+  yoksa bildirim kalır ve "Kaydedilemedi" bildirimi çıkar.
+- Uygulama açıkken sayaç iki telefondan birinde durdurulursa (SignalR) bildirim kalkar. Sunucunun üst sınırında
+  (ekran süresi 8 sa, ödev/okuma 4 sa) bildirim kendiliğinden kapanır. Uygulama açılınca eskimiş bildirimler
+  temizlenir. Çıkış yapınca Hally'nin tüm bildirimleri kaldırılır.
+- iPhone (Live Activities) henüz yok; Mac ve Apple hesabı gerekir.
+
+## "Şu an" widget'ı
+
+- Ana ekranda ailenin **tüm** çalışan sayaçları (en çok 3 satır), her satırda canlı süre (Android Chronometer,
+  uygulama kapalıyken de akar) ve **Durdur**. Dokununca uygulama açılır.
+- Kod: `lib/features/home/now_widget.dart`, `NowWidgetProvider.kt`, `res/layout/now_widget.xml`.
+- Durdur, `home_widget` arka plan geri çağrısıyla (`hallyWidgetAction`) sayacı durdurur, satırı kaldırır ve
+  bildirimi kapatır. Sunucu sayacın zaten durmuş olduğunu söylerse satır yine kalkar.
+- Sınır: başka telefonda durdurulan bir sayaç, bu telefonda uygulama kapalıyken widget'ta kalır; uygulama bir
+  sonraki açılışta ya da o satırın Durdur'una basınca düzelir. Üst sınırı geçen sayaç kendiliğinden gizlenir.
+- Eklemek için: ana ekranda uzun bas → Widgets → Hally → "Şu an".
 
 ## İlaç hatırlatması ("Verdim")
 

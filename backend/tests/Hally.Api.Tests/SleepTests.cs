@@ -6,7 +6,7 @@ using Hally.Domain.Sleep;
 namespace Hally.Api.Tests;
 
 public record SleepEntryBody(Guid Id, Guid ChildId, string Kind, DateTimeOffset StartedAt, DateTimeOffset? EndedAt, int Minutes,
-    string? StartedByName, string? EndedByName, string? Note);
+    string? StartedByName, string? EndedByName, string? Note, Guid? StartedByUserId);
 public record ChildSleepStatusBody(Guid ChildId, SleepEntryBody? Asleep, SleepEntryBody? LastSleep);
 public record SleepDayBody(DateOnly Date, int NightMinutes, int NapMinutes, int Naps);
 public record ChildSleepHistoryBody(Guid ChildId, List<SleepDayBody> Days, List<SleepEntryBody> Entries, int AverageNightMinutes, int AverageNapMinutes);
@@ -45,6 +45,7 @@ public class SleepTests(HallyApiFactory api)
 
         var started = (await (await owner.PostAsJsonAsync($"{url}/start", new { at, kind = "Nap" })).Content.ReadFromJsonAsync<ChildSleepStatusBody>())!;
         started.Asleep!.StartedByName.Should().Be("Ayşe");
+        started.Asleep.StartedByUserId.Should().NotBeNull();
         (await (await partner.PostAsJsonAsync($"{url}/start", new { })).Content.ReadFromJsonAsync<ChildSleepStatusBody>())!
             .Asleep!.Id.Should().Be(started.Asleep.Id, "already asleep");
 

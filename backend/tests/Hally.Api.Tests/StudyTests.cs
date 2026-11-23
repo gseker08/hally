@@ -6,7 +6,7 @@ using Hally.Domain.Study;
 namespace Hally.Api.Tests;
 
 public record ChildStudyBody(Guid ChildId, int? DailyGoalMinutes, int TodaySeconds, int HomeworkSeconds, int ReadingSeconds, string? RunningKind,
-    DateTimeOffset? RunningSince, DateTimeOffset? RunningUntil, string? StartedByName, int Streak, DateTimeOffset AsOf);
+    DateTimeOffset? RunningSince, DateTimeOffset? RunningUntil, string? StartedByName, int Streak, DateTimeOffset AsOf, Guid? StartedByUserId);
 public record StudyDayBody(DateOnly Date, int HomeworkSeconds, int ReadingSeconds, bool GoalMet);
 public record StudyEntryBody(Guid Id, string Kind, DateTimeOffset StartedAt, DateTimeOffset EndedAt, int Seconds, string? Note, string? ByName);
 public record ChildStudyHistoryBody(Guid ChildId, int? DailyGoalMinutes, List<StudyDayBody> Days, List<StudyEntryBody> Entries);
@@ -43,6 +43,7 @@ public class StudyTests(HallyApiFactory api)
         var started = (await (await owner.PostAsJsonAsync($"{url}/start", new { kind = "Reading" })).Content.ReadFromJsonAsync<ChildStudyBody>())!;
         started.RunningKind.Should().Be("Reading");
         started.StartedByName.Should().Be("Ayşe");
+        started.StartedByUserId.Should().Be((await owner.GetFromJsonAsync<MeBody>("/api/v1/me"))!.Id, "the app shows the lock screen timer to whoever started it");
         var again = (await (await partner.PostAsJsonAsync($"{url}/start", new { kind = "Homework" })).Content.ReadFromJsonAsync<ChildStudyBody>())!;
         again.RunningSince.Should().Be(started.RunningSince);
         again.RunningKind.Should().Be("Reading", "already running");

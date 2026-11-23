@@ -33,7 +33,8 @@ public record ChildStudyDto(
     DateTimeOffset? RunningUntil,
     string? StartedByName,
     int Streak,
-    DateTimeOffset AsOf);
+    DateTimeOffset AsOf,
+    Guid? StartedByUserId = null);
 
 public record StudyDayDto(DateOnly Date, int HomeworkSeconds, int ReadingSeconds, bool GoalMet);
 
@@ -217,7 +218,7 @@ public class StudyController(
         var streak = child.DailyStudyMinutes is null ? 0 : StudySession.Streak(days.Select(d => d.GoalMet).ToList());
         return new ChildStudyDto(child.Id, child.DailyStudyMinutes, todayDay.HomeworkSeconds + todayDay.ReadingSeconds, todayDay.HomeworkSeconds,
             todayDay.ReadingSeconds, running?.Kind.ToString(), running?.StartedAt, running is null ? null : running.StartedAt + StudySession.MaxLength,
-            startedBy, streak, now);
+            startedBy, streak, now, running?.StartedByUserId);
     }
 
     private static StudyDayDto Day(DateOnly date, List<StudySession> sessions, DateTimeOffset from, DateTimeOffset to, int? goal, DateTimeOffset now)

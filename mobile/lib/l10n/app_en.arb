@@ -633,5 +633,16 @@
   "medNoticeChannelDescription": "When the next dose is due, with a Given button",
   "medNoticeRefusedTitle": "Dose not saved",
   "medNoticeRefusedBody": "Last dose: {time} · {name}. Save it in the app if needed.",
-  "medNoticeRefusedDailyLimit": "The daily limit is reached. Save it in the app if needed."
+  "medNoticeRefusedDailyLimit": "The daily limit is reached. Save it in the app if needed.",
+  "liveTimerReading": "{name} · reading",
+  "liveTimerHomework": "{name} · homework",
+  "liveTimerToday": "Today's total",
+  "liveTimerSleep": "{name} is asleep",
+  "liveTimerSleepSince": "Fell asleep: {time}",
+  "liveTimerChannel": "Running timers",
+  "liveTimerChannelDescription": "Shown while a screen time, homework/reading or sleep timer you started is running",
+  "nowWidgetTitle": "Right now",
+  "nowWidgetEmpty": "No timer running",
+  "nowWidgetCount": "{count} running",
+  "nowWidgetStop": "Stop"
 }

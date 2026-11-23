@@ -13,9 +13,8 @@ import '../../core/auth/token_storage.dart';
 import '../../core/locale/app_language.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../router.dart';
-import '../family/family_repository.dart';
+import '../home/live_timers.dart';
 import '../medications/medications_repository.dart';
-import '../screen_time/screen_time_repository.dart';
 
 /// What a notification belongs to and what its buttons act on. Travels as the notification payload (JSON), so
 /// the action handler also works in the background isolate, with the app closed.
@@ -27,7 +26,7 @@ class NotificationTarget {
     return NotificationTarget(type: j['type'] as String, familyId: j['familyId'] as String, id: j['id'] as String);
   }
 
-  /// `screen` (id = child id) or `med` (id = medication id).
+  /// `screen`, `study`, `sleep` (id = child id) or `med` (id = medication id).
   final String type;
   final String familyId;
   final String id;
@@ -37,6 +36,8 @@ class NotificationTarget {
   /// The screen a tap on the notification opens.
   String get route => switch (type) {
         'screen' => '/screen-time',
+        'study' => '/study',
+        'sleep' => '/sleep',
         'med' => '/medications',
         _ => '/notifications',
       };
@@ -51,52 +52,21 @@ int notificationIdFor(String type, String id) {
   return h;
 }
 
-/// A running screen time timer as an ongoing notification.
-class ScreenTimeNotice {
-  const ScreenTimeNotice({required this.familyId, required this.childId, required this.title, required this.body, required this.countingSince, this.until});
+/// Timer types that get an ongoing notification and a Durdur button.
+const liveTimerTypes = ['screen', 'study', 'sleep'];
 
-  final String familyId;
-  final String childId;
-  final String title;
-  final String body;
+NotificationTarget timerTarget(LiveTimer t) => NotificationTarget(type: t.type, familyId: t.familyId, id: t.childId);
 
-  /// Android's chronometer counts up from here, so it shows today's total, not only this session.
-  final DateTime countingSince;
-
-  /// The server's 8 hour cap: the notification goes away by itself then, even if the app is closed.
-  final DateTime? until;
-
-  NotificationTarget get target => NotificationTarget(type: 'screen', familyId: familyId, id: childId);
-}
-
-/// The timers this user started that are running now. The other parent's timers stay in the app, so a timer
-/// stopped on another phone never leaves a stale notification here while this app is closed.
-List<ScreenTimeNotice> screenTimeNotices({
-  required String familyId,
-  required String userId,
-  required Map<String, ChildScreenTime> statuses,
-  required Map<String, String> childNames,
-  required AppLocalizations l10n,
-  required DateTime now,
-}) =>
-    [
-      for (final s in statuses.values)
-        if (s.isRunning && s.startedByUserId == userId)
-          ScreenTimeNotice(
-            familyId: familyId,
-            childId: s.childId,
-            title: l10n.screenNoticeTitle(childNames[s.childId] ?? ''),
-            body: s.dailyGoalMinutes == null ? l10n.screenNoticeBody : l10n.screenNoticeGoal(s.dailyGoalMinutes!),
-            countingSince: now.subtract(Duration(seconds: s.secondsAt(now))),
-            until: s.runningUntil != null && s.asOf != null ? now.add(s.runningUntil!.difference(s.asOf!)) : null,
-          ),
-    ];
+/// The timers this user started. The other parent's timers stay in the app and the widget, so a timer stopped on
+/// another phone never leaves a stale notification here while this app is closed.
+List<LiveTimer> myTimers(List<LiveTimer> timers, String userId) => [for (final t in timers) if (t.startedByUserId == userId) t];
 
 /// The phone's notification tray. [LocalDeviceNotifications] on Android, a no-op elsewhere and in tests.
 abstract interface class DeviceNotifications {
   /// [onTap] gets the target of a tapped notification, also the one that started the app.
   Future<void> init(void Function(NotificationTarget target) onTap);
-  Future<void> showScreenTime(ScreenTimeNotice notice, AppLocalizations l10n);
+  /// An ongoing notification with a live clock and a Durdur button; on Android 16 also a chip in the status bar.
+  Future<void> showTimer(LiveTimer timer, AppLocalizations l10n);
 
   /// A medication reminder from the server (`kind=MedicationDue`, data-only on Android) with a "Verdim" button.
   Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n);
@@ -111,7 +81,7 @@ class NoDeviceNotifications implements DeviceNotifications {
   @override
   Future<void> init(void Function(NotificationTarget target) onTap) async {}
   @override
-  Future<void> showScreenTime(ScreenTimeNotice notice, AppLocalizations l10n) async {}
+  Future<void> showTimer(LiveTimer timer, AppLocalizations l10n) async {}
   @override
   Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n) async {}
   @override
@@ -122,8 +92,11 @@ class NoDeviceNotifications implements DeviceNotifications {
   Future<void> cancelAll() async {}
 }
 
-const _icon = '@mipmap/ic_launcher_monochrome';
+const notificationIcon = '@mipmap/ic_launcher_monochrome';
 const _cherry = Color(0xFFA8133C);
+const stopTimerAction = 'timer.stop';
+
+/// The action id of the first version (screen time only); old notifications may still carry it.
 const stopScreenTimeAction = 'screen.stop';
 const giveMedicationAction = 'med.given';
 
@@ -137,7 +110,7 @@ class LocalDeviceNotifications implements DeviceNotifications {
   /// For a background isolate (a push while the app is closed): no tap handling, no permission prompt.
   Future<void> initBackground() => _ready ??= _plugin
       .initialize(
-        settings: const InitializationSettings(android: AndroidInitializationSettings(_icon)),
+        settings: const InitializationSettings(android: AndroidInitializationSettings(notificationIcon)),
         onDidReceiveBackgroundNotificationResponse: hallyNotificationAction,
       )
       .then((_) {});
@@ -149,7 +122,7 @@ class LocalDeviceNotifications implements DeviceNotifications {
     }
 
     await _plugin.initialize(
-      settings: const InitializationSettings(android: AndroidInitializationSettings(_icon)),
+      settings: const InitializationSettings(android: AndroidInitializationSettings(notificationIcon)),
       onDidReceiveNotificationResponse: open,
       onDidReceiveBackgroundNotificationResponse: hallyNotificationAction,
     );
@@ -160,20 +133,20 @@ class LocalDeviceNotifications implements DeviceNotifications {
   }
 
   @override
-  Future<void> showScreenTime(ScreenTimeNotice n, AppLocalizations l10n) async {
+  Future<void> showTimer(LiveTimer t, AppLocalizations l10n) async {
     await _ready;
     final now = DateTime.now();
     await _plugin.show(
-      id: notificationIdFor('screen', n.childId),
-      title: n.title,
-      body: n.body,
-      payload: n.target.toPayload(),
+      id: notificationIdFor(t.type, t.childId),
+      title: t.title,
+      body: t.body,
+      payload: timerTarget(t).toPayload(),
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
-          'screen_time',
-          l10n.screenNoticeChannel,
-          channelDescription: l10n.screenNoticeChannelDescription,
-          icon: _icon,
+          'live_timers',
+          l10n.liveTimerChannel,
+          channelDescription: l10n.liveTimerChannelDescription,
+          icon: notificationIcon,
           color: _cherry,
           importance: Importance.low,
           priority: Priority.low,
@@ -183,12 +156,14 @@ class LocalDeviceNotifications implements DeviceNotifications {
           ongoing: true,
           autoCancel: false,
           showWhen: true,
-          when: n.countingSince.millisecondsSinceEpoch,
+          when: t.countingSince.millisecondsSinceEpoch,
           usesChronometer: true,
+          // Android 16+: a "live update" with the running time as a chip in the status bar.
+          requestPromotedOngoing: true,
           category: AndroidNotificationCategory.stopwatch,
           visibility: NotificationVisibility.public,
-          timeoutAfter: n.until == null ? null : n.until!.difference(now).inMilliseconds.clamp(1000, 1 << 31),
-          actions: [AndroidNotificationAction(stopScreenTimeAction, l10n.screenNoticeStop, cancelNotification: false)],
+          timeoutAfter: t.until == null ? null : t.until!.difference(now).inMilliseconds.clamp(1000, 1 << 31),
+          actions: [AndroidNotificationAction(stopTimerAction, l10n.screenNoticeStop, cancelNotification: false)],
         ),
       ),
     );
@@ -207,7 +182,7 @@ class LocalDeviceNotifications implements DeviceNotifications {
           'medications',
           l10n.medNoticeChannel,
           channelDescription: l10n.medNoticeChannelDescription,
-          icon: _icon,
+          icon: notificationIcon,
           color: _cherry,
           importance: Importance.high,
           priority: Priority.high,
@@ -242,8 +217,8 @@ final deviceNotificationsProvider = Provider<DeviceNotifications>((ref) {
   return LocalDeviceNotifications();
 });
 
-/// Keeps the tray in step with the app: an ongoing notification for each screen time timer this user started.
-/// Follows the live updates of [screenTimeProvider], so a stop on either phone removes it while the app runs.
+/// Keeps the tray in step with the app: an ongoing notification for each timer (screen time, homework/reading,
+/// sleep) this user started. Follows the live updates, so a stop on either phone removes it while the app runs.
 final deviceNotificationsSyncProvider = Provider<void>((ref) {
   final notifications = ref.watch(deviceNotificationsProvider);
   final userId = ref.watch(meProvider.select((me) => me.valueOrNull?.id));
@@ -255,48 +230,48 @@ final deviceNotificationsSyncProvider = Provider<void>((ref) {
   }
 
   final language = ref.watch(languageProvider);
-  final l10n = lookupAppLocalizations(language.locale ?? resolveDeviceLocale(ref.watch(deviceLocaleProvider)));
+  final locale = language.locale ?? resolveDeviceLocale(ref.watch(deviceLocaleProvider));
+  final l10n = lookupAppLocalizations(locale);
   final ready = notifications.init((target) {
     final router = ref.read(routerProvider);
     router.push(target.route);
   });
 
-  // What is on screen now, by child id: running since + today's seconds + name, to skip identical re-posts.
+  // What is on screen now, by timer key, to skip identical re-posts.
   final shown = <String, String>{};
   var cleaned = false;
 
-  Future<void> sync() async {
+  Future<void> sync(List<LiveTimer> timers) async {
     await ready;
-    final statuses = ref.read(screenTimeProvider(familyId)).valueOrNull;
-    if (statuses == null) return;
-    final names = <String, String>{for (final c in ref.read(familyProvider(familyId)).valueOrNull?.children ?? const <ChildProfile>[]) c.id: c.firstName};
-    final now = DateTime.now();
-    final notices = screenTimeNotices(familyId: familyId, userId: userId, statuses: statuses, childNames: names, l10n: l10n, now: now);
-    final wanted = {for (final n in notices) n.childId: n};
+    final mine = myTimers(timers, userId);
+    final wanted = {for (final t in mine) t.key: t};
 
     // Left from an earlier run of the app (it was closed while the timer stopped elsewhere).
     if (!cleaned) {
       cleaned = true;
-      for (final t in await notifications.active('screen')) {
-        if (!wanted.containsKey(t.id)) await notifications.cancel(t);
+      for (final type in liveTimerTypes) {
+        for (final t in await notifications.active(type)) {
+          if (!wanted.containsKey('${t.type}:${t.id}')) await notifications.cancel(t);
+        }
       }
     }
-    for (final id in shown.keys.where((id) => !wanted.containsKey(id)).toList()) {
-      shown.remove(id);
-      await notifications.cancel(NotificationTarget(type: 'screen', familyId: familyId, id: id));
+    for (final key in shown.keys.where((k) => !wanted.containsKey(k)).toList()) {
+      shown.remove(key);
+      final [type, id] = key.split(':');
+      await notifications.cancel(NotificationTarget(type: type, familyId: familyId, id: id));
     }
-    for (final n in notices) {
-      final s = statuses[n.childId]!;
-      final key = '${s.runningSince}|${s.todaySeconds}|${n.title}|${n.body}';
-      if (shown[n.childId] == key) continue;
-      shown[n.childId] = key;
-      await notifications.showScreenTime(n, l10n);
+    for (final t in mine) {
+      // Recomputing "since" can move it by a second; that is not a change worth re-posting.
+      final key = '${t.countingSince.millisecondsSinceEpoch ~/ 10000}|${(t.until?.millisecondsSinceEpoch ?? 0) ~/ 60000}|${t.title}|${t.body}';
+      if (shown[t.key] == key) continue;
+      shown[t.key] = key;
+      await notifications.showTimer(t, l10n);
     }
   }
 
-  void run() => unawaited(sync().catchError((Object e) => debugPrint('notifications: $e')));
-  ref.listen(screenTimeProvider(familyId), (_, __) => run(), fireImmediately: true);
-  ref.listen(familyProvider(familyId), (_, __) => run());
+  ref.listen(liveTimersProvider((familyId: familyId, language: locale.languageCode)), (_, timers) {
+    if (timers != null) unawaited(sync(timers).catchError((Object e) => debugPrint('notifications: $e')));
+  }, fireImmediately: true);
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -304,8 +279,8 @@ final deviceNotificationsSyncProvider = Provider<void>((ref) {
 
 /// Tokens for the background isolate. If a refresh fails here (the app may have rotated the refresh token at the
 /// same moment), the stored session is kept: only the app itself signs the user out.
-class _KeepSessionTokens implements TokenStorage {
-  _KeepSessionTokens(this._inner);
+class KeepSessionTokens implements TokenStorage {
+  KeepSessionTokens(this._inner);
 
   final TokenStorage _inner;
 
@@ -342,8 +317,15 @@ class ActionFailed extends ActionResult {
 Future<ActionResult> runNotificationAction(ApiClient api, String actionId, NotificationTarget target) async {
   try {
     switch (actionId) {
-      case stopScreenTimeAction:
-        await api.dio.post<void>('/api/v1/families/${target.familyId}/children/${target.id}/screen-time/stop');
+      case stopTimerAction || stopScreenTimeAction:
+        final path = switch (target.type) {
+          'screen' => 'screen-time/stop',
+          'study' => 'study/stop',
+          'sleep' => 'sleep/stop',
+          _ => null,
+        };
+        if (path == null) return const ActionFailed();
+        await api.dio.post<void>('/api/v1/families/${target.familyId}/children/${target.id}/$path', data: const <String, Object?>{});
         return const ActionDone();
       case giveMedicationAction:
         await ApiMedicationsRepository(api).give(target.familyId, target.id);
@@ -390,10 +372,10 @@ Future<void> hallyNotificationAction(NotificationResponse response) async {
   final payload = response.payload;
   if (actionId == null || payload == null) return;
   final target = NotificationTarget.fromPayload(payload);
-  final result = await runNotificationAction(ApiClient(_KeepSessionTokens(SecureTokenStorage())), actionId, target);
+  final result = await runNotificationAction(ApiClient(KeepSessionTokens(SecureTokenStorage())), actionId, target);
 
   final plugin = FlutterLocalNotificationsPlugin();
-  await plugin.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings(_icon)));
+  await plugin.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings(notificationIcon)));
   if (result is ActionDone) {
     await plugin.cancel(id: notificationIdFor(target.type, target.id));
     return;
@@ -420,7 +402,7 @@ Future<void> hallyNotificationAction(NotificationResponse response) async {
     body: body,
     payload: target.toPayload(),
     notificationDetails: NotificationDetails(
-      android: AndroidNotificationDetails('actions', l10n.noticeActionChannel, icon: _icon, color: _cherry, importance: Importance.defaultImportance),
+      android: AndroidNotificationDetails('actions', l10n.noticeActionChannel, icon: notificationIcon, color: _cherry, importance: Importance.defaultImportance),
     ),
   );
 }
