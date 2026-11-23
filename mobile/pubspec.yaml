@@ -21,7 +21,8 @@ dependencies:
   sign_in_with_apple: ^8.2.0
   uuid: ^4.5.1
   image_picker: ^1.1.2
-  receive_sharing_intent: ^1.8.1
+  # Pinned: the share extension links its Swift package by its versioned folder (ios/Runner.xcodeproj, receive_sharing_intent-<version>).
+  receive_sharing_intent: 1.9.0
   share_plus: ^13.3.1
   sentry_flutter: ^10.3.0
   signalr_netcore: ^1.4.4
