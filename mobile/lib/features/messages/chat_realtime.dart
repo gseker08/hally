@@ -41,6 +41,9 @@ abstract interface class ChatRealtime {
 
   /// Raw `SleepChanged` payloads (`{familyId, childId}`).
   Stream<Map<String, dynamic>> get sleepEvents;
+
+  /// Raw `FeedingChanged` payloads (`{familyId, childId}`).
+  Stream<Map<String, dynamic>> get feedingEvents;
   bool get isConnected;
   Future<void> dispose();
 }
@@ -76,6 +79,10 @@ class SignalRChatRealtime implements ChatRealtime {
       final payload = args?.firstOrNull;
       if (payload is Map) _sleep.add(Map<String, dynamic>.from(payload));
     });
+    _connection.on('FeedingChanged', (args) {
+      final payload = args?.firstOrNull;
+      if (payload is Map) _feeding.add(Map<String, dynamic>.from(payload));
+    });
     _connection.onclose(({error}) => _scheduleRetry());
     unawaited(_start());
   }
@@ -90,6 +97,7 @@ class SignalRChatRealtime implements ChatRealtime {
   final _medication = StreamController<Map<String, dynamic>>.broadcast();
   final _shopping = StreamController<Map<String, dynamic>>.broadcast();
   final _sleep = StreamController<Map<String, dynamic>>.broadcast();
+  final _feeding = StreamController<Map<String, dynamic>>.broadcast();
   Timer? _retry;
   bool _disposed = false;
 
@@ -107,6 +115,9 @@ class SignalRChatRealtime implements ChatRealtime {
 
   @override
   Stream<Map<String, dynamic>> get sleepEvents => _sleep.stream;
+
+  @override
+  Stream<Map<String, dynamic>> get feedingEvents => _feeding.stream;
 
   @override
   bool get isConnected => _connection.state == HubConnectionState.Connected;
@@ -163,6 +174,7 @@ class SignalRChatRealtime implements ChatRealtime {
     await _medication.close();
     await _shopping.close();
     await _sleep.close();
+    await _feeding.close();
   }
 }
 
@@ -182,6 +194,9 @@ class NoChatRealtime implements ChatRealtime {
 
   @override
   Stream<Map<String, dynamic>> get sleepEvents => const Stream.empty();
+
+  @override
+  Stream<Map<String, dynamic>> get feedingEvents => const Stream.empty();
 
   @override
   bool get isConnected => false;

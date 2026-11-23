@@ -11,6 +11,7 @@ import 'features/capture/capture_text_screen.dart';
 import 'features/capture/review_screen.dart';
 import 'features/demo/demo_scan_screen.dart';
 import 'features/family/family_screen.dart';
+import 'features/feeding/feeding_screen.dart';
 import 'features/family/family_setup_screen.dart';
 import 'features/family/invite_partner_screen.dart';
 import 'features/family/join_family_screen.dart';
@@ -93,6 +94,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen()),
       GoRoute(path: '/chats/:key', builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?)),
       GoRoute(path: '/sleep', builder: (_, __) => const SleepScreen()),
+      GoRoute(path: '/feeding', builder: (_, __) => const FeedingScreen()),
       GoRoute(path: '/shopping', builder: (_, __) => const ShoppingScreen()),
       GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimeScreen()),

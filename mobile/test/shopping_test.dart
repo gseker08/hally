@@ -100,6 +100,8 @@ class _Live implements ChatRealtime {
   @override
   Stream<Map<String, dynamic>> get sleepEvents => const Stream.empty();
   @override
+  Stream<Map<String, dynamic>> get feedingEvents => const Stream.empty();
+  @override
   bool get isConnected => true;
   @override
   Future<void> dispose() => shopping.close();

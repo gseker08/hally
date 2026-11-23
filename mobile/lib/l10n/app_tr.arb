@@ -782,5 +782,58 @@
         "type": "String"
       }
     }
-  }
+  },
+  "feedingTitle": "Beslenme",
+  "feedingBody": "Emzirme, biberon, ek gıda; sıradaki taraf",
+  "feedingNoChildren": "Beslenme takibi için Aile sekmesinden çocuk ekleyin.",
+  "feedingNoRecord": "Henüz kayıt yok",
+  "feedingLast": "{ago} önce · {what}",
+  "@feedingLast": {
+    "placeholders": {
+      "ago": {
+        "type": "String"
+      },
+      "what": {
+        "type": "String"
+      }
+    }
+  },
+  "feedingToday": "Bugün {count} öğün",
+  "@feedingToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "feedingTodayWithMl": "Bugün {count} öğün · {ml} ml biberon",
+  "@feedingTodayWithMl": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "feedingNextSide": "Sıradaki taraf: {side}",
+  "@feedingNextSide": {
+    "placeholders": {
+      "side": {
+        "type": "String"
+      }
+    }
+  },
+  "feedingBreast": "Emzirme",
+  "feedingBottle": "Biberon",
+  "feedingSolid": "Ek gıda",
+  "feedingLeft": "Sol",
+  "feedingRight": "Sağ",
+  "feedingBoth": "İkisi",
+  "feedingAdd": "Beslenme ekle",
+  "feedingFood": "Ne yedi?",
+  "feedingFoodRequired": "Ne yediğini yazın.",
+  "feedingTime": "Saat",
+  "feedingNow": "Şimdi"
 }
