@@ -64,16 +64,18 @@ public class MessageThread : Entity
     public void Touch(DateTimeOffset at) => LastMessageAt = at;
 }
 
-/// <summary>A text message in a family or direct chat, optionally pointing at a task or event.</summary>
+/// <summary>A message in a family or direct chat: text, a photo with an optional caption, and optionally a link to a task or event.</summary>
 public class FamilyMessage : Entity
 {
     public const int MaxLength = 2000;
 
     private FamilyMessage() { }
 
-    public FamilyMessage(MessageThread thread, Guid senderUserId, string body, Guid? taskId, Guid? eventId, DateTimeOffset now)
+    public FamilyMessage(MessageThread thread, Guid senderUserId, string? body, Guid? taskId, Guid? eventId, DateTimeOffset now,
+        MessagePhoto? photo = null)
     {
-        if (string.IsNullOrWhiteSpace(body) || body.Trim().Length > MaxLength)
+        body = body?.Trim() ?? "";
+        if ((body.Length == 0 && photo is null) || body.Length > MaxLength)
         {
             throw new DomainException("message.body_invalid", $"A message must be 1-{MaxLength} characters.");
         }
@@ -86,7 +88,9 @@ public class FamilyMessage : Entity
         ThreadId = thread.Id;
         FamilyId = thread.FamilyId;
         SenderUserId = senderUserId;
-        Body = body.Trim();
+        Body = body;
+        PhotoKey = photo?.StorageKey;
+        PhotoContentType = photo?.ContentType;
         TaskId = taskId;
         EventId = eventId;
         CreatedAt = now;
@@ -96,10 +100,18 @@ public class FamilyMessage : Entity
     public Guid ThreadId { get; private set; }
     public Guid FamilyId { get; private set; }
     public Guid SenderUserId { get; private set; }
+    /// <summary>Empty for a photo sent without a caption.</summary>
     public string Body { get; private set; } = default!;
+
+    /// <summary>Where the encrypted photo is stored (document store key), when the message has one.</summary>
+    public string? PhotoKey { get; private set; }
+    public string? PhotoContentType { get; private set; }
     public Guid? TaskId { get; private set; }
     public Guid? EventId { get; private set; }
 }
+
+/// <summary>A stored photo attached to a message.</summary>
+public record MessagePhoto(string StorageKey, string ContentType);
 
 /// <summary>How far a user has read a thread. Messages after <see cref="LastReadAt"/> from others are unread.</summary>
 public class MessageReadState

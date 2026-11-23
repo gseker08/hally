@@ -5,6 +5,7 @@ using Hally.Api.Features.Notifications;
 using Hally.Domain.Common;
 using Hally.Domain.Messaging;
 using Hally.Infrastructure.Persistence;
+using Hally.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +18,11 @@ public record ChatSummaryDto(string Key, string Kind, Guid? OtherUserId, string?
 public record ChatListDto(IReadOnlyList<ChatSummaryDto> Chats, int TotalUnread);
 
 /// <param name="SenderName">Null when the sender is no longer in the family.</param>
+/// <param name="Body">Empty for a photo sent without a caption.</param>
 /// <param name="LinkTitle">Title of the linked task or event, when it still exists.</param>
-public record MessageDto(Guid Id, Guid SenderUserId, string? SenderName, string Body, DateTimeOffset CreatedAt, Guid? TaskId, Guid? EventId, string? LinkTitle);
+/// <param name="HasPhoto">The photo is read from <c>GET .../chats/{key}/messages/{id}/photo</c>.</param>
+public record MessageDto(Guid Id, Guid SenderUserId, string? SenderName, string Body, DateTimeOffset CreatedAt, Guid? TaskId, Guid? EventId, string? LinkTitle,
+    bool HasPhoto = false);
 public record SendMessageRequest(string Body, Guid? TaskId = null, Guid? EventId = null);
 
 public class SendMessageRequestValidator : AbstractValidator<SendMessageRequest>
@@ -37,9 +41,10 @@ public class SendMessageRequestValidator : AbstractValidator<SendMessageRequest>
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
 [Route("api/v1/families/{familyId:guid}/chats")]
-public class MessagesController(HallyDbContext db, MessagePush push, ChatRealtime realtime, TimeProvider clock) : ControllerBase
+public class MessagesController(HallyDbContext db, MessagePush push, ChatRealtime realtime, IDocumentStore store, TimeProvider clock) : ControllerBase
 {
     public const int MaxPage = 100;
+    public const long MaxPhotoBytes = 10 * 1024 * 1024;
 
     [HttpGet]
     public async Task<ActionResult<ChatListDto>> List(Guid familyId, CancellationToken ct)
@@ -141,9 +146,74 @@ public class MessagesController(HallyDbContext db, MessagePush push, ChatRealtim
             throw new DomainException("message.event_not_in_family", "The event does not belong to this family.");
         }
 
+        return await Store(familyId, key, me, members, thread => new FamilyMessage(thread, me, request.Body, request.TaskId, request.EventId, clock.GetUtcNow()), ct);
+    }
+
+    /// <summary>Sends a photo (JPEG, PNG, WebP or HEIC, up to 10 MB) with an optional caption. The photo is stored
+    /// encrypted like captures, but is not deleted after the capture retention period: it is part of the chat.</summary>
+    [HttpPost("{key}/photos")]
+    [Idempotent]
+    [RequestSizeLimit(MaxPhotoBytes + 64 * 1024)]
+    [ProducesResponseType<MessageDto>(201)]
+    public async Task<IActionResult> SendPhoto(Guid familyId, string key, IFormFile? file, [FromForm] string? caption, CancellationToken ct)
+    {
+        var me = User.UserId();
+        var members = await Members(familyId, ct);
+        ThreadKey(me, key, members); // 404 before reading the upload for a chat that is not the caller's
+        if (caption?.Trim().Length > FamilyMessage.MaxLength)
+        {
+            throw new DomainException("message.body_invalid", $"A caption can be up to {FamilyMessage.MaxLength} characters.");
+        }
+
+        if (file is null || file.Length == 0 || file.Length > MaxPhotoBytes)
+        {
+            throw new DomainException("message.photo_invalid", "Send a JPEG, PNG, WebP or HEIC photo up to 10 MB.");
+        }
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, ct);
+        var bytes = ms.ToArray();
+        // Trust the bytes, not the declared type: the photo is served back with this content type.
+        var contentType = PhotoFormat.Detect(bytes)
+                          ?? throw new DomainException("message.photo_invalid", "Send a JPEG, PNG, WebP or HEIC photo up to 10 MB.");
+
+        var storageKey = await store.SaveAsync(familyId, bytes, ct);
+        try
+        {
+            return await Store(familyId, key, me, members,
+                thread => new FamilyMessage(thread, me, caption, null, null, clock.GetUtcNow(), new MessagePhoto(storageKey, contentType)), ct);
+        }
+        catch
+        {
+            await store.DeleteAsync(storageKey, CancellationToken.None);
+            throw;
+        }
+    }
+
+    /// <summary>The photo of a message, decrypted. Only the people in the chat can read it.</summary>
+    [HttpGet("{key}/messages/{messageId:guid}/photo")]
+    public async Task<IActionResult> Photo(Guid familyId, string key, Guid messageId, CancellationToken ct)
+    {
+        var me = User.UserId();
+        var thread = await FindThread(familyId, me, key, await Members(familyId, ct), ct)
+                     ?? throw new NotFoundException("message.not_found", "Message not found.");
+        var message = await db.FamilyMessages.AsNoTracking().FirstOrDefaultAsync(m => m.Id == messageId && m.ThreadId == thread.Id, ct);
+        if (message?.PhotoKey is null || await store.ReadAsync(message.PhotoKey, ct) is not { } bytes)
+        {
+            throw new NotFoundException("message.photo_not_found", "Photo not found.");
+        }
+
+        Response.Headers.CacheControl = "private, max-age=31536000, immutable";
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return File(bytes, message.PhotoContentType ?? "image/jpeg");
+    }
+
+    private async Task<IActionResult> Store(Guid familyId, string key, Guid me, List<Member> members, Func<MessageThread, FamilyMessage> create,
+        CancellationToken ct)
+    {
         var thread = await FindThread(familyId, me, key, members, ct) ?? await CreateThread(familyId, me, key, ct);
         db.Attach(thread);
-        var message = new FamilyMessage(thread, me, request.Body, request.TaskId, request.EventId, clock.GetUtcNow());
+        var message = create(thread);
         db.FamilyMessages.Add(message);
         await db.SaveChangesAsync(ct);
 
@@ -156,7 +226,7 @@ public class MessagesController(HallyDbContext db, MessagePush push, ChatRealtim
         var participants = members.Where(m => thread.Includes(m.UserId)).Select(m => m.UserId).ToList();
         await realtime.MessageSentAsync(familyId, thread, dto, participants);
         var recipients = participants.Where(id => id != me).ToList();
-        await push.SendAsync(familyId, thread, names.GetValueOrDefault(me, ""), saved.Body, recipients, me, ct);
+        await push.SendAsync(familyId, thread, names.GetValueOrDefault(me, ""), saved.Body, saved.PhotoKey is not null, recipients, me, ct);
         return StatusCode(201, dto);
     }
 
@@ -268,5 +338,39 @@ public class MessagesController(HallyDbContext db, MessagePush push, ChatRealtim
 
     private static MessageDto ToDto(FamilyMessage m, Dictionary<Guid, string> names, Dictionary<Guid, string>? titles) =>
         new(m.Id, m.SenderUserId, names.GetValueOrDefault(m.SenderUserId), m.Body, m.CreatedAt, m.TaskId, m.EventId,
-            (m.TaskId ?? m.EventId) is { } link && titles is not null ? titles.GetValueOrDefault(link) : null);
+            (m.TaskId ?? m.EventId) is { } link && titles is not null ? titles.GetValueOrDefault(link) : null, m.PhotoKey is not null);
+}
+
+/// <summary>Recognises the photo formats chats accept from their first bytes.</summary>
+public static class PhotoFormat
+{
+    public static string? Detect(ReadOnlySpan<byte> b)
+    {
+        if (b.Length >= 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF)
+        {
+            return "image/jpeg";
+        }
+
+        if (b.Length >= 8 && b[..8].SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }))
+        {
+            return "image/png";
+        }
+
+        if (b.Length >= 12 && b[..4].SequenceEqual("RIFF"u8) && b[8..12].SequenceEqual("WEBP"u8))
+        {
+            return "image/webp";
+        }
+
+        // ISO base media file: "ftyp" at offset 4, then a HEIF brand.
+        if (b.Length >= 12 && b[4..8].SequenceEqual("ftyp"u8))
+        {
+            var brand = System.Text.Encoding.ASCII.GetString(b[8..12]);
+            if (brand is "heic" or "heix" or "hevc" or "heim" or "heis" or "mif1" or "msf1")
+            {
+                return "image/heic";
+            }
+        }
+
+        return null;
+    }
 }

@@ -104,13 +104,15 @@ class _ChatTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final last = chat.lastMessage;
     final title = chat.isFamily ? l10n.chatFamily : (chat.otherName ?? l10n.chatFormerMember);
+    // A photo shows as "📷 Fotoğraf", or "📷 caption" when it has one.
+    final text = last == null || !last.hasPhoto ? last?.body ?? '' : '📷 ${last.body.isEmpty ? l10n.chatPhoto : last.body}';
     final preview = last == null
         ? (chat.isFamily ? l10n.chatFamilyEmpty : l10n.chatDirectEmpty)
         : last.senderUserId == myId
-            ? l10n.chatYou(last.body)
+            ? l10n.chatYou(text)
             : chat.isFamily
-                ? '${_firstName(last.senderName ?? l10n.chatFormerMember)}: ${last.body}'
-                : last.body;
+                ? '${_firstName(last.senderName ?? l10n.chatFormerMember)}: $text'
+                : text;
     return Card(
       child: ListTile(
         key: Key('chat.${chat.key}'),

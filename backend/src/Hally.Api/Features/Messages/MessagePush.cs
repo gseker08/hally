@@ -11,7 +11,7 @@ public class MessagePush(HallyDbContext db, IPushSender push, ILogger<MessagePus
 {
     public const int PreviewLength = 140;
 
-    public async Task SendAsync(Guid familyId, MessageThread thread, string senderName, string body, IReadOnlyCollection<Guid> recipients,
+    public async Task SendAsync(Guid familyId, MessageThread thread, string senderName, string body, bool hasPhoto, IReadOnlyCollection<Guid> recipients,
         Guid senderId, CancellationToken ct)
     {
         if (recipients.Count == 0)
@@ -23,7 +23,7 @@ public class MessagePush(HallyDbContext db, IPushSender push, ILogger<MessagePus
         {
             var users = await db.Users.AsNoTracking().Where(u => recipients.Contains(u.Id)).Select(u => new { u.Id, u.Locale }).ToListAsync(ct);
             var devices = await db.Devices.AsNoTracking().Where(d => recipients.Contains(d.UserId)).ToListAsync(ct);
-            var preview = body.Length > PreviewLength ? body[..PreviewLength] + "…" : body;
+            var text = body.Length > PreviewLength ? body[..PreviewLength] + "…" : body;
             var first = senderName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? senderName;
             var invalid = new List<string>();
             foreach (var user in users)
@@ -34,6 +34,8 @@ public class MessagePush(HallyDbContext db, IPushSender push, ILogger<MessagePus
                     continue;
                 }
 
+                var photo = user.Locale == "en" ? "📷 Photo" : "📷 Fotoğraf";
+                var preview = !hasPhoto ? text : text.Length == 0 ? photo : $"📷 {text}";
                 var title = thread.Kind == MessageThreadKind.Family
                     ? $"{first} · {(user.Locale == "en" ? "Family chat" : "Aile sohbeti")}"
                     : first;
