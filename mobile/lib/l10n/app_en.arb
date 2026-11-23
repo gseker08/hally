@@ -445,5 +445,19 @@
   "habitsStart": "Start today",
   "habitsNotToday": "Not today",
   "habitsTitleHint": "Habit (e.g. Brush teeth)",
-  "habitsPickDay": "Pick at least one day."
+  "habitsPickDay": "Pick at least one day.",
+  "dutiesTitle": "School run",
+  "dutiesBody": "Who drops off, who picks up; done alerts",
+  "dutiesToday": "Today",
+  "dutiesDropOff": "Drop-off",
+  "dutiesPickUp": "Pick-up",
+  "dutiesDroppedOff": "Dropped off",
+  "dutiesPickedUp": "Picked up",
+  "dutiesDoneBy": "{name} · {time}",
+  "dutiesNobody": "Not needed",
+  "dutiesHint": "Tap a day to change it. Tick the box if it is the same every week.",
+  "dutiesSomeoneElse": "Someone else",
+  "dutiesNameHint": "Name (e.g. Grandma, School bus)",
+  "dutiesEveryWeek": "Every {weekday}",
+  "dutiesReset": "Back to the usual plan"
 }
