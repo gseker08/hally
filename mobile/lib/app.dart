@@ -6,6 +6,7 @@ import 'core/config/app_config.dart';
 import 'core/design/theme.dart';
 import 'core/locale/app_language.dart';
 import 'features/home/today_widget.dart';
+import 'features/notifications/device_notifications.dart';
 import 'features/notifications/push.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'router.dart';
@@ -19,6 +20,8 @@ class HallyApp extends ConsumerWidget {
     ref.watch(pushControllerProvider);
     // Keeps the Android home screen "Today" widget up to date (a no-op elsewhere).
     ref.watch(todayWidgetSyncProvider);
+    // Ongoing lock screen notification while a screen time timer this user started runs (Android).
+    ref.watch(deviceNotificationsSyncProvider);
     return MaterialApp.router(
       scaffoldMessengerKey: hallyMessengerKey,
       title: AppConfig.appName,

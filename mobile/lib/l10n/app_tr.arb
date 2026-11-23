@@ -1441,5 +1441,28 @@
         "type": "int"
       }
     }
-  }
+  },
+  "screenNoticeTitle": "{name} · ekran süresi",
+  "@screenNoticeTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "screenNoticeBody": "Sayaç çalışıyor",
+  "screenNoticeGoal": "Günlük hedef: {minutes} dk",
+  "@screenNoticeGoal": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "screenNoticeStop": "Durdur",
+  "screenNoticeChannel": "Ekran süresi sayacı",
+  "screenNoticeChannelDescription": "Başlattığın ekran süresi sayacı çalışırken görünür",
+  "noticeActionFailedTitle": "Kaydedilemedi",
+  "noticeActionFailedBody": "Bağlantı olmadı. Hally'yi açıp tekrar dene.",
+  "noticeActionChannel": "Bildirim düğmeleri"
 }
