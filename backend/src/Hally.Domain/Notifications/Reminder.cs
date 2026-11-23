@@ -119,6 +119,7 @@ public enum NotificationKind
     EveningPrep,
     ScreenTimeGoal,
     MedicationDue,
+    StudyGoal,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

@@ -835,5 +835,52 @@
   "feedingFood": "Ne yedi?",
   "feedingFoodRequired": "Ne yediğini yazın.",
   "feedingTime": "Saat",
-  "feedingNow": "Şimdi"
+  "feedingNow": "Şimdi",
+  "studyTitle": "Ödev ve okuma",
+  "studyBody": "Ödev/okuma sayacı, günlük en az hedef ve seri",
+  "studyNoChildren": "Ödev ve okuma takibi için Aile sekmesinden çocuk ekleyin.",
+  "studyHomework": "Ödev",
+  "studyReading": "Okuma",
+  "studyStop": "Bitir",
+  "studyToday": "Bugün {time}",
+  "@studyToday": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "studyOfGoal": "Bugün {time} / hedef {goal}",
+  "@studyOfGoal": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      },
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "studyStreak": "Seri: {days} gün",
+  "@studyStreak": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "studySetGoal": "Günlük hedef koy",
+  "studyGoalLabel": "Günlük hedef: {goal}",
+  "@studyGoalLabel": {
+    "placeholders": {
+      "goal": {
+        "type": "String"
+      }
+    }
+  },
+  "studyGoalTitle": "Günlük hedef",
+  "studyGoalHint": "Ödev ve okuma birlikte en az bu kadar olsun. Hedef dolunca ikinize de bildirim gelir.",
+  "studyAdd": "Süre ekle",
+  "studyNote": "Not (ör. kitabın adı)",
+  "studyNoRecord": "Henüz kayıt yok"
 }

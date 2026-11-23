@@ -150,6 +150,22 @@ public class Child : Entity
     public const int MinScreenGoal = 5;
     public const int MaxScreenGoal = 24 * 60;
 
+    /// <summary>Daily homework + reading minimum in minutes, or null for no goal.</summary>
+    public int? DailyStudyMinutes { get; private set; }
+
+    public const int MinStudyGoal = 5;
+    public const int MaxStudyGoal = 4 * 60;
+
+    public void SetStudyGoal(int? minutes)
+    {
+        if (minutes is { } m && (m < MinStudyGoal || m > MaxStudyGoal))
+        {
+            throw new DomainException("child.study_goal_invalid", $"Daily goal must be {MinStudyGoal}-{MaxStudyGoal} minutes.");
+        }
+
+        DailyStudyMinutes = minutes;
+    }
+
     public void SetScreenTimeGoal(int? minutes)
     {
         if (minutes is { } m && (m < MinScreenGoal || m > MaxScreenGoal))

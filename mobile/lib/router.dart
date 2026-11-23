@@ -25,6 +25,7 @@ import 'features/notifications/notifications_screen.dart';
 import 'features/screen_time/screen_time_screen.dart';
 import 'features/shopping/shopping_screen.dart';
 import 'features/sleep/sleep_screen.dart';
+import 'features/study/study_screen.dart';
 import 'features/sharing/weekly_card_screen.dart';
 import 'features/planning/calendar_screen.dart';
 import 'features/planning/tasks_screen.dart';
@@ -95,6 +96,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/chats/:key', builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?)),
       GoRoute(path: '/sleep', builder: (_, __) => const SleepScreen()),
       GoRoute(path: '/feeding', builder: (_, __) => const FeedingScreen()),
+      GoRoute(path: '/study', builder: (_, __) => const StudyScreen()),
       GoRoute(path: '/shopping', builder: (_, __) => const ShoppingScreen()),
       GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimeScreen()),
