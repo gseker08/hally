@@ -16,6 +16,7 @@ import 'features/feeding/feeding_screen.dart';
 import 'features/family/family_setup_screen.dart';
 import 'features/family/invite_partner_screen.dart';
 import 'features/family/join_family_screen.dart';
+import 'features/habits/habits_screen.dart';
 import 'features/home/home_shell.dart';
 import 'features/medications/medications_screen.dart';
 import 'features/messages/chat_screen.dart';
@@ -99,6 +100,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/feeding', builder: (_, __) => const FeedingScreen()),
       GoRoute(path: '/study', builder: (_, __) => const StudyScreen()),
       GoRoute(path: '/stars', builder: (_, __) => const PointsScreen()),
+      GoRoute(path: '/habits', builder: (_, __) => const HabitsScreen()),
       GoRoute(path: '/shopping', builder: (_, __) => const ShoppingScreen()),
       GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimeScreen()),

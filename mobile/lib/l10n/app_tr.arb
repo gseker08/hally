@@ -925,5 +925,26 @@
   "pointsChoreHint": "Görev (ör. Odanı topla)",
   "pointsRewardHint": "Ödül (ör. 20 TL harçlık)",
   "pointsEveryone": "Herkes",
-  "pointsTitleRequired": "Bir ad yazın."
+  "pointsTitleRequired": "Bir ad yazın.",
+  "habitsTitle": "Alışkanlıklar",
+  "habitsBody": "Diş fırçalama gibi günlük alışkanlıklar ve seriler",
+  "habitsNoChildren": "Alışkanlık eklemek için Aile sekmesinden çocuk ekleyin.",
+  "habitsEmpty": "Henüz alışkanlık yok. Ör. Diş fırçalama, Yatağını topla.",
+  "habitsAdd": "Alışkanlık ekle",
+  "habitsDoneToday": "Bugün yapıldı",
+  "habitsStreak": "Seri: {days} gün · en iyi {best}",
+  "@habitsStreak": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "best": {
+        "type": "int"
+      }
+    }
+  },
+  "habitsStart": "Bugün başla",
+  "habitsNotToday": "Bugün yok",
+  "habitsTitleHint": "Alışkanlık (ör. Diş fırçalama)",
+  "habitsPickDay": "En az bir gün seçin."
 }
