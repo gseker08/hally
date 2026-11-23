@@ -920,6 +920,170 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("habit_checks", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Health.GrowthMeasurement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<decimal?>("HeadCm")
+                        .HasPrecision(4, 1)
+                        .HasColumnType("numeric(4,1)")
+                        .HasColumnName("head_cm");
+
+                    b.Property<decimal?>("HeightCm")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("numeric(5,1)")
+                        .HasColumnName("height_cm");
+
+                    b.Property<DateOnly>("MeasuredOn")
+                        .HasColumnType("date")
+                        .HasColumnName("measured_on");
+
+                    b.Property<decimal?>("WeightKg")
+                        .HasPrecision(6, 2)
+                        .HasColumnType("numeric(6,2)")
+                        .HasColumnName("weight_kg");
+
+                    b.HasKey("Id")
+                        .HasName("pk_growth_measurements");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_growth_measurements_created_by_user_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_growth_measurements_family_id");
+
+                    b.HasIndex("ChildId", "MeasuredOn")
+                        .HasDatabaseName("ix_growth_measurements_child_id_measured_on");
+
+                    b.ToTable("growth_measurements", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.HealthAppointment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Doctor")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("doctor");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_health_appointments");
+
+                    b.HasIndex("ChildId")
+                        .HasDatabaseName("ix_health_appointments_child_id");
+
+                    b.HasIndex("EventId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_health_appointments_event_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_health_appointments_family_id");
+
+                    b.ToTable("health_appointments", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.HealthProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Allergies")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("allergies");
+
+                    b.Property<string>("BloodType")
+                        .HasMaxLength(4)
+                        .HasColumnType("character varying(4)")
+                        .HasColumnName("blood_type");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<string>("Conditions")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("conditions");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DoctorName")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("doctor_name");
+
+                    b.Property<string>("DoctorPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("doctor_phone");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("notes");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_health_profiles");
+
+                    b.HasIndex("ChildId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_health_profiles_child_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_health_profiles_family_id");
+
+                    b.ToTable("health_profiles", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Health.Medication", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1041,6 +1205,62 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_medication_doses_medication_id_given_at");
 
                     b.ToTable("medication_doses", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.VaccineRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateOnly?>("DueOn")
+                        .HasColumnType("date")
+                        .HasColumnName("due_on");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<DateOnly?>("GivenOn")
+                        .HasColumnType("date")
+                        .HasColumnName("given_on");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("note");
+
+                    b.HasKey("Id")
+                        .HasName("pk_vaccines");
+
+                    b.HasIndex("ChildId")
+                        .HasDatabaseName("ix_vaccines_child_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_vaccines_created_by_user_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_vaccines_family_id");
+
+                    b.ToTable("vaccines", (string)null);
                 });
 
             modelBuilder.Entity("Hally.Domain.Messaging.FamilyMessage", b =>
@@ -2459,6 +2679,70 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_habit_checks_habits_habit_id");
                 });
 
+            modelBuilder.Entity("Hally.Domain.Health.GrowthMeasurement", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_growth_measurements_children_child_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_growth_measurements_users_created_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_growth_measurements_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.HealthAppointment", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_health_appointments_children_child_id");
+
+                    b.HasOne("Hally.Domain.Planning.CalendarEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_health_appointments_events_event_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_health_appointments_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.HealthProfile", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_health_profiles_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_health_profiles_families_family_id");
+                });
+
             modelBuilder.Entity("Hally.Domain.Health.Medication", b =>
                 {
                     b.HasOne("Hally.Domain.Families.Child", null)
@@ -2496,6 +2780,29 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_medication_doses_medications_medication_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.VaccineRecord", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_vaccines_children_child_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_vaccines_users_created_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_vaccines_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Messaging.FamilyMessage", b =>

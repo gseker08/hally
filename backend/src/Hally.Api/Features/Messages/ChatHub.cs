@@ -43,6 +43,8 @@ public interface IChatClient
 
     /// <summary>Expenses or settlements changed; apps reload.</summary>
     Task ExpensesChanged(Expenses.ExpensesEvent e);
+
+    Task HealthChanged(Health.HealthEvent e);
 }
 
 /// <summary>
