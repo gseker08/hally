@@ -1265,6 +1265,58 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("share_links", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Shopping.ShoppingItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AddedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("added_by_user_id");
+
+                    b.Property<DateTimeOffset?>("CheckedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_at");
+
+                    b.Property<Guid?>("CheckedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("checked_by_user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Quantity")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("quantity");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("text");
+
+                    b.HasKey("Id")
+                        .HasName("pk_shopping_items");
+
+                    b.HasIndex("AddedByUserId")
+                        .HasDatabaseName("ix_shopping_items_added_by_user_id");
+
+                    b.HasIndex("CheckedByUserId")
+                        .HasDatabaseName("ix_shopping_items_checked_by_user_id");
+
+                    b.HasIndex("FamilyId", "CheckedAt")
+                        .HasDatabaseName("ix_shopping_items_family_id_checked_at");
+
+                    b.ToTable("shopping_items", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Users.ExternalLogin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1762,6 +1814,28 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_share_links_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Shopping.ShoppingItem", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AddedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_shopping_items_users_added_by_user_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CheckedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_shopping_items_users_checked_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_shopping_items_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Users.ExternalLogin", b =>

@@ -26,11 +26,12 @@ class PushEvent {
 /// Where tapping a push should take the user. Pure so it can be unit tested.
 ///
 /// The server sends `kind=Message` + `chatKey` for chat messages, and `targetKind` (Task/Event) for reminders and
-/// the evening summary, `kind=ScreenTimeGoal` when a child's daily screen time goal is reached, `MedicationGiven`/`MedicationDue` for medications. Anything else opens the inbox.
+/// the evening summary, `kind=ScreenTimeGoal` when a child's daily screen time goal is reached, `MedicationGiven`/`MedicationDue` for medications, `ShoppingHeadingOut` for the shopping list. Anything else opens the inbox.
 String pushRoute(Map<String, dynamic> data) {
   final chatKey = data['chatKey'];
   if (data['kind'] == 'Message' && chatKey is String && chatKey.isNotEmpty) return '/chats/$chatKey';
   if (data['kind'] == 'ScreenTimeGoal') return '/screen-time';
+  if (data['kind'] == 'ShoppingHeadingOut') return '/shopping';
   if (data['kind'] == 'MedicationGiven' || data['kind'] == 'MedicationDue') return '/medications';
   return switch (data['targetKind']) {
     'Task' => '/tasks',

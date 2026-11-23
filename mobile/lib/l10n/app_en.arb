@@ -343,5 +343,22 @@
   "medicationRemind": "Remind when the next dose is due",
   "medicationNotes": "Note (optional)",
   "medicationMissing": "Pick the child, the name and the interval.",
-  "medicationDisclaimer": "Hally does not suggest doses. You enter the interval from your doctor or the leaflet; Hally only keeps the record and warns about early doses."
+  "medicationDisclaimer": "Hally does not suggest doses. You enter the interval from your doctor or the leaflet; Hally only keeps the record and warns about early doses.",
+  "shoppingTitle": "Shopping list",
+  "shoppingBody": "One shared list that updates live in the shop",
+  "shoppingHint": "Add: milk, bread, 1.5 kg apples",
+  "shoppingAdd": "Add",
+  "shoppingEmpty": "The list is empty",
+  "shoppingEmptyBody": "Whatever you add shows up on your partner's phone right away.",
+  "shoppingAllDone": "All bought 🎉",
+  "shoppingAddedBy": "Added by {name}",
+  "shoppingBoughtBy": "Bought by {name}",
+  "shoppingBought": "Bought ({count})",
+  "shoppingClear": "Clear",
+  "shoppingAlreadyOnList": "Already on the list: {items}",
+  "shoppingQuantity": "Quantity",
+  "shoppingQuantityHint": "e.g. 2 kg, 3 pcs",
+  "shoppingHeadingOut": "I'm going shopping",
+  "shoppingHeadingOutSent": "Your family was told; what they add shows up here.",
+  "shoppingHeadingOutAlready": "You told them a moment ago."
 }

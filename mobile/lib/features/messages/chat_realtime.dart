@@ -35,6 +35,9 @@ abstract interface class ChatRealtime {
 
   /// Raw `MedicationChanged` payloads (`{familyId, medicationId}`).
   Stream<Map<String, dynamic>> get medicationEvents;
+
+  /// Raw `ShoppingChanged` payloads (`{familyId}`).
+  Stream<Map<String, dynamic>> get shoppingEvents;
   bool get isConnected;
   Future<void> dispose();
 }
@@ -62,6 +65,10 @@ class SignalRChatRealtime implements ChatRealtime {
       final payload = args?.firstOrNull;
       if (payload is Map) _medication.add(Map<String, dynamic>.from(payload));
     });
+    _connection.on('ShoppingChanged', (args) {
+      final payload = args?.firstOrNull;
+      if (payload is Map) _shopping.add(Map<String, dynamic>.from(payload));
+    });
     _connection.onclose(({error}) => _scheduleRetry());
     unawaited(_start());
   }
@@ -74,6 +81,7 @@ class SignalRChatRealtime implements ChatRealtime {
   final _events = StreamController<ChatMessageEvent>.broadcast();
   final _screenTime = StreamController<Map<String, dynamic>>.broadcast();
   final _medication = StreamController<Map<String, dynamic>>.broadcast();
+  final _shopping = StreamController<Map<String, dynamic>>.broadcast();
   Timer? _retry;
   bool _disposed = false;
 
@@ -85,6 +93,9 @@ class SignalRChatRealtime implements ChatRealtime {
 
   @override
   Stream<Map<String, dynamic>> get medicationEvents => _medication.stream;
+
+  @override
+  Stream<Map<String, dynamic>> get shoppingEvents => _shopping.stream;
 
   @override
   bool get isConnected => _connection.state == HubConnectionState.Connected;
@@ -139,6 +150,7 @@ class SignalRChatRealtime implements ChatRealtime {
     await _events.close();
     await _screenTime.close();
     await _medication.close();
+    await _shopping.close();
   }
 }
 
@@ -152,6 +164,9 @@ class NoChatRealtime implements ChatRealtime {
 
   @override
   Stream<Map<String, dynamic>> get medicationEvents => const Stream.empty();
+
+  @override
+  Stream<Map<String, dynamic>> get shoppingEvents => const Stream.empty();
 
   @override
   bool get isConnected => false;

@@ -690,5 +690,50 @@
         "type": "int"
       }
     }
+  },
+  "shoppingTitle": "Alışveriş listesi",
+  "shoppingBody": "Ortak liste; markette anında güncellenir",
+  "shoppingHint": "Ekle: süt, ekmek, 1,5 kg elma",
+  "shoppingAdd": "Ekle",
+  "shoppingEmpty": "Liste boş",
+  "shoppingEmptyBody": "Eklediğin her şey eşinin telefonunda da anında görünür.",
+  "shoppingAllDone": "Hepsi alındı 🎉",
+  "shoppingAddedBy": "{name} ekledi",
+  "shoppingBoughtBy": "{name} aldı",
+  "shoppingBought": "Alınanlar ({count})",
+  "shoppingClear": "Temizle",
+  "shoppingAlreadyOnList": "Zaten listede: {items}",
+  "shoppingQuantity": "Miktar",
+  "shoppingQuantityHint": "ör. 2 kg, 3 adet",
+  "shoppingHeadingOut": "Alışverişe çıkıyorum",
+  "shoppingHeadingOutSent": "Ailene haber verildi; eklediklerini burada göreceksin.",
+  "shoppingHeadingOutAlready": "Az önce haber verdin.",
+  "@shoppingAddedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@shoppingBoughtBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "@shoppingBought": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@shoppingAlreadyOnList": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
   }
 }

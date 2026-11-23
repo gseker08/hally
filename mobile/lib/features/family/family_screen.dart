@@ -91,6 +91,16 @@ class FamilyScreen extends ConsumerWidget {
                     },
                   ),
                 ),
+              Card(
+                child: ListTile(
+                  key: const Key('family.shopping'),
+                  leading: const HallyIconBadge(icon: Icons.shopping_basket_rounded, color: HallyColors.mint),
+                  title: Text(l10n.shoppingTitle),
+                  subtitle: Text(l10n.shoppingBody),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => context.push('/shopping'),
+                ),
+              ),
               const SizedBox(height: HallySpace.sm),
               HallyPressable(
                 onTap: () => context.push('/family/${f.id}/invite'),
