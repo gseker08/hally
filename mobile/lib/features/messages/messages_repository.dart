@@ -1,3 +1,7 @@
+import 'dart:collection';
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
@@ -15,6 +19,7 @@ class FamilyChatMessage {
     this.taskId,
     this.eventId,
     this.linkTitle,
+    this.hasPhoto = false,
   });
 
   factory FamilyChatMessage.fromJson(Map<String, dynamic> j) => FamilyChatMessage(
@@ -26,6 +31,7 @@ class FamilyChatMessage {
         taskId: j['taskId'] as String?,
         eventId: j['eventId'] as String?,
         linkTitle: j['linkTitle'] as String?,
+        hasPhoto: j['hasPhoto'] as bool? ?? false,
       );
 
   final String id;
@@ -40,6 +46,9 @@ class FamilyChatMessage {
   final String? taskId;
   final String? eventId;
   final String? linkTitle;
+
+  /// The message carries a photo; [body] is then its caption and may be empty.
+  final bool hasPhoto;
 }
 
 class ChatSummary {
@@ -76,6 +85,12 @@ abstract interface class MessagesRepository {
   Future<List<FamilyChatMessage>> messages(String familyId, String key, {DateTime? after, DateTime? before});
   Future<FamilyChatMessage> send(String familyId, String key, String body, {String? taskId, String? eventId});
   Future<void> markRead(String familyId, String key);
+
+  /// Sends a photo (JPEG, PNG, WebP or HEIC, up to 10 MB) with an optional caption.
+  Future<FamilyChatMessage> sendPhoto(String familyId, String key, List<int> bytes, String fileName, String contentType, {String? caption});
+
+  /// The photo of a message. Photos never change, so implementations may cache them.
+  Future<Uint8List> photo(String familyId, String key, String messageId);
 }
 
 class ApiMessagesRepository implements MessagesRepository {
@@ -121,6 +136,42 @@ class ApiMessagesRepository implements MessagesRepository {
 
   @override
   Future<void> markRead(String familyId, String key) => _guard(() => _api.dio.post<dynamic>('${_base(familyId)}/$key/read'));
+
+  @override
+  Future<FamilyChatMessage> sendPhoto(String familyId, String key, List<int> bytes, String fileName, String contentType, {String? caption}) =>
+      _guard(() async {
+        final res = await _api.dio.post<Map<String, dynamic>>('${_base(familyId)}/$key/photos',
+            data: FormData.fromMap({
+              'file': MultipartFile.fromBytes(bytes, filename: fileName, contentType: DioMediaType.parse(contentType)),
+              if (caption != null && caption.trim().isNotEmpty) 'caption': caption.trim(),
+            }));
+        return FamilyChatMessage.fromJson(res.data!);
+      });
+
+  /// Recently viewed photos, so scrolling back and forth does not download them again.
+  final _photos = LinkedHashMap<String, Future<Uint8List>>();
+  static const _cacheSize = 40;
+
+  @override
+  Future<Uint8List> photo(String familyId, String key, String messageId) {
+    final cached = _photos.remove(messageId);
+    if (cached != null) return _photos[messageId] = cached;
+    final future = _guard(() async {
+      final res = await _api.dio.get<List<int>>('${_base(familyId)}/$key/messages/$messageId/photo',
+          options: Options(responseType: ResponseType.bytes));
+      return Uint8List.fromList(res.data!);
+    });
+    _photos[messageId] = future;
+    // A failed download is not kept, so the next try fetches again.
+    future.catchError((Object _) {
+      _photos.remove(messageId);
+      return Uint8List(0);
+    });
+    while (_photos.length > _cacheSize) {
+      _photos.remove(_photos.keys.first);
+    }
+    return future;
+  }
 }
 
 final messagesRepositoryProvider = Provider<MessagesRepository>((ref) => ApiMessagesRepository(ref.watch(apiClientProvider)));

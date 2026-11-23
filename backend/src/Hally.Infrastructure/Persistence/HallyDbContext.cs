@@ -290,6 +290,8 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
         {
             e.ToTable("family_messages");
             e.Property(x => x.Body).HasMaxLength(FamilyMessage.MaxLength).IsRequired();
+            e.Property(x => x.PhotoKey).HasMaxLength(120);
+            e.Property(x => x.PhotoContentType).HasMaxLength(40);
             e.HasIndex(x => new { x.ThreadId, x.CreatedAt });
             e.HasOne<MessageThread>().WithMany().HasForeignKey(x => x.ThreadId).OnDelete(DeleteBehavior.Cascade);
             // Deleting an account removes the person's messages too (right to erasure).

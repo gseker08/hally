@@ -7,6 +7,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import 'chat_photo.dart';
 import 'chat_realtime.dart';
 import 'chats_screen.dart';
 import 'messages_repository.dart';
@@ -155,9 +156,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
-  void _showError() {
+  /// Camera or gallery, then a full-screen preview with an optional caption (prefilled with what was typed).
+  Future<void> _sendPhoto() async {
+    final familyId = _familyId;
+    if (familyId == null || _sending) return;
+    final source = await askPhotoSource(context);
+    if (source == null || !mounted) return;
+    final PickedPhoto? photo;
+    try {
+      photo = await ref.read(photoPickerProvider)(source);
+    } catch (_) {
+      // No permission for the camera or photos, or no camera at all.
+      _showError(AppLocalizations.of(context).chatPhotoPickFailed);
+      return;
+    }
+    if (photo == null || !mounted) return;
+    final typed = _input.text.trim();
+    final caption = await Navigator.of(context).push<String>(MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => PhotoPreviewPage(photo: photo!, caption: typed),
+    ));
+    if (caption == null || !mounted) return;
+    setState(() => _sending = true);
+    try {
+      final sent = await _repo.sendPhoto(familyId, widget.chatKey, photo.bytes, photo.fileName, photo.contentType, caption: caption);
+      if (!mounted) return;
+      if (typed.isNotEmpty) _input.clear();
+      setState(() {
+        if (!_messages.any((m) => m.id == sent.id)) _messages.add(sent);
+      });
+    } catch (_) {
+      if (mounted) _showError(AppLocalizations.of(context).chatPhotoSendFailed);
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  void _showError([String? text]) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).errorGeneric)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text ?? AppLocalizations.of(context).errorGeneric)));
   }
 
   @override
@@ -199,16 +236,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               final previous = index > 0 ? _messages[index - 1] : null;
                               final mine = m.senderUserId == myId;
                               final showName = isFamily && !mine && previous?.senderUserId != m.senderUserId;
-                              return _Bubble(message: m, mine: mine, showName: showName);
+                              return _Bubble(message: m, mine: mine, showName: showName, familyId: _familyId ?? '', chatKey: widget.chatKey);
                             },
                           ),
           ),
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.xs, HallySpace.sm, HallySpace.sm),
+              padding: const EdgeInsets.fromLTRB(HallySpace.xs, HallySpace.xs, HallySpace.sm, HallySpace.sm),
               child: Row(
                 children: [
+                  IconButton(
+                    key: const Key('chat.photo'),
+                    tooltip: l10n.chatPhotoAdd,
+                    onPressed: _sending ? null : _sendPhoto,
+                    icon: const Icon(Icons.add_photo_alternate_rounded),
+                  ),
                   Expanded(
                     child: TextField(
                       key: const Key('chat.input'),
@@ -239,11 +282,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 }
 
 class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message, required this.mine, required this.showName});
+  const _Bubble({required this.message, required this.mine, required this.showName, required this.familyId, required this.chatKey});
 
   final FamilyChatMessage message;
   final bool mine;
   final bool showName;
+  final String familyId;
+  final String chatKey;
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +310,7 @@ class _Bubble extends StatelessWidget {
                   child: Text(message.senderName ?? l10n.chatFormerMember, style: theme.textTheme.labelMedium),
                 ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                padding: message.hasPhoto ? const EdgeInsets.fromLTRB(4, 4, 4, 7) : const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
                 decoration: BoxDecoration(
                   color: mine ? HallyColors.cherry : theme.colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.only(
@@ -293,10 +338,19 @@ class _Bubble extends StatelessWidget {
                           ],
                         ),
                       ),
-                    Text(message.body, style: theme.textTheme.bodyMedium?.copyWith(color: fg)),
-                    const SizedBox(height: 2),
-                    Text(chatTime(context, message.createdAt),
-                        style: theme.textTheme.labelSmall?.copyWith(color: mine ? Colors.white70 : theme.colorScheme.onSurfaceVariant)),
+                    if (message.hasPhoto) ChatPhoto(familyId: familyId, chatKey: chatKey, messageId: message.id),
+                    Padding(
+                      padding: message.hasPhoto ? const EdgeInsets.fromLTRB(10, 6, 10, 0) : EdgeInsets.zero,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (message.body.isNotEmpty) Text(message.body, style: theme.textTheme.bodyMedium?.copyWith(color: fg)),
+                          const SizedBox(height: 2),
+                          Text(chatTime(context, message.createdAt),
+                              style: theme.textTheme.labelSmall?.copyWith(color: mine ? Colors.white70 : theme.colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

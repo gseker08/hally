@@ -5,6 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hally/core/auth/auth_repository.dart';
 import 'package:hally/core/design/theme.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:image_picker/image_picker.dart';
+import 'package:hally/features/messages/chat_photo.dart';
 
 import 'package:hally/features/messages/chat_realtime.dart';
 import 'package:hally/features/messages/chat_screen.dart';
@@ -19,13 +24,16 @@ class _FakeMessages implements MessagesRepository {
   final read = <String>[];
   var _n = 0;
 
-  FamilyChatMessage add(String key, String sender, String body, {String? name}) {
+  final photos = <String, ({String key, String contentType, String? caption})>{};
+
+  FamilyChatMessage add(String key, String sender, String body, {String? name, bool photo = false}) {
     final m = FamilyChatMessage(
       id: 'm${_n++}',
       senderUserId: sender,
       senderName: name,
       body: body,
       createdAt: DateTime.utc(2026, 11, 22, 10, _n),
+      hasPhoto: photo,
     );
     byKey.putIfAbsent(key, () => []).add(m);
     return m;
@@ -52,7 +60,20 @@ class _FakeMessages implements MessagesRepository {
 
   @override
   Future<void> markRead(String familyId, String key) async => read.add(key);
+
+  @override
+  Future<FamilyChatMessage> sendPhoto(String familyId, String key, List<int> bytes, String fileName, String contentType, {String? caption}) async {
+    final m = add(key, 'u1', caption ?? '', photo: true);
+    photos[m.id] = (key: key, contentType: contentType, caption: caption);
+    return m;
+  }
+
+  @override
+  Future<Uint8List> photo(String familyId, String key, String messageId) async => _png;
 }
+
+// 1x1 transparent PNG.
+final _png = base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
 
 class _FakeRealtime implements ChatRealtime {
   final controller = StreamController<ChatMessageEvent>.broadcast();
@@ -91,8 +112,9 @@ class _FakeRealtime implements ChatRealtime {
   Future<void> dispose() => controller.close();
 }
 
-Widget _app(Widget child, _FakeMessages repo, {ChatRealtime? realtime}) => ProviderScope(
+Widget _app(Widget child, _FakeMessages repo, {ChatRealtime? realtime, PhotoPicker? picker}) => ProviderScope(
       overrides: [
+        if (picker != null) photoPickerProvider.overrideWithValue(picker),
         meProvider.overrideWith((ref) async => _me),
         messagesRepositoryProvider.overrideWithValue(repo),
         chatRealtimeProvider.overrideWithValue(realtime ?? NoChatRealtime()),
@@ -180,6 +202,50 @@ void main() {
     await tester.pumpWidget(_app(const ChatScreen(chatKey: 'u2', title: 'Mehmet'), _FakeMessages()));
     await tester.pumpAndSettle();
     expect(find.text('Bu yazışmayı yalnızca ikiniz görürsünüz.'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('a photo is picked, previewed with a caption, sent and opened full screen', (tester) async {
+    _phone(tester);
+    final repo = _FakeMessages()..add('u2', 'u2', 'Karneyi gönderir misin?', name: 'Mehmet');
+    ImageSource? asked;
+    Future<PickedPhoto?> picker(ImageSource source) async {
+      asked = source;
+      return PickedPhoto(bytes: _png, fileName: 'IMG_1.jpg', contentType: PickedPhoto.contentTypeOf('IMG_1.jpg'));
+    }
+
+    await tester.pumpWidget(_app(const ChatScreen(chatKey: 'u2', title: 'Mehmet'), repo, picker: picker));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('chat.photo')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('chat.photo.gallery')));
+    await tester.pumpAndSettle();
+    expect(asked, ImageSource.gallery);
+    expect(find.byKey(const Key('chat.photo.preview')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('chat.photo.caption')), 'İşte karne');
+    await tester.tap(find.byKey(const Key('chat.photo.send')));
+    await tester.pumpAndSettle();
+
+    final sent = repo.byKey['u2']!.last;
+    expect(sent.hasPhoto, isTrue);
+    expect(repo.photos[sent.id]!.contentType, 'image/jpeg');
+    expect(find.text('İşte karne'), findsOneWidget);
+    expect(find.byKey(Key('chat.photo.${sent.id}')), findsOneWidget);
+
+    await tester.tap(find.byKey(Key('chat.photo.${sent.id}')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('chat.photo.viewer')), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('the chat list shows a photo as "📷 Fotoğraf"', (tester) async {
+    _phone(tester);
+    final repo = _FakeMessages()..add(familyChatKey, 'u2', '', name: 'Mehmet Yılmaz', photo: true);
+    await tester.pumpWidget(_app(const ChatsScreen(), repo));
+    await tester.pumpAndSettle();
+    expect(find.text('Mehmet: 📷 Fotoğraf'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }
