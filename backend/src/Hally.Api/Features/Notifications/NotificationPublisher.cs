@@ -50,7 +50,14 @@ public class NotificationPublisher(HallyDbContext db, IPushSender push, TimeProv
                 data["targetId"] = target.ToString();
             }
 
-            foreach (var token in await push.SendAsync(tokens, new PushMessage(n.Title, n.Body, data), ct))
+            // A medication reminder carries a "Verdim" button, which the app draws on Android.
+            var appDraws = n.Kind == NotificationKind.MedicationDue;
+            if (appDraws && n.TargetId is { } medicationId)
+            {
+                data["medicationId"] = medicationId.ToString();
+            }
+
+            foreach (var token in await push.SendAsync(tokens, new PushMessage(n.Title, n.Body, data, appDraws), ct))
             {
                 invalid.Add(token);
             }

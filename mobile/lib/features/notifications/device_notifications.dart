@@ -14,6 +14,7 @@ import '../../core/locale/app_language.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../router.dart';
 import '../family/family_repository.dart';
+import '../medications/medications_repository.dart';
 import '../screen_time/screen_time_repository.dart';
 
 /// What a notification belongs to and what its buttons act on. Travels as the notification payload (JSON), so
@@ -26,7 +27,7 @@ class NotificationTarget {
     return NotificationTarget(type: j['type'] as String, familyId: j['familyId'] as String, id: j['id'] as String);
   }
 
-  /// `screen` (id = child id).
+  /// `screen` (id = child id) or `med` (id = medication id).
   final String type;
   final String familyId;
   final String id;
@@ -36,6 +37,7 @@ class NotificationTarget {
   /// The screen a tap on the notification opens.
   String get route => switch (type) {
         'screen' => '/screen-time',
+        'med' => '/medications',
         _ => '/notifications',
       };
 }
@@ -95,6 +97,9 @@ abstract interface class DeviceNotifications {
   /// [onTap] gets the target of a tapped notification, also the one that started the app.
   Future<void> init(void Function(NotificationTarget target) onTap);
   Future<void> showScreenTime(ScreenTimeNotice notice, AppLocalizations l10n);
+
+  /// A medication reminder from the server (`kind=MedicationDue`, data-only on Android) with a "Verdim" button.
+  Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n);
   Future<void> cancel(NotificationTarget target);
 
   /// Targets of the notifications of [type] this app shows now.
@@ -108,6 +113,8 @@ class NoDeviceNotifications implements DeviceNotifications {
   @override
   Future<void> showScreenTime(ScreenTimeNotice notice, AppLocalizations l10n) async {}
   @override
+  Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n) async {}
+  @override
   Future<void> cancel(NotificationTarget target) async {}
   @override
   Future<List<NotificationTarget>> active(String type) async => const [];
@@ -118,6 +125,7 @@ class NoDeviceNotifications implements DeviceNotifications {
 const _icon = '@mipmap/ic_launcher_monochrome';
 const _cherry = Color(0xFFA8133C);
 const stopScreenTimeAction = 'screen.stop';
+const giveMedicationAction = 'med.given';
 
 class LocalDeviceNotifications implements DeviceNotifications {
   final _plugin = FlutterLocalNotificationsPlugin();
@@ -125,6 +133,14 @@ class LocalDeviceNotifications implements DeviceNotifications {
 
   @override
   Future<void> init(void Function(NotificationTarget target) onTap) => _ready ??= _init(onTap);
+
+  /// For a background isolate (a push while the app is closed): no tap handling, no permission prompt.
+  Future<void> initBackground() => _ready ??= _plugin
+      .initialize(
+        settings: const InitializationSettings(android: AndroidInitializationSettings(_icon)),
+        onDidReceiveBackgroundNotificationResponse: hallyNotificationAction,
+      )
+      .then((_) {});
 
   Future<void> _init(void Function(NotificationTarget target) onTap) async {
     void open(NotificationResponse r) {
@@ -173,6 +189,32 @@ class LocalDeviceNotifications implements DeviceNotifications {
           visibility: NotificationVisibility.public,
           timeoutAfter: n.until == null ? null : n.until!.difference(now).inMilliseconds.clamp(1000, 1 << 31),
           actions: [AndroidNotificationAction(stopScreenTimeAction, l10n.screenNoticeStop, cancelNotification: false)],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n) async {
+    await _ready;
+    await _plugin.show(
+      id: notificationIdFor(target.type, target.id),
+      title: title,
+      body: body,
+      payload: target.toPayload(),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          'medications',
+          l10n.medNoticeChannel,
+          channelDescription: l10n.medNoticeChannelDescription,
+          icon: _icon,
+          color: _cherry,
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.reminder,
+          // The medicine's name stays hidden on a locked phone if the user chose "hide sensitive content".
+          visibility: NotificationVisibility.private,
+          actions: [AndroidNotificationAction(giveMedicationAction, l10n.medNoticeGiven, cancelNotification: false)],
         ),
       ),
     );
@@ -275,16 +317,69 @@ class _KeepSessionTokens implements TokenStorage {
   Future<void> clear() async {}
 }
 
-/// Runs a notification button against the API. Returns false when it could not be saved.
-Future<bool> runNotificationAction(ApiClient api, String actionId, NotificationTarget target) async {
+/// What a notification button did.
+sealed class ActionResult {
+  const ActionResult();
+}
+
+class ActionDone extends ActionResult {
+  const ActionDone();
+}
+
+/// "Verdim" was not saved because the dose comes too soon: someone already gave it (or the daily limit is
+/// reached). From the lock screen Hally never overrides that; the app asks first.
+class ActionDoseRefused extends ActionResult {
+  const ActionDoseRefused(this.warning);
+
+  final DoseWarning warning;
+}
+
+class ActionFailed extends ActionResult {
+  const ActionFailed();
+}
+
+/// Runs a notification button against the API.
+Future<ActionResult> runNotificationAction(ApiClient api, String actionId, NotificationTarget target) async {
   try {
     switch (actionId) {
       case stopScreenTimeAction:
         await api.dio.post<void>('/api/v1/families/${target.familyId}/children/${target.id}/screen-time/stop');
-        return true;
+        return const ActionDone();
+      case giveMedicationAction:
+        await ApiMedicationsRepository(api).give(target.familyId, target.id);
+        return const ActionDone();
     }
+  } on DoseWarning catch (w) {
+    return ActionDoseRefused(w);
   } catch (e) {
-    debugPrint('notification action $actionId failed: ${ApiClient.toApiException(e)}');
+    debugPrint('notification action $actionId failed: $e');
+  }
+  return const ActionFailed();
+}
+
+String _clock(DateTime t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+
+/// The language the app shows, also from a background isolate.
+Future<AppLocalizations> backgroundLocalizations() async {
+  final language = await SecureLanguageStorage().read();
+  return lookupAppLocalizations(language.locale ?? resolveDeviceLocale(PlatformDispatcher.instance.locale));
+}
+
+/// A push from the server that the app draws or clears itself. Used for pushes in the background (FCM's
+/// background isolate) and while the app is open. Returns true when it handled the push.
+Future<bool> handleNotificationPush(Map<String, dynamic> data, DeviceNotifications notifications, AppLocalizations l10n) async {
+  final familyId = data['familyId'];
+  final medicationId = data['medicationId'];
+  if (familyId is! String || medicationId is! String) return false;
+  final target = NotificationTarget(type: 'med', familyId: familyId, id: medicationId);
+  switch (data['kind']) {
+    case 'MedicationDue':
+      await notifications.showMedicationDue(target, '${data['title'] ?? ''}', '${data['body'] ?? ''}', l10n);
+      return true;
+    case 'MedicationGiven':
+      // The other parent gave it: the reminder on this phone is done.
+      await notifications.cancel(target);
+      return false;
   }
   return false;
 }
@@ -295,21 +390,34 @@ Future<void> hallyNotificationAction(NotificationResponse response) async {
   final payload = response.payload;
   if (actionId == null || payload == null) return;
   final target = NotificationTarget.fromPayload(payload);
-  final ok = await runNotificationAction(ApiClient(_KeepSessionTokens(SecureTokenStorage())), actionId, target);
+  final result = await runNotificationAction(ApiClient(_KeepSessionTokens(SecureTokenStorage())), actionId, target);
 
   final plugin = FlutterLocalNotificationsPlugin();
   await plugin.initialize(settings: const InitializationSettings(android: AndroidInitializationSettings(_icon)));
-  if (ok) {
+  if (result is ActionDone) {
     await plugin.cancel(id: notificationIdFor(target.type, target.id));
     return;
   }
-  // Leave the original in place and say why nothing happened.
-  final language = await SecureLanguageStorage().read();
-  final l10n = lookupAppLocalizations(language.locale ?? resolveDeviceLocale(PlatformDispatcher.instance.locale));
+  final l10n = await backgroundLocalizations();
+  final String title;
+  final String body;
+  if (result is ActionDoseRefused) {
+    // Someone already gave it, so the reminder is done; say who and when instead.
+    await plugin.cancel(id: notificationIdFor(target.type, target.id));
+    final last = result.warning.lastDose;
+    title = l10n.medNoticeRefusedTitle;
+    body = result.warning.isDailyLimit
+        ? l10n.medNoticeRefusedDailyLimit
+        : l10n.medNoticeRefusedBody(_clock(last.givenAt), last.givenByName ?? '');
+  } else {
+    // Leave the original in place and say why nothing happened.
+    title = l10n.noticeActionFailedTitle;
+    body = l10n.noticeActionFailedBody;
+  }
   await plugin.show(
     id: notificationIdFor('failed', target.id),
-    title: l10n.noticeActionFailedTitle,
-    body: l10n.noticeActionFailedBody,
+    title: title,
+    body: body,
     payload: target.toPayload(),
     notificationDetails: NotificationDetails(
       android: AndroidNotificationDetails('actions', l10n.noticeActionChannel, icon: _icon, color: _cherry, importance: Importance.defaultImportance),

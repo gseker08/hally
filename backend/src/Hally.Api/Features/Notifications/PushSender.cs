@@ -18,7 +18,9 @@ public class PushOptions
     public string FcmServiceAccountJson { get; set; } = string.Empty;
 }
 
-public record PushMessage(string Title, string Body, IReadOnlyDictionary<string, string> Data);
+/// <param name="AppDrawsOnAndroid">Sent to Android as data only (title and body in <c>data</c>), so the app draws the
+/// notification itself, with buttons such as "Verdim". iOS still gets a normal alert.</param>
+public record PushMessage(string Title, string Body, IReadOnlyDictionary<string, string> Data, bool AppDrawsOnAndroid = false);
 
 public interface IPushSender
 {
@@ -51,16 +53,7 @@ public class FcmPushSender(HttpClient http, IOptions<PushOptions> options, ILogg
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, url)
             {
-                Content = JsonContent.Create(new
-                {
-                    message = new
-                    {
-                        token,
-                        notification = new { title = message.Title, body = message.Body },
-                        data = message.Data,
-                        android = new { priority = "HIGH" },
-                    },
-                }),
+                Content = JsonContent.Create(new { message = BuildMessage(token, message) }),
             };
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
             using var response = await http.SendAsync(request, ct);
@@ -75,5 +68,29 @@ public class FcmPushSender(HttpClient http, IOptions<PushOptions> options, ILogg
         }
 
         return invalid;
+    }
+
+    /// <summary>The FCM HTTP v1 <c>message</c> object for one device.</summary>
+    public static object BuildMessage(string token, PushMessage message)
+    {
+        if (!message.AppDrawsOnAndroid)
+        {
+            return new
+            {
+                token,
+                notification = new { title = message.Title, body = message.Body },
+                data = message.Data,
+                android = new { priority = "HIGH" },
+            };
+        }
+
+        var data = new Dictionary<string, string>(message.Data) { ["title"] = message.Title, ["body"] = message.Body };
+        return new
+        {
+            token,
+            data,
+            android = new { priority = "HIGH" },
+            apns = new { payload = new { aps = new { alert = new { title = message.Title, body = message.Body }, sound = "default" } } },
+        };
     }
 }

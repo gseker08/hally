@@ -9,9 +9,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_repository.dart';
+import '../../core/locale/app_language.dart';
 import '../../router.dart';
 import '../messages/messages_repository.dart';
 import '../../l10n/gen/app_localizations.dart';
+import 'device_notifications.dart';
 import 'notifications_repository.dart';
 
 /// A push as the app sees it: the title and body FCM shows, and the `data` map the server attaches.
@@ -66,7 +68,12 @@ abstract interface class PushMessaging {
 /// Firebase Cloud Messaging. Firebase reads its settings from `android/app/google-services.json`
 /// (and `ios/Runner/GoogleService-Info.plist`); without them [init] returns false and the app runs without push.
 class FirebasePushMessaging implements PushMessaging {
-  static PushEvent _event(RemoteMessage m) => PushEvent(title: m.notification?.title, body: m.notification?.body, data: m.data);
+  // Data-only pushes (the medication reminder on Android) carry their texts in `data`.
+  static PushEvent _event(RemoteMessage m) => PushEvent(
+        title: m.notification?.title ?? m.data['title'] as String?,
+        body: m.notification?.body ?? m.data['body'] as String?,
+        data: m.data,
+      );
 
   FirebaseMessaging get _fm => FirebaseMessaging.instance;
 
@@ -75,6 +82,7 @@ class FirebasePushMessaging implements PushMessaging {
     if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) return false;
     try {
       if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+      if (Platform.isAndroid) FirebaseMessaging.onBackgroundMessage(hallyBackgroundPush);
       return true;
     } catch (e) {
       debugPrint('push: Firebase is not configured ($e)');
@@ -114,6 +122,16 @@ class FirebasePushMessaging implements PushMessaging {
   @override
   // ignore: deprecated_member_use
   Future<void> deleteToken() => _fm.deleteToken();
+}
+
+/// Pushes while the app is in the background or closed (Android, own isolate). The system already shows normal
+/// pushes; this draws the data-only medication reminder with its "Verdim" button, and clears it when the other
+/// parent gave the dose.
+@pragma('vm:entry-point')
+Future<void> hallyBackgroundPush(RemoteMessage message) async {
+  final notifications = LocalDeviceNotifications();
+  await notifications.initBackground();
+  await handleNotificationPush(message.data, notifications, await backgroundLocalizations());
 }
 
 /// Push is off: before Firebase is set up, on desktop, and in widget tests.
@@ -228,7 +246,18 @@ final pushControllerProvider = Provider<PushController?>((ref) {
     open,
     onForeground: (e) {
       final familyId = ref.read(meProvider).valueOrNull?.primaryFamily?.id;
-      if (e.data['kind'] == 'Message') {
+      final kind = e.data['kind'];
+      if (kind == 'MedicationDue' || kind == 'MedicationGiven') {
+        final language = ref.read(languageProvider);
+        final l10n = lookupAppLocalizations(language.locale ?? resolveDeviceLocale(ref.read(deviceLocaleProvider)));
+        unawaited(handleNotificationPush(e.data, ref.read(deviceNotificationsProvider), l10n).catchError((Object _) => false));
+        // The reminder goes to the tray with its "Verdim" button instead of a snack bar.
+        if (kind == 'MedicationDue' && ref.read(deviceNotificationsProvider) is! NoDeviceNotifications) {
+          ref.invalidate(inboxProvider);
+          return;
+        }
+      }
+      if (kind == 'Message') {
         // Chats update live; just refresh the unread badge.
         if (familyId != null) ref.invalidate(chatListProvider(familyId));
         return;

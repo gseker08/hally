@@ -121,6 +121,8 @@ public class MedicationTests(HallyApiFactory api)
     public async Task Next_dose_reminder_reaches_both_adults_once_and_not_for_stale_courses()
     {
         var (owner, partner, familyId, childId) = await FamilyWithChild();
+        var partnerToken = $"tok-{Guid.NewGuid():N}";
+        await partner.PutAsJsonAsync("/api/v1/me/devices", new { platform = "android", token = partnerToken });
         var med = await Create(owner, familyId, childId, interval: 240);
         (await owner.PostAsJsonAsync($"/api/v1/families/{familyId}/medications/{med.Id}/doses", new { })).StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -139,6 +141,12 @@ public class MedicationTests(HallyApiFactory api)
 
         var partnerInbox = (await partner.GetFromJsonAsync<InboxBody>("/api/v1/me/notifications"))!;
         partnerInbox.Items.Should().ContainSingle(n => n.Kind == "MedicationDue").Which.Title.Should().Be("Ela: time for Ateş şurubu");
+
+        // The app draws this one on Android, with a "Verdim" button that needs the medication id.
+        var push = api.Push.Sent.Where(p => p.Token == partnerToken && p.Message.Data["kind"] == "MedicationDue").Should().ContainSingle().Subject.Message;
+        push.AppDrawsOnAndroid.Should().BeTrue();
+        push.Data["medicationId"].Should().Be(med.Id.ToString());
+        push.Data["familyId"].Should().Be(familyId.ToString());
 
         // A course nobody continued: no reminders days later.
         var other = await Create(owner, familyId, childId, interval: 60);
