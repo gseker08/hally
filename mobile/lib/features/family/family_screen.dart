@@ -10,6 +10,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../notifications/push.dart';
 import '../billing/billing_repository.dart';
 import '../messages/messages_repository.dart';
+import '../screen_time/screen_time_screen.dart';
 import 'children.dart';
 import 'language_sheet.dart';
 import 'family_repository.dart';
@@ -141,6 +142,10 @@ class FamilyScreen extends ConsumerWidget {
                   onTap: () => showChildSheet(context, ref, familyId: f.id, siblings: f.children),
                 ),
               ),
+              if (f.children.isNotEmpty) ...[
+                const SizedBox(height: HallySpace.sm),
+                ScreenTimeCard(familyId: f.id, children: f.children),
+              ],
               const SizedBox(height: HallySpace.md),
               Card(
                 child: Column(

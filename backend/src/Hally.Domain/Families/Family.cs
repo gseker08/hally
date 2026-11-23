@@ -144,6 +144,22 @@ public class Child : Entity
     /// <summary>A key from <see cref="ChildColors.All"/>; the app maps it to a colour.</summary>
     public string Color { get; private set; } = ChildColors.All[0];
 
+    /// <summary>Daily screen time goal in minutes (family-local day), or null for no goal.</summary>
+    public int? DailyScreenMinutes { get; private set; }
+
+    public const int MinScreenGoal = 5;
+    public const int MaxScreenGoal = 24 * 60;
+
+    public void SetScreenTimeGoal(int? minutes)
+    {
+        if (minutes is { } m && (m < MinScreenGoal || m > MaxScreenGoal))
+        {
+            throw new DomainException("child.screen_goal_invalid", $"Daily goal must be {MinScreenGoal}-{MaxScreenGoal} minutes.");
+        }
+
+        DailyScreenMinutes = minutes;
+    }
+
     public void Update(string firstName, int? birthYear, string color)
     {
         if (string.IsNullOrWhiteSpace(firstName) || firstName.Trim().Length > 40)

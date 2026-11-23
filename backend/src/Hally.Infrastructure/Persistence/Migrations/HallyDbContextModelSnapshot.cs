@@ -370,6 +370,10 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<int?>("DailyScreenMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("daily_screen_minutes");
+
                     b.Property<Guid>("FamilyId")
                         .HasColumnType("uuid")
                         .HasColumnName("family_id");
@@ -1010,6 +1014,67 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("tasks", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.ScreenTime.ScreenTimeSession", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<Guid?>("EndedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ended_by_user_id");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<Guid?>("StartedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("started_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_screen_time_sessions");
+
+                    b.HasIndex("ChildId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_screen_time_sessions_running")
+                        .HasFilter("ended_at IS NULL");
+
+                    b.HasIndex("EndedAt")
+                        .HasDatabaseName("ix_screen_time_sessions_open")
+                        .HasFilter("ended_at IS NULL");
+
+                    b.HasIndex("EndedByUserId")
+                        .HasDatabaseName("ix_screen_time_sessions_ended_by_user_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_screen_time_sessions_family_id");
+
+                    b.HasIndex("StartedByUserId")
+                        .HasDatabaseName("ix_screen_time_sessions_started_by_user_id");
+
+                    b.HasIndex("ChildId", "StartedAt")
+                        .HasDatabaseName("ix_screen_time_sessions_child_id_started_at");
+
+                    b.ToTable("screen_time_sessions", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Sharing.ShareLink", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1496,6 +1561,35 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_tasks_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.ScreenTime.ScreenTimeSession", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_screen_time_sessions_children_child_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("EndedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_screen_time_sessions_users_ended_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_screen_time_sessions_families_family_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("StartedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_screen_time_sessions_users_started_by_user_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Sharing.ShareLink", b =>
