@@ -45,3 +45,20 @@ App A ──POST /chats/{key}/messages──▶ MessagesController ──save─
   server) and checks that both adults get the event with their own chat key, a stranger gets nothing, and a
   connection without a token is refused.
 - `mobile/test/messages_test.dart` drives the chat screen with a fake `ChatRealtime`.
+
+## Photos in chats
+
+- Send: `POST /api/v1/families/{familyId}/chats/{key}/photos` (multipart: `file`, optional `caption`), idempotent like
+  text messages. JPEG, PNG, WebP or HEIC up to 10 MB. The server checks the file's first bytes, not the declared type,
+  because it serves the photo back with that type.
+- The photo is stored with the same AES-GCM `IDocumentStore` as captures, under the family's folder. Unlike capture
+  originals it is not removed by the retention job: it is part of the chat.
+- Read: `GET .../chats/{key}/messages/{messageId}/photo`. The key must be the caller's key for that chat, so only the
+  people in it can read it. `Cache-Control: private, immutable`, `nosniff`.
+- `MessageDto.hasPhoto` marks such messages; `body` is the caption and may be empty. Live delivery (`MessageReceived`)
+  and push are the same as for text; the push text is "📷 Fotoğraf" or "📷 caption".
+- Deletion: direct-chat photos go when one of the two adults leaves, a person's photos go when their account is
+  deleted, and all photos go with the family.
+- App: `chat_photo.dart` picks from camera or gallery (shrunk to 1600 px, quality 80), shows a full-screen preview
+  with a caption, shows the photo in the bubble and opens it full screen with pinch to zoom. Downloaded photos are
+  kept in a small in-memory cache in `ApiMessagesRepository`.

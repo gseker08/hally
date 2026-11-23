@@ -34,6 +34,9 @@ public class AccountService(HallyDbContext db, IDocumentStore store, TimeProvide
 
         await db.SaveChangesAsync(ct);
 
+        // Photos the person sent in family chats that stay (their messages go with the account below).
+        keys.AddRange(await db.FamilyMessages.Where(m => m.SenderUserId == userId && m.PhotoKey != null).Select(m => m.PhotoKey!).ToListAsync(ct));
+
         // Analytics keep counts but lose the person.
         await db.AnalyticsEvents.Where(e => e.UserId == userId).ExecuteUpdateAsync(s => s.SetProperty(e => e.UserId, (Guid?)null), ct);
         // Logins, sessions, devices, inbox and own chats are removed by cascade.
@@ -50,6 +53,7 @@ public class AccountService(HallyDbContext db, IDocumentStore store, TimeProvide
         if (family.Members.Count <= 1)
         {
             var keys = await db.Captures.Where(c => c.FamilyId == familyId && c.StorageKey != null).Select(c => c.StorageKey!).ToListAsync(ct);
+            keys.AddRange(await db.FamilyMessages.Where(m => m.FamilyId == familyId && m.PhotoKey != null).Select(m => m.PhotoKey!).ToListAsync(ct));
             await db.AuditEntries.Where(a => a.FamilyId == familyId).ExecuteDeleteAsync(ct);
             await db.AnalyticsEvents.Where(e => e.FamilyId == familyId).ExecuteUpdateAsync(s => s.SetProperty(e => e.FamilyId, (Guid?)null), ct);
             db.Families.Remove(family); // cascades to tasks, events, captures, proposals, reminders, links, chats, subscription
@@ -75,11 +79,14 @@ public class AccountService(HallyDbContext db, IDocumentStore store, TimeProvide
         }
 
         await db.Conversations.Where(c => c.FamilyId == familyId && c.UserId == userId).ExecuteDeleteAsync(ct);
-        // Direct chats with the leaver go (with their messages); in the family chat their messages stay, shown without a name.
+        // Direct chats with the leaver go (with their messages and photos); in the family chat their messages stay, shown without a name.
+        var photoKeys = await db.FamilyMessages
+            .Where(m => m.PhotoKey != null && db.MessageThreads.Any(t => t.Id == m.ThreadId && t.FamilyId == familyId && (t.UserA == userId || t.UserB == userId)))
+            .Select(m => m.PhotoKey!).ToListAsync(ct);
         await db.MessageThreads.Where(t => t.FamilyId == familyId && (t.UserA == userId || t.UserB == userId)).ExecuteDeleteAsync(ct);
         await db.MessageReadStates.Where(r => r.UserId == userId && db.MessageThreads.Any(t => t.Id == r.ThreadId && t.FamilyId == familyId)).ExecuteDeleteAsync(ct);
         await db.Notifications.Where(n => n.FamilyId == familyId && n.UserId == userId).ExecuteDeleteAsync(ct);
-        return [];
+        return photoKeys;
     }
 
     private async Task DeleteFilesAsync(IEnumerable<string> keys, CancellationToken ct)
