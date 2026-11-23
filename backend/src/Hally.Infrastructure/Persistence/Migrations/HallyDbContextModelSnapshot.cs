@@ -1317,6 +1317,74 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("shopping_items", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Sleep.SleepEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("EndedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ended_at");
+
+                    b.Property<Guid?>("EndedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ended_by_user_id");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("note");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<Guid?>("StartedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("started_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_sleep_entries");
+
+                    b.HasIndex("ChildId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_sleep_entries_open")
+                        .HasFilter("ended_at IS NULL");
+
+                    b.HasIndex("EndedByUserId")
+                        .HasDatabaseName("ix_sleep_entries_ended_by_user_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_sleep_entries_family_id");
+
+                    b.HasIndex("StartedByUserId")
+                        .HasDatabaseName("ix_sleep_entries_started_by_user_id");
+
+                    b.HasIndex("ChildId", "StartedAt")
+                        .HasDatabaseName("ix_sleep_entries_child_id_started_at");
+
+                    b.ToTable("sleep_entries", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Users.ExternalLogin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1836,6 +1904,35 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_shopping_items_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Sleep.SleepEntry", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sleep_entries_children_child_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("EndedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_sleep_entries_users_ended_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_sleep_entries_families_family_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("StartedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_sleep_entries_users_started_by_user_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Users.ExternalLogin", b =>
