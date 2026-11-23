@@ -63,6 +63,9 @@ class _FakeRealtime implements ChatRealtime {
   Stream<ChatMessageEvent> get events => controller.stream;
 
   @override
+  Stream<Map<String, dynamic>> get medicationEvents => const Stream.empty();
+
+  @override
   Stream<Map<String, dynamic>> get screenTimeEvents => const Stream.empty();
 
   @override

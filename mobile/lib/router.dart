@@ -15,6 +15,7 @@ import 'features/family/family_setup_screen.dart';
 import 'features/family/invite_partner_screen.dart';
 import 'features/family/join_family_screen.dart';
 import 'features/home/home_shell.dart';
+import 'features/medications/medications_screen.dart';
 import 'features/messages/chat_screen.dart';
 import 'features/messages/chats_screen.dart';
 import 'features/assistant/assistant_screen.dart';
@@ -89,6 +90,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/tasks', builder: (_, __) => const TasksScreen()),
       GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen()),
       GoRoute(path: '/chats/:key', builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?)),
+      GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimeScreen()),
       GoRoute(path: '/weekly-card', builder: (_, __) => const WeeklyCardScreen()),
       GoRoute(path: '/share-links', builder: (_, __) => const ShareLinksScreen()),

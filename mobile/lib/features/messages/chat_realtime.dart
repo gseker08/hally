@@ -32,6 +32,9 @@ abstract interface class ChatRealtime {
 
   /// Raw `ScreenTimeChanged` payloads (`{familyId, status}`); the screen time feature parses them.
   Stream<Map<String, dynamic>> get screenTimeEvents;
+
+  /// Raw `MedicationChanged` payloads (`{familyId, medicationId}`).
+  Stream<Map<String, dynamic>> get medicationEvents;
   bool get isConnected;
   Future<void> dispose();
 }
@@ -55,6 +58,10 @@ class SignalRChatRealtime implements ChatRealtime {
       final payload = args?.firstOrNull;
       if (payload is Map) _screenTime.add(Map<String, dynamic>.from(payload));
     });
+    _connection.on('MedicationChanged', (args) {
+      final payload = args?.firstOrNull;
+      if (payload is Map) _medication.add(Map<String, dynamic>.from(payload));
+    });
     _connection.onclose(({error}) => _scheduleRetry());
     unawaited(_start());
   }
@@ -66,6 +73,7 @@ class SignalRChatRealtime implements ChatRealtime {
   late final HubConnection _connection;
   final _events = StreamController<ChatMessageEvent>.broadcast();
   final _screenTime = StreamController<Map<String, dynamic>>.broadcast();
+  final _medication = StreamController<Map<String, dynamic>>.broadcast();
   Timer? _retry;
   bool _disposed = false;
 
@@ -74,6 +82,9 @@ class SignalRChatRealtime implements ChatRealtime {
 
   @override
   Stream<Map<String, dynamic>> get screenTimeEvents => _screenTime.stream;
+
+  @override
+  Stream<Map<String, dynamic>> get medicationEvents => _medication.stream;
 
   @override
   bool get isConnected => _connection.state == HubConnectionState.Connected;
@@ -127,6 +138,7 @@ class SignalRChatRealtime implements ChatRealtime {
     await _connection.stop().catchError((_) {});
     await _events.close();
     await _screenTime.close();
+    await _medication.close();
   }
 }
 
@@ -137,6 +149,9 @@ class NoChatRealtime implements ChatRealtime {
 
   @override
   Stream<Map<String, dynamic>> get screenTimeEvents => const Stream.empty();
+
+  @override
+  Stream<Map<String, dynamic>> get medicationEvents => const Stream.empty();
 
   @override
   bool get isConnected => false;

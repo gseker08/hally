@@ -16,6 +16,8 @@ public static class JobScheduling
         services.AddScoped<Billing.SubscriptionRefreshJob>();
         services.AddScoped<ScreenTime.ScreenTimeService>();
         services.AddScoped<ScreenTime.ScreenTimeGoalJob>();
+        services.AddScoped<Medications.MedicationService>();
+        services.AddScoped<Medications.MedicationDueJob>();
         if (!config.GetValue("Jobs:Enabled", true))
         {
             return services;
@@ -42,6 +44,7 @@ public static class JobScheduling
         jobs.AddOrUpdate<EveningPrepJob>("evening-prep", j => j.RunAsync(CancellationToken.None), "*/15 * * * *");
         jobs.AddOrUpdate<RetentionJob>("retention", j => j.RunAsync(CancellationToken.None), "30 3 * * *");
         jobs.AddOrUpdate<ScreenTime.ScreenTimeGoalJob>("screen-time-goals", j => j.RunAsync(CancellationToken.None), Cron.Minutely());
+        jobs.AddOrUpdate<Medications.MedicationDueJob>("medication-due", j => j.RunAsync(CancellationToken.None), Cron.Minutely());
         jobs.AddOrUpdate<Billing.SubscriptionRefreshJob>("subscription-refresh", j => j.RunAsync(CancellationToken.None), Cron.Hourly());
     }
 }

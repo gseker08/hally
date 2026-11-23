@@ -511,6 +511,129 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("invitations", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Health.Medication", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean")
+                        .HasColumnName("active");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<string>("Dose")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("dose");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<int?>("MaxDosesPerDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_doses_per_day");
+
+                    b.Property<int>("MinIntervalMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("min_interval_minutes");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("notes");
+
+                    b.Property<bool>("RemindNextDose")
+                        .HasColumnType("boolean")
+                        .HasColumnName("remind_next_dose");
+
+                    b.HasKey("Id")
+                        .HasName("pk_medications");
+
+                    b.HasIndex("ChildId")
+                        .HasDatabaseName("ix_medications_child_id");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_medications_created_by_user_id");
+
+                    b.HasIndex("FamilyId", "Active")
+                        .HasDatabaseName("ix_medications_family_id_active");
+
+                    b.ToTable("medications", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.MedicationDose", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<DateTimeOffset>("GivenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("given_at");
+
+                    b.Property<Guid?>("GivenByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("given_by_user_id");
+
+                    b.Property<Guid>("MedicationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("medication_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("note");
+
+                    b.Property<bool>("OverrodeWarning")
+                        .HasColumnType("boolean")
+                        .HasColumnName("overrode_warning");
+
+                    b.HasKey("Id")
+                        .HasName("pk_medication_doses");
+
+                    b.HasIndex("GivenByUserId")
+                        .HasDatabaseName("ix_medication_doses_given_by_user_id");
+
+                    b.HasIndex("FamilyId", "GivenAt")
+                        .HasDatabaseName("ix_medication_doses_family_id_given_at");
+
+                    b.HasIndex("MedicationId", "GivenAt")
+                        .HasDatabaseName("ix_medication_doses_medication_id_given_at");
+
+                    b.ToTable("medication_doses", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Messaging.FamilyMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1448,6 +1571,45 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_invitations_families_family_id");
 
                     b.Navigation("Family");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.Medication", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_medications_children_child_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_medications_users_created_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_medications_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Health.MedicationDose", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("GivenByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_medication_doses_users_given_by_user_id");
+
+                    b.HasOne("Hally.Domain.Health.Medication", null)
+                        .WithMany()
+                        .HasForeignKey("MedicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_medication_doses_medications_medication_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Messaging.FamilyMessage", b =>
