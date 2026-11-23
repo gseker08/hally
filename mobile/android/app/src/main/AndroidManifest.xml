@@ -38,6 +38,8 @@
                 <data android:mimeType="text/plain"/>
             </intent-filter>
         </activity>
+        <!-- Buttons on notifications ("Durdur", "Verdim"), handled in Dart without opening the app. -->
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver"/>
         <!-- Home screen "Today" widget (TodayWidgetProvider.kt). -->
         <receiver android:name=".TodayWidgetProvider" android:exported="false">
             <intent-filter>

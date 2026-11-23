@@ -605,5 +605,14 @@
   "widgetTodayStale": "Open Hally to see today",
   "widgetTodayAllDay": "All day",
   "widgetTodayTask": "Task",
-  "widgetTodayMore": "+{count} more"
+  "widgetTodayMore": "+{count} more",
+  "screenNoticeTitle": "{name} · screen time",
+  "screenNoticeBody": "Timer running",
+  "screenNoticeGoal": "Daily goal: {minutes} min",
+  "screenNoticeStop": "Stop",
+  "screenNoticeChannel": "Screen time timer",
+  "screenNoticeChannelDescription": "Shown while a screen time timer you started is running",
+  "noticeActionFailedTitle": "Not saved",
+  "noticeActionFailedBody": "No connection. Open Hally and try again.",
+  "noticeActionChannel": "Notification buttons"
 }
