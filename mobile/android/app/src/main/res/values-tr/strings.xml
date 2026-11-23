@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_widget_description">Bugünün sıradaki etkinlik ve görevleri</string>
+    <string name="today_widget_title">Bugün</string>
+    <string name="today_widget_stale">Bugünü görmek için Hally\'yi aç</string>
+</resources>

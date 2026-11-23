@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_widget_description">The next events and tasks of today</string>
+    <string name="today_widget_title">Today</string>
+    <string name="today_widget_stale">Open Hally to see today</string>
+</resources>

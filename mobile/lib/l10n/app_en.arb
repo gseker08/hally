@@ -599,5 +599,11 @@
   "taskDeletedToast": "Task deleted",
   "taskMarkOpen": "Reopen",
   "taskClearDate": "Remove date",
-  "taskSavedToast": "Task saved"
+  "taskSavedToast": "Task saved",
+  "widgetTodayTitle": "Today",
+  "widgetTodayEmpty": "Nothing else planned today",
+  "widgetTodayStale": "Open Hally to see today",
+  "widgetTodayAllDay": "All day",
+  "widgetTodayTask": "Task",
+  "widgetTodayMore": "+{count} more"
 }

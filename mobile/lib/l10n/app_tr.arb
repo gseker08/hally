@@ -1427,5 +1427,19 @@
   "taskDeletedToast": "Görev silindi",
   "taskMarkOpen": "Yeniden aç",
   "taskClearDate": "Tarihi kaldır",
-  "taskSavedToast": "Görev kaydedildi"
+  "taskSavedToast": "Görev kaydedildi",
+  "widgetTodayTitle": "Bugün",
+  "widgetTodayEmpty": "Bugün için başka plan yok",
+  "widgetTodayStale": "Bugünü görmek için Hally'yi aç",
+  "widgetTodayAllDay": "Gün boyu",
+  "widgetTodayTask": "Görev",
+  "widgetTodayMore": "+{count} daha",
+  "@widgetTodayMore": {
+    "description": "Home screen widget: items that do not fit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
