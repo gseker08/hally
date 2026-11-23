@@ -144,7 +144,7 @@ Widget _app(Widget child, List<Override> overrides, {FamilyDetails family = cons
     );
 
 void main() {
-  testWidgets('tasks: the child filter keeps that child and whole-family tasks', (tester) async {
+  testWidgets('tasks: the child filter shows only that child\'s tasks', (tester) async {
     tester.view.physicalSize = const Size(1080, 2340);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
@@ -161,7 +161,7 @@ void main() {
     await tester.tap(find.byKey(const Key('childFilter.c1')));
     await tester.pumpAndSettle();
     expect(find.text('Ela ödev'), findsOneWidget);
-    expect(find.text('Beslenme çantası'), findsOneWidget, reason: 'untagged tasks belong to the whole family');
+    expect(find.text('Beslenme çantası'), findsNothing, reason: 'whole-family tasks show only under Hepsi');
     expect(find.text('Can yüzme'), findsNothing);
 
     await tester.tap(find.byKey(const Key('childFilter.all')));

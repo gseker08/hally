@@ -238,9 +238,10 @@ void main() {
     expect(repo.calls, ['update c1 Ela sky']);
   });
 
-  test('filterByChild keeps whole-family items', () {
+  test('filterByChild keeps only items tagged with the child', () {
     final items = [('a', <String>[]), ('b', ['c1']), ('c', ['c2']), ('d', ['c1', 'c2'])];
-    expect(filterByChild(items, (i) => i.$2, 'c1').map((i) => i.$1), ['a', 'b', 'd']);
+    expect(filterByChild(items, (i) => i.$2, 'c1').map((i) => i.$1), ['b', 'd']);
+    expect(filterByChild(items, (i) => i.$2, 'c2').map((i) => i.$1), ['c', 'd']);
     expect(filterByChild(items, (i) => i.$2, null), items);
   });
 }
