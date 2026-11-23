@@ -9,10 +9,10 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../family/children.dart';
-import '../family/family_repository.dart';
 import '../notifications/reminder_sheet.dart';
 import '../sharing/helper_share_sheet.dart';
 import '../sharing/sharing_repository.dart';
+import 'event_editor.dart';
 import 'planning_repository.dart';
 
 /// Week strip or month grid, plus the selected day's events. Events come from approved proposals or manual entry.
@@ -142,6 +142,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     for (final e in today)
                       Card(
                         child: ListTile(
+                          key: Key('event.${e.id}'),
+                          onTap: () => _editEvent(familyId, e),
                           leading: const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.apricot),
                           title: Row(
                             children: [
@@ -173,28 +175,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _addEvent(String familyId) async {
-    final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final children = ref.read(familyProvider(familyId)).valueOrNull?.children ?? const <ChildProfile>[];
     final filtered = ref.read(childFilterProvider);
-    final result = await showDialog<(String, DateTime, TimeOfDay?, EventRepeat, List<String>)>(
-      context: context,
-      builder: (_) => _EventDialog(initialDate: _selected, children: children, initialChildIds: {if (filtered != null) filtered}),
-    );
-    if (result == null) return;
-    final (title, date, time, repeat, childIds) = result;
-    final startsAt = DateTime(date.year, date.month, date.day, time?.hour ?? 0, time?.minute ?? 0);
-    try {
-      final saved = await ref.read(planningRepositoryProvider).createEvent(familyId, title: title, startsAt: startsAt, allDay: time == null, repeat: repeat, childIds: childIds);
-      // A series can show up in any window, so refresh every cached range.
-      ref.invalidate(calendarEventsProvider);
-      if (saved.conflicts.isNotEmpty) {
-        messenger.showSnackBar(SnackBar(content: Text(l10n.eventConflict(saved.conflicts.first.title))));
-      }
-      if (mounted) setState(() => _selected = DateUtils.dateOnly(startsAt));
-    } catch (_) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
-    }
+    final day = await showEventEditor(context, ref, familyId: familyId, initialDate: _selected, initialChildIds: {if (filtered != null) filtered});
+    if (day != null && mounted) setState(() => _selected = day);
+  }
+
+  Future<void> _editEvent(String familyId, EventItem event) async {
+    final day = await showEventEditor(context, ref, familyId: familyId, event: event);
+    if (day != null && mounted) setState(() => _selected = day);
   }
 }
 
@@ -357,92 +345,6 @@ class _DayChip extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _EventDialog extends StatefulWidget {
-  const _EventDialog({required this.initialDate, required this.children, required this.initialChildIds});
-
-  final DateTime initialDate;
-  final List<ChildProfile> children;
-  final Set<String> initialChildIds;
-
-  @override
-  State<_EventDialog> createState() => _EventDialogState();
-}
-
-class _EventDialogState extends State<_EventDialog> {
-  final _title = TextEditingController();
-  late DateTime _date = widget.initialDate;
-  TimeOfDay? _time;
-  EventRepeat _repeat = EventRepeat.none;
-  late Set<String> _childIds = widget.initialChildIds;
-
-  @override
-  void dispose() {
-    _title.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    return AlertDialog(
-      // Scrolls instead of overflowing on short screens, with the keyboard open or large text.
-      scrollable: true,
-      title: Text(l10n.calendarAdd),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(key: const Key('event.title'), controller: _title, autofocus: true, maxLength: 200, decoration: InputDecoration(labelText: l10n.eventTitle)),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.event),
-            title: Text(DateFormat.yMMMEd(locale).format(_date)),
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _date,
-                firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                lastDate: DateTime.now().add(const Duration(days: 730)),
-              );
-              if (picked != null) setState(() => _date = picked);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.schedule),
-            title: Text(_time?.format(context) ?? l10n.reviewAllDay),
-            onTap: () async {
-              final picked = await showTimePicker(context: context, initialTime: _time ?? const TimeOfDay(hour: 9, minute: 0));
-              if (picked != null) setState(() => _time = picked);
-            },
-          ),
-          DropdownButtonFormField<EventRepeat>(
-            key: const Key('event.repeat'),
-            isExpanded: true,
-            initialValue: _repeat,
-            decoration: InputDecoration(labelText: l10n.eventRepeat, prefixIcon: const Icon(Icons.repeat)),
-            items: [for (final r in EventRepeat.values) DropdownMenuItem(value: r, child: Text(repeatLabel(l10n, r)))],
-            onChanged: (r) => setState(() => _repeat = r ?? EventRepeat.none),
-          ),
-          ChildPicker(children: widget.children, selected: _childIds, onChanged: (ids) => setState(() => _childIds = ids)),
-        ],
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(MaterialLocalizations.of(context).cancelButtonLabel)),
-        FilledButton(
-          style: FilledButton.styleFrom(minimumSize: const Size(64, 40)),
-          onPressed: () {
-            final title = _title.text.trim();
-            if (title.isEmpty) return;
-            Navigator.pop(context, (title, _date, _time, _repeat, _childIds.toList()));
-          },
-          child: Text(l10n.eventSave),
-        ),
-      ],
     );
   }
 }

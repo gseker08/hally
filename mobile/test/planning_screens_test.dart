@@ -84,7 +84,18 @@ class _FakePlanning implements PlanningRepository {
   }
 
   @override
-  Future<TodayData> today(String familyId) async => const TodayData(overdue: [], dueToday: [], events: [], waiting: []);
+  Future<SavedEvent> updateEvent(String familyId, EventItem original,
+      {required String title, required DateTime startsAt, required bool allDay, required EventRepeat repeat, required List<String> childIds}) async {
+    final e = EventItem(id: original.id, title: title, startsAt: startsAt, allDay: allDay, repeat: repeat, childIds: childIds);
+    saved[saved.indexWhere((x) => x.id == original.id)] = e;
+    return SavedEvent(event: e, conflicts: const []);
+  }
+
+  @override
+  Future<void> deleteEvent(String familyId, String eventId) async => saved.removeWhere((e) => e.id == eventId);
+
+  @override
+  Future<TodayData> today(String familyId) async => TodayData(overdue: const [], dueToday: const [], events: List.of(saved), waiting: const []);
 }
 
 class _FakeDemo implements DemoRepository {
@@ -339,6 +350,48 @@ void main() {
     await tester.tap(find.text('Kaydet'));
     await tester.pumpAndSettle();
     expect(repo.saved.single.childIds, ['c2']);
+  });
+
+  testWidgets('calendar: tapping an event edits it, with its values filled in', (tester) async {
+    final repo = _FakePlanning();
+    final day = DateTime.now();
+    repo.saved.add(EventItem(id: 'e0', title: 'Yüzme', startsAt: DateTime(day.year, day.month, day.day, 17), allDay: false, childIds: const ['c1']));
+    await tester.pumpWidget(_app(const CalendarScreen(), [planningRepositoryProvider.overrideWithValue(repo)], family: _kids));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('event.e0')));
+    await tester.pumpAndSettle();
+    expect(find.text('Etkinliği düzenle'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Yüzme'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('event.title')), 'Yüzme kursu');
+    await tester.tap(find.text('Kaydet'));
+    await tester.pumpAndSettle();
+
+    expect(repo.saved.single.title, 'Yüzme kursu');
+    expect(repo.saved.single.startsAt.hour, 17);
+    expect(repo.saved.single.childIds, ['c1']);
+    expect(find.text('Yüzme kursu'), findsOneWidget);
+  });
+
+  testWidgets('calendar: deleting a repeating event asks first and removes the series', (tester) async {
+    final repo = _FakePlanning();
+    final day = DateTime.now();
+    repo.saved.add(EventItem(id: 'e0', title: 'Piyano', startsAt: DateTime(day.year, day.month, day.day, 16), allDay: false, repeat: EventRepeat.weekly));
+    await tester.pumpWidget(_app(const CalendarScreen(), [planningRepositoryProvider.overrideWithValue(repo)]));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('event.e0')));
+    await tester.pumpAndSettle();
+    expect(find.text('Tekrarlanan etkinlik: değişiklikler tüm tekrarlara uygulanır.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('event.delete')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Tüm tekrarlarıyla birlikte silinir'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('event.deleteConfirm')));
+    await tester.pumpAndSettle();
+
+    expect(repo.saved, isEmpty);
+    expect(find.text('Etkinlik silindi.'), findsOneWidget);
+    expect(find.text('Bu güne planlanmış bir şey yok'), findsOneWidget);
   });
 
   testWidgets('calendar: month view shows the whole month and keeps the selected day', (tester) async {

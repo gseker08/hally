@@ -51,22 +51,45 @@ class EventItem {
     required this.allDay,
     this.repeat = EventRepeat.none,
     this.childIds = const [],
-  });
+    this.endsAt,
+    this.location,
+    this.repeatUntil,
+    DateTime? seriesStartsAt,
+  }) : seriesStartsAt = seriesStartsAt ?? startsAt;
 
-  factory EventItem.fromJson(Map<String, dynamic> j) => EventItem(
-        id: j['id'] as String,
-        title: j['title'] as String,
-        startsAt: DateTime.parse(j['startsAt'] as String).toLocal(),
-        allDay: j['allDay'] as bool? ?? false,
-        repeat: EventRepeat.fromApi(j['repeat'] as String?),
-        childIds: _childIds(j),
-      );
+  factory EventItem.fromJson(Map<String, dynamic> j) {
+    final startsAt = DateTime.parse(j['startsAt'] as String).toLocal();
+    return EventItem(
+      id: j['id'] as String,
+      title: j['title'] as String,
+      startsAt: startsAt,
+      allDay: j['allDay'] as bool? ?? false,
+      repeat: EventRepeat.fromApi(j['repeat'] as String?),
+      childIds: _childIds(j),
+      endsAt: j['endsAt'] == null ? null : DateTime.parse(j['endsAt'] as String).toLocal(),
+      location: j['location'] as String?,
+      repeatUntil: j['repeatUntil'] as String?,
+      seriesStartsAt: j['seriesStartsAt'] == null ? startsAt : DateTime.parse(j['seriesStartsAt'] as String).toLocal(),
+    );
+  }
 
   final String id;
   final String title;
+
+  /// This occurrence's start; for a series see [seriesStartsAt].
   final DateTime startsAt;
   final bool allDay;
   final EventRepeat repeat;
+
+  /// Kept so an edit from the app does not wipe them (the app does not edit them yet).
+  final DateTime? endsAt;
+  final String? location;
+
+  /// Last day of a series as `yyyy-MM-dd`, or null for no end.
+  final String? repeatUntil;
+
+  /// First occurrence of the series; equals [startsAt] for a one-off event.
+  final DateTime seriesStartsAt;
 
   /// Children this event is about; empty means the whole family.
   final List<String> childIds;
@@ -126,6 +149,13 @@ abstract interface class PlanningRepository {
   Future<List<EventItem>> events(String familyId, DateTime from, DateTime to);
   Future<SavedEvent> createEvent(String familyId,
       {required String title, required DateTime startsAt, required bool allDay, EventRepeat repeat = EventRepeat.none, List<String> childIds = const []});
+
+  /// Replaces the event (the whole series for a repeating one). [startsAt] is the series' first occurrence.
+  Future<SavedEvent> updateEvent(String familyId, EventItem original,
+      {required String title, required DateTime startsAt, required bool allDay, required EventRepeat repeat, required List<String> childIds});
+
+  /// Deletes the event; for a repeating event, the whole series.
+  Future<void> deleteEvent(String familyId, String eventId);
 }
 
 class ApiPlanningRepository implements PlanningRepository {
@@ -216,12 +246,36 @@ class ApiPlanningRepository implements PlanningRepository {
           'repeat': repeat.api,
           'childIds': childIds,
         });
-        final d = res.data!;
-        return SavedEvent(
-          event: EventItem.fromJson(d['event'] as Map<String, dynamic>),
-          conflicts: [for (final c in d['conflicts'] as List) EventItem.fromJson(c as Map<String, dynamic>)],
-        );
+        return _saved(res.data!);
       });
+
+  @override
+  Future<SavedEvent> updateEvent(String familyId, EventItem original,
+          {required String title, required DateTime startsAt, required bool allDay, required EventRepeat repeat, required List<String> childIds}) =>
+      _guard(() async {
+        // Keep the end time's length when the start moves, and fields the app does not edit yet.
+        final endsAt = original.endsAt?.add(startsAt.difference(original.seriesStartsAt));
+        final res = await _api.dio.put<Map<String, dynamic>>('/api/v1/families/$familyId/events/${original.id}', data: {
+          'title': title,
+          'startsAt': startsAt.toUtc().toIso8601String(),
+          'endsAt': endsAt?.toUtc().toIso8601String(),
+          'allDay': allDay,
+          'location': original.location,
+          'repeat': repeat.api,
+          'repeatUntil': repeat == EventRepeat.none ? null : original.repeatUntil,
+          'childIds': childIds,
+        });
+        return _saved(res.data!);
+      });
+
+  @override
+  Future<void> deleteEvent(String familyId, String eventId) =>
+      _guard(() => _api.dio.delete<dynamic>('/api/v1/families/$familyId/events/$eventId'));
+
+  static SavedEvent _saved(Map<String, dynamic> d) => SavedEvent(
+        event: EventItem.fromJson(d['event'] as Map<String, dynamic>),
+        conflicts: [for (final c in d['conflicts'] as List) EventItem.fromJson(c as Map<String, dynamic>)],
+      );
 }
 
 final planningRepositoryProvider = Provider<PlanningRepository>((ref) => ApiPlanningRepository(ref.watch(apiClientProvider)));

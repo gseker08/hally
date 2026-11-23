@@ -13,6 +13,7 @@ import '../capture/capture_repository.dart';
 import '../family/children.dart';
 import '../messages/chats_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../planning/event_editor.dart';
 import '../planning/planning_repository.dart';
 import '../planning/task_sheet.dart';
 import 'live_now.dart';
@@ -503,7 +504,7 @@ class _TaskTileState extends ConsumerState<TaskTile> {
 }
 
 /// Timeline-style event row: time on the left, a coloured rail, then the title.
-class _EventTile extends StatelessWidget {
+class _EventTile extends ConsumerWidget {
   const _EventTile({required this.event, required this.familyId, required this.last});
 
   final EventItem event;
@@ -511,7 +512,7 @@ class _EventTile extends StatelessWidget {
   final bool last;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final time = event.allDay ? l10n.reviewAllDay : TimeOfDay.fromDateTime(event.startsAt).format(context);
@@ -546,17 +547,22 @@ class _EventTile extends StatelessWidget {
           const SizedBox(width: HallySpace.sm + 4),
           Expanded(
             child: Card(
-              child: Padding(
-                padding: const EdgeInsets.all(HallySpace.md),
-                child: Row(
-                  children: [
-                    Expanded(child: Text(event.title, style: theme.textTheme.titleMedium)),
-                    if (event.childIds.isNotEmpty) ...[
-                      ChildBadges(familyId: familyId, childIds: event.childIds),
-                      const SizedBox(width: HallySpace.sm),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                key: Key('today.event.${event.id}'),
+                onTap: () => showEventEditor(context, ref, familyId: familyId, event: event),
+                child: Padding(
+                  padding: const EdgeInsets.all(HallySpace.md),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(event.title, style: theme.textTheme.titleMedium)),
+                      if (event.childIds.isNotEmpty) ...[
+                        ChildBadges(familyId: familyId, childIds: event.childIds),
+                        const SizedBox(width: HallySpace.sm),
+                      ],
+                      const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.cherry, size: 34),
                     ],
-                    const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.cherry, size: 34),
-                  ],
+                  ),
                 ),
               ),
             ),
