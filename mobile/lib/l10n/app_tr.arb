@@ -1420,5 +1420,12 @@
         "type": "String"
       }
     }
-  }
+  },
+  "taskEditTitle": "Görev",
+  "taskNotes": "Not",
+  "taskDelete": "Görevi sil",
+  "taskDeletedToast": "Görev silindi",
+  "taskMarkOpen": "Yeniden aç",
+  "taskClearDate": "Tarihi kaldır",
+  "taskSavedToast": "Görev kaydedildi"
 }

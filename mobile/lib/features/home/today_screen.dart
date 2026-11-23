@@ -14,6 +14,7 @@ import '../family/children.dart';
 import '../messages/chats_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../planning/planning_repository.dart';
+import '../planning/task_sheet.dart';
 import 'live_now.dart';
 import '../profile/profile_screen.dart';
 
@@ -345,7 +346,7 @@ class _WaitingCard extends StatelessWidget {
   }
 }
 
-/// A task row: tap the circle or swipe right to complete. The check animates before the row disappears.
+/// A task row: tap the circle or swipe right to complete (the check animates before the row disappears); tap the row to open it.
 class TaskTile extends ConsumerStatefulWidget {
   const TaskTile({super.key, required this.task, required this.familyId, required this.color});
 
@@ -431,14 +432,18 @@ class _TaskTileState extends ConsumerState<TaskTile> {
         duration: HallyMotion.medium,
         child: Card(
           child: InkWell(
-            onTap: _complete,
+            key: ValueKey('task.${t.id}.row'),
+            // Tapping the row opens the task; only the circle (or a swipe) completes it, so a stray tap can't tick it off.
+            onTap: () => showTaskSheet(context, ref, familyId: widget.familyId, task: t),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: HallySpace.md - 2),
+              padding: const EdgeInsets.fromLTRB(HallySpace.md - 10, HallySpace.md - 12, HallySpace.md, HallySpace.md - 12),
               child: Row(
                 children: [
-                  Tooltip(
-                    message: l10n.taskComplete,
-                    child: AnimatedContainer(
+                  IconButton(
+                    key: ValueKey('task.${t.id}.check'),
+                    tooltip: l10n.taskComplete,
+                    onPressed: done ? null : _complete,
+                    icon: AnimatedContainer(
                       duration: HallyMotion.medium,
                       curve: Curves.easeOutBack,
                       width: 28,
@@ -456,7 +461,7 @@ class _TaskTileState extends ConsumerState<TaskTile> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: HallySpace.md),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

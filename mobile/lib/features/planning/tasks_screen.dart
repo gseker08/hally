@@ -12,6 +12,7 @@ import '../notifications/reminder_sheet.dart';
 import '../sharing/helper_share_sheet.dart';
 import '../sharing/sharing_repository.dart';
 import 'planning_repository.dart';
+import 'task_sheet.dart';
 
 /// All family tasks: open (by due date) and done, with quick add.
 class TasksScreen extends ConsumerStatefulWidget {
@@ -72,11 +73,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         children: [
                           for (final t in items)
                             Card(
-                              child: CheckboxListTile(
+                              child: ListTile(
                                 key: Key('task.${t.id}'),
-                                value: t.state == 'Done',
-                                controlAffinity: ListTileControlAffinity.leading,
-                                secondary: t.state == 'Done'
+                                // Tapping the row opens the task; only the checkbox completes it.
+                                onTap: () => showTaskSheet(context, ref, familyId: familyId, task: t),
+                                contentPadding: const EdgeInsets.only(left: HallySpace.xs, right: HallySpace.sm),
+                                leading: Checkbox(
+                                  key: Key('task.${t.id}.check'),
+                                  value: t.state == 'Done',
+                                  activeColor: HallyColors.mint,
+                                  onChanged: (_) => _toggle(familyId, t),
+                                ),
+                                trailing: t.state == 'Done'
                                     ? null
                                     : Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -97,7 +105,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           ),
                                         ],
                                       ),
-                                activeColor: HallyColors.mint,
                                 title: Row(
                                   children: [
                                     Expanded(child: Text(t.title)),
@@ -109,39 +116,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                     : t.allDay
                                         ? DateFormat.MMMEd(locale).format(t.dueAt!)
                                         : DateFormat.MMMEd(locale).add_Hm().format(t.dueAt!)),
-                                onChanged: (_) async {
-                                  final repo = ref.read(planningRepositoryProvider);
-                                  final messenger = ScaffoldMessenger.of(context);
-                                  void refresh() {
-                                    ref.invalidate(tasksProvider((familyId, 'Open')));
-                                    ref.invalidate(tasksProvider((familyId, 'Done')));
-                                    ref.invalidate(todayProvider(familyId));
-                                  }
-
-                                  try {
-                                    if (t.state == 'Done') {
-                                      await repo.reopenTask(familyId, t.id);
-                                    } else {
-                                      await repo.completeTask(familyId, t.id);
-                                      messenger.hideCurrentSnackBar();
-                                      messenger.showSnackBar(SnackBar(
-                                        content: Text(l10n.taskDoneToast),
-                                        duration: const Duration(seconds: 4),
-                                        action: SnackBarAction(
-                                          key: const Key('task.undo'),
-                                          label: l10n.taskReopen,
-                                          onPressed: () async {
-                                            await repo.reopenTask(familyId, t.id).catchError((_) {});
-                                            refresh();
-                                          },
-                                        ),
-                                      ));
-                                    }
-                                  } catch (_) {
-                                    messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
-                                  }
-                                  refresh();
-                                },
                               ),
                             ),
                         ],
@@ -152,6 +126,41 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _toggle(String familyId, TaskItem t) async {
+    final l10n = AppLocalizations.of(context);
+    final repo = ref.read(planningRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    void refresh() {
+      ref.invalidate(tasksProvider((familyId, 'Open')));
+      ref.invalidate(tasksProvider((familyId, 'Done')));
+      ref.invalidate(todayProvider(familyId));
+    }
+
+    try {
+      if (t.state == 'Done') {
+        await repo.reopenTask(familyId, t.id);
+      } else {
+        await repo.completeTask(familyId, t.id);
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(SnackBar(
+          content: Text(l10n.taskDoneToast),
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            key: const Key('task.undo'),
+            label: l10n.taskReopen,
+            onPressed: () async {
+              await repo.reopenTask(familyId, t.id).catchError((_) {});
+              refresh();
+            },
+          ),
+        ));
+      }
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
+    }
+    refresh();
   }
 
   Future<void> _addTask(String familyId) async {
