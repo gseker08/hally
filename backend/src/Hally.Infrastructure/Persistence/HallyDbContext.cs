@@ -121,6 +121,8 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
         {
             e.Property(x => x.FirstName).HasMaxLength(40).IsRequired();
             e.Property(x => x.Color).HasMaxLength(16).IsRequired().HasDefaultValue("sky");
+            e.Property(x => x.PhotoKey).HasMaxLength(120);
+            e.Property(x => x.PhotoContentType).HasMaxLength(40);
         });
 
         b.Entity<Invitation>(e =>

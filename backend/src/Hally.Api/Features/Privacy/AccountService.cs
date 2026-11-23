@@ -54,6 +54,7 @@ public class AccountService(HallyDbContext db, IDocumentStore store, TimeProvide
         {
             var keys = await db.Captures.Where(c => c.FamilyId == familyId && c.StorageKey != null).Select(c => c.StorageKey!).ToListAsync(ct);
             keys.AddRange(await db.FamilyMessages.Where(m => m.FamilyId == familyId && m.PhotoKey != null).Select(m => m.PhotoKey!).ToListAsync(ct));
+            keys.AddRange(await db.Children.Where(c => c.FamilyId == familyId && c.PhotoKey != null).Select(c => c.PhotoKey!).ToListAsync(ct));
             await db.AuditEntries.Where(a => a.FamilyId == familyId).ExecuteDeleteAsync(ct);
             await db.AnalyticsEvents.Where(e => e.FamilyId == familyId).ExecuteUpdateAsync(s => s.SetProperty(e => e.FamilyId, (Guid?)null), ct);
             db.Families.Remove(family); // cascades to tasks, events, captures, proposals, reminders, links, chats, subscription

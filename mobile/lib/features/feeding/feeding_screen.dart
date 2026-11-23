@@ -244,6 +244,7 @@ class FeedingHistoryScreen extends ConsumerWidget {
 Future<bool?> showAddFeedingSheet(BuildContext context, {required String familyId, required String childId, required String kind, String? nextSide}) =>
     showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _AddFeedingSheet(familyId: familyId, childId: childId, kind: kind, nextSide: nextSide),

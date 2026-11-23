@@ -17,7 +17,7 @@ public class StudyTests(HallyApiFactory api)
     private async Task<(HttpClient Owner, HttpClient Partner, Guid FamilyId, Guid ChildId)> FamilyWithChild()
     {
         var owner = await api.SignInAsync($"{Guid.NewGuid():N}@example.com", "Ayşe");
-        var family = (await (await owner.PostIdempotentAsync("/api/v1/families", new { name = "Yılmaz" })).Content.ReadFromJsonAsync<FamilyBody>())!;
+        var family = (await (await owner.PostIdempotentAsync("/api/v1/families", new { name = "Yılmaz", timeZoneId = TestZones.Daytime(api.Clock) })).Content.ReadFromJsonAsync<FamilyBody>())!;
         var invite = (await (await owner.PostIdempotentAsync($"/api/v1/families/{family.Id}/invitations", null)).Content.ReadFromJsonAsync<InvitationBody>())!;
         var partner = await api.SignInAsync($"{Guid.NewGuid():N}@example.com", "Mehmet", locale: "en");
         await partner.PostIdempotentAsync($"/api/v1/invitations/{invite.Token}/accept", null);

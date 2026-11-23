@@ -13,6 +13,7 @@ String languageLabel(AppLocalizations l10n, AppLanguage language) => switch (lan
 
 Future<void> showLanguageSheet(BuildContext context) => showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       builder: (_) => const _LanguageSheet(),
     );

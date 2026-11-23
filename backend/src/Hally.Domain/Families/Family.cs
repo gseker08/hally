@@ -147,6 +147,33 @@ public class Child : Entity
     /// <summary>Daily screen time goal in minutes (family-local day), or null for no goal.</summary>
     public int? DailyScreenMinutes { get; private set; }
 
+    /// <summary>Storage key of the encrypted profile photo, or null when the child has none.</summary>
+    public string? PhotoKey { get; private set; }
+    public string? PhotoContentType { get; private set; }
+
+    /// <summary>When the photo last changed; part of the photo URL so apps fetch a new one after a change.</summary>
+    public DateTimeOffset? PhotoUpdatedAt { get; private set; }
+
+    /// <summary>Sets the profile photo and returns the key of the one it replaces (to delete), if any.</summary>
+    public string? SetPhoto(string key, string contentType, DateTimeOffset now)
+    {
+        var old = PhotoKey;
+        PhotoKey = key;
+        PhotoContentType = contentType;
+        PhotoUpdatedAt = now;
+        return old;
+    }
+
+    /// <summary>Removes the profile photo and returns its key (to delete), if there was one.</summary>
+    public string? RemovePhoto()
+    {
+        var old = PhotoKey;
+        PhotoKey = null;
+        PhotoContentType = null;
+        PhotoUpdatedAt = null;
+        return old;
+    }
+
     public const int MinScreenGoal = 5;
     public const int MaxScreenGoal = 24 * 60;
 

@@ -254,6 +254,7 @@ class PointsHistoryScreen extends ConsumerWidget {
 /// Add a chore (stars, for one child or all) or a reward (cost).
 Future<bool?> showAddPointsItemSheet(BuildContext context, {required String familyId, required List<ChildProfile> children}) => showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _AddItemSheet(familyId: familyId, children: children),

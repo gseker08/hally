@@ -1,10 +1,12 @@
 using FluentValidation;
 using Hally.Api.Auth;
 using Hally.Api.Common;
+using Hally.Api.Features.Messages;
 using Hally.Domain.Common;
 using Hally.Domain.Families;
 using Hally.Infrastructure.Analytics;
 using Hally.Infrastructure.Persistence;
+using Hally.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,9 +18,11 @@ public record CreateFamilyRequest(string Name, string? TimeZoneId);
 public record AddChildRequest(string FirstName, int? BirthYear, string? Color = null);
 public record UpdateChildRequest(string FirstName, int? BirthYear, string Color);
 public record MemberDto(Guid UserId, string DisplayName, string Role);
-public record ChildDto(Guid Id, string FirstName, int? BirthYear, string Color)
+/// <param name="PhotoUrl">Relative URL of the profile photo (it changes when the photo does), or null for none.</param>
+public record ChildDto(Guid Id, string FirstName, int? BirthYear, string Color, string? PhotoUrl = null)
 {
-    public static ChildDto From(Child c) => new(c.Id, c.FirstName, c.BirthYear, c.Color);
+    public static ChildDto From(Child c) => new(c.Id, c.FirstName, c.BirthYear, c.Color,
+        c.PhotoUpdatedAt is { } at ? $"/api/v1/families/{c.FamilyId}/children/{c.Id}/photo?v={at.ToUnixTimeMilliseconds()}" : null);
 }
 public record FamilyDto(Guid Id, string Name, string TimeZoneId, IReadOnlyList<MemberDto> Members, IReadOnlyList<ChildDto> Children);
 
@@ -56,8 +60,12 @@ public class UpdateChildRequestValidator : AbstractValidator<UpdateChildRequest>
 [ApiController]
 [Authorize]
 [Route("api/v1/families")]
-public class FamiliesController(HallyDbContext db, IAnalytics analytics) : ControllerBase
+public class FamiliesController(HallyDbContext db, IAnalytics analytics, IDocumentStore store, TimeProvider clock, ILogger<FamiliesController> logger)
+    : ControllerBase
 {
+    /// <summary>The app sends a small square crop; this leaves room for a full-size photo from older apps.</summary>
+    public const long MaxChildPhotoBytes = 5 * 1024 * 1024;
+
     [HttpPost]
     [Idempotent]
     [ProducesResponseType<FamilyDto>(201)]
@@ -119,10 +127,97 @@ public class FamiliesController(HallyDbContext db, IAnalytics analytics) : Contr
             $"UPDATE tasks SET child_ids = array_remove(child_ids, {childId}) WHERE family_id = {familyId} AND {childId} = ANY(child_ids)", ct);
         await db.Database.ExecuteSqlInterpolatedAsync(
             $"UPDATE events SET child_ids = array_remove(child_ids, {childId}) WHERE family_id = {familyId} AND {childId} = ANY(child_ids)", ct);
+        var photoKey = child.PhotoKey;
         db.Children.Remove(child);
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
+        await DeleteFileAsync(photoKey);
         return NoContent();
+    }
+
+    /// <summary>Sets or replaces the child's profile photo (JPEG, PNG, WebP or HEIC, up to 5 MB). Stored encrypted like chat photos.</summary>
+    [HttpPut("{familyId:guid}/children/{childId:guid}/photo")]
+    [Authorize(Policy = Policies.FamilyMember)]
+    [RequestSizeLimit(MaxChildPhotoBytes + 64 * 1024)]
+    public async Task<ActionResult<ChildDto>> SetChildPhoto(Guid familyId, Guid childId, IFormFile? file, CancellationToken ct)
+    {
+        var child = await db.Children.FirstOrDefaultAsync(c => c.FamilyId == familyId && c.Id == childId, ct)
+                    ?? throw new NotFoundException("child.not_found", "Child not found.");
+        if (file is null || file.Length == 0 || file.Length > MaxChildPhotoBytes)
+        {
+            throw new DomainException("child.photo_invalid", "Send a JPEG, PNG, WebP or HEIC photo up to 5 MB.");
+        }
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, ct);
+        var bytes = ms.ToArray();
+        // Trust the bytes, not the declared type: the photo is served back with this content type.
+        var contentType = PhotoFormat.Detect(bytes)
+                          ?? throw new DomainException("child.photo_invalid", "Send a JPEG, PNG, WebP or HEIC photo up to 5 MB.");
+
+        var key = await store.SaveAsync(familyId, bytes, ct);
+        string? old;
+        try
+        {
+            old = child.SetPhoto(key, contentType, clock.GetUtcNow());
+            await db.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            await store.DeleteAsync(key, CancellationToken.None);
+            throw;
+        }
+
+        await DeleteFileAsync(old);
+        return ChildDto.From(child);
+    }
+
+    /// <summary>The child's profile photo, decrypted. Only members of the family can read it.</summary>
+    [HttpGet("{familyId:guid}/children/{childId:guid}/photo")]
+    [Authorize(Policy = Policies.FamilyMember)]
+    public async Task<IActionResult> ChildPhoto(Guid familyId, Guid childId, CancellationToken ct)
+    {
+        var child = await db.Children.AsNoTracking().FirstOrDefaultAsync(c => c.FamilyId == familyId && c.Id == childId, ct);
+        if (child?.PhotoKey is null || await store.ReadAsync(child.PhotoKey, ct) is not { } bytes)
+        {
+            throw new NotFoundException("child.photo_not_found", "Photo not found.");
+        }
+
+        // The URL carries the photo's version, so a cached copy never goes stale.
+        Response.Headers.CacheControl = "private, max-age=31536000, immutable";
+        Response.Headers.XContentTypeOptions = "nosniff";
+        return File(bytes, child.PhotoContentType ?? "image/jpeg");
+    }
+
+    /// <summary>Removes the child's profile photo; the app shows the initial again.</summary>
+    [HttpDelete("{familyId:guid}/children/{childId:guid}/photo")]
+    [Authorize(Policy = Policies.FamilyMember)]
+    public async Task<ActionResult<ChildDto>> DeleteChildPhoto(Guid familyId, Guid childId, CancellationToken ct)
+    {
+        var child = await db.Children.FirstOrDefaultAsync(c => c.FamilyId == familyId && c.Id == childId, ct)
+                    ?? throw new NotFoundException("child.not_found", "Child not found.");
+        var old = child.RemovePhoto();
+        await db.SaveChangesAsync(ct);
+        await DeleteFileAsync(old);
+        return ChildDto.From(child);
+    }
+
+    private async Task DeleteFileAsync(string? key)
+    {
+        if (key is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await store.DeleteAsync(key, CancellationToken.None);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The row no longer points at it. Log it so an operator can remove the leftover encrypted file.
+            logger.LogWarning(ex, "Could not delete a replaced child photo");
+        }
     }
 
     private async Task<FamilyDto> LoadDto(Guid familyId, CancellationToken ct)

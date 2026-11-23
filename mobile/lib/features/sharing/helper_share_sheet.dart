@@ -15,6 +15,7 @@ import 'sharing_repository.dart';
 Future<void> showHelperShareSheet(BuildContext context, WidgetRef ref, {required String subject, required Future<HelperLink> Function() create}) =>
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (_) => _HelperShareSheet(subject: subject, create: create),

@@ -20,7 +20,7 @@ public class InsightsTests(HallyApiFactory api)
     public async Task One_page_brings_a_childs_logs_together()
     {
         var owner = await api.SignInAsync($"{Guid.NewGuid():N}@example.com", "Ayşe");
-        var family = (await (await owner.PostIdempotentAsync("/api/v1/families", new { name = "Yılmaz" })).Content.ReadFromJsonAsync<FamilyBody>())!;
+        var family = (await (await owner.PostIdempotentAsync("/api/v1/families", new { name = "Yılmaz", timeZoneId = TestZones.Daytime(api.Clock) })).Content.ReadFromJsonAsync<FamilyBody>())!;
         var ela = (await (await owner.PostIdempotentAsync($"/api/v1/families/{family.Id}/children", new { firstName = "Ela" })).Content.ReadFromJsonAsync<ChildBody>())!;
         var f = $"/api/v1/families/{family.Id}";
         var c = $"{f}/children/{ela.Id}";

@@ -641,6 +641,20 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("first_name");
 
+                    b.Property<string>("PhotoContentType")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("photo_content_type");
+
+                    b.Property<string>("PhotoKey")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("photo_key");
+
+                    b.Property<DateTimeOffset?>("PhotoUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("photo_updated_at");
+
                     b.HasKey("Id")
                         .HasName("pk_children");
 

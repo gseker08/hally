@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
@@ -10,21 +13,25 @@ class FamilyMember {
   final String role;
 }
 
-/// A child profile: first name only, an optional birth year and a colour key (see `childColor`).
+/// A child profile: first name only, an optional birth year, a colour key (see `childColor`) and an optional photo.
 class ChildProfile {
-  const ChildProfile({required this.id, required this.firstName, this.birthYear, this.color = 'sky'});
+  const ChildProfile({required this.id, required this.firstName, this.birthYear, this.color = 'sky', this.photoUrl});
 
   factory ChildProfile.fromJson(Map<String, dynamic> j) => ChildProfile(
         id: j['id'] as String,
         firstName: j['firstName'] as String,
         birthYear: j['birthYear'] as int?,
         color: j['color'] as String? ?? 'sky',
+        photoUrl: j['photoUrl'] as String?,
       );
 
   final String id;
   final String firstName;
   final int? birthYear;
   final String color;
+
+  /// Relative API path of the profile photo; it changes whenever the photo does. Null shows the initial.
+  final String? photoUrl;
 }
 
 class FamilyDetails {
@@ -75,6 +82,11 @@ abstract interface class FamilyRepository {
   Future<ChildProfile> addChild(String familyId, {required String firstName, int? birthYear, String? color});
   Future<ChildProfile> updateChild(String familyId, String childId, {required String firstName, int? birthYear, required String color});
   Future<void> deleteChild(String familyId, String childId);
+  Future<ChildProfile> setChildPhoto(String familyId, String childId, Uint8List bytes);
+  Future<ChildProfile> deleteChildPhoto(String familyId, String childId);
+
+  /// Downloads a photo from [ChildProfile.photoUrl].
+  Future<Uint8List> childPhoto(String photoUrl);
 }
 
 class ApiFamilyRepository implements FamilyRepository {
@@ -140,11 +152,33 @@ class ApiFamilyRepository implements FamilyRepository {
   @override
   Future<void> deleteChild(String familyId, String childId) =>
       _call(() => _api.dio.delete<dynamic>('/api/v1/families/$familyId/children/$childId'));
+
+  @override
+  Future<ChildProfile> setChildPhoto(String familyId, String childId, Uint8List bytes) => _call(() async {
+        final res = await _api.dio.put<Map<String, dynamic>>('/api/v1/families/$familyId/children/$childId/photo',
+            data: FormData.fromMap({'file': MultipartFile.fromBytes(bytes, filename: 'child.png', contentType: DioMediaType.parse('image/png'))}));
+        return ChildProfile.fromJson(res.data!);
+      });
+
+  @override
+  Future<ChildProfile> deleteChildPhoto(String familyId, String childId) => _call(() async {
+        final res = await _api.dio.delete<Map<String, dynamic>>('/api/v1/families/$familyId/children/$childId/photo');
+        return ChildProfile.fromJson(res.data!);
+      });
+
+  @override
+  Future<Uint8List> childPhoto(String photoUrl) => _call(() async {
+        final res = await _api.dio.get<List<int>>(photoUrl, options: Options(responseType: ResponseType.bytes));
+        return Uint8List.fromList(res.data!);
+      });
 }
 
 final familyRepositoryProvider = Provider<FamilyRepository>((ref) => ApiFamilyRepository(ref.watch(apiClientProvider)));
 
 final familyProvider = FutureProvider.family<FamilyDetails, String>((ref, id) => ref.watch(familyRepositoryProvider).get(id));
+
+/// A child's photo by its URL. Kept for the session: the URL changes when the photo does, so it never goes stale.
+final childPhotoProvider = FutureProvider.family<Uint8List, String>((ref, url) => ref.watch(familyRepositoryProvider).childPhoto(url));
 
 /// Extracts the token from a pasted invite link (https://…/i/{token}) or a bare token.
 String parseInviteToken(String input) {
