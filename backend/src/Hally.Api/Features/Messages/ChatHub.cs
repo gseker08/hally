@@ -22,10 +22,13 @@ public interface IChatClient
 
     /// <summary>The family's shopping list changed; apps reload it.</summary>
     Task ShoppingChanged(Shopping.ShoppingEvent e);
+
+    /// <summary>A child fell asleep, woke up, or a sleep was added or removed; apps reload.</summary>
+    Task SleepChanged(Sleep.SleepEvent e);
 }
 
 /// <summary>
-/// Live channel at <c>/hubs/chat</c> for chat messages and other family events (screen time, medications, shopping list). Apps only listen: sending still goes through the REST API,
+/// Live channel at <c>/hubs/chat</c> for chat messages and other family events (screen time, medications, shopping list, sleep). Apps only listen: sending still goes through the REST API,
 /// which validates, stores and then announces the message here. Every connection joins its user's group, so all
 /// of a person's devices get the event. The JWT comes in the <c>access_token</c> query string (WebSockets cannot
 /// send headers from browsers and most mobile clients), see Program.cs.

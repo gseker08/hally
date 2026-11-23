@@ -143,12 +143,12 @@ public static class MedicationTexts
 {
     public static (string Title, string Body) Given(string locale, string giver, string child, string medication, string time) =>
         locale != "en"
-            ? ($"{child}: {medication} verildi", $"{giver} {time}'de verdi.")
+            ? ($"{child}: {medication} verildi", $"{giver} verdi · {time}")
             : ($"{child}: {medication} given", $"{giver} gave it at {time}.");
 
     public static (string Title, string Body) Due(string locale, string child, string medication, string lastTime) =>
         locale != "en"
-            ? ($"{child}: {medication} zamanı", $"Son doz {lastTime}'de verilmişti. Verdiyseniz uygulamada işaretleyin.")
+            ? ($"{child}: {medication} zamanı", $"Son doz: {lastTime}. Verdiyseniz uygulamada işaretleyin.")
             : ($"{child}: time for {medication}", $"The last dose was at {lastTime}. Mark it in the app once given.");
 }
 

@@ -165,6 +165,16 @@ class FamilyScreen extends ConsumerWidget {
                     onTap: () => context.push('/medications'),
                   ),
                 ),
+                Card(
+                  child: ListTile(
+                    key: const Key('family.sleep'),
+                    leading: const HallyIconBadge(icon: Icons.bedtime_rounded, color: HallyColors.sky),
+                    title: Text(l10n.sleepTitle),
+                    subtitle: Text(l10n.sleepBody),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => context.push('/sleep'),
+                  ),
+                ),
               ],
               const SizedBox(height: HallySpace.md),
               Card(

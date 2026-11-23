@@ -735,5 +735,52 @@
         "type": "String"
       }
     }
+  },
+  "sleepTitle": "Uyku",
+  "sleepBody": "Uyudu / uyandı; gece ve gündüz uykusu özeti",
+  "sleepNoChildren": "Uyku takibi için Aile sekmesinden çocuk ekleyin.",
+  "sleepFellAsleep": "Uyudu",
+  "sleepWoke": "Uyandı",
+  "sleepAsleepFor": "Uyuyor · {duration} · yattı: {time}",
+  "sleepAwakeFor": "Uyanık · {duration} · uyandı: {time}",
+  "sleepNoRecord": "Henüz uyku kaydı yok",
+  "sleepAverages": "Ortalama gece {night} · gündüz {nap}",
+  "sleepNight": "Gece",
+  "sleepNap": "Gündüz uykusu",
+  "sleepAdd": "Uyku ekle",
+  "sleepDelete": "Sil",
+  "sleepToday": "Bugün",
+  "sleepYesterday": "Dün",
+  "sleepInFuture": "Uyanma saati henüz gelmedi.",
+  "sleepAddFailed": "Kaydedilemedi. Başka bir uykuyla çakışıyor olabilir.",
+  "@sleepAsleepFor": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@sleepAwakeFor": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@sleepAverages": {
+    "placeholders": {
+      "night": {
+        "type": "String"
+      },
+      "nap": {
+        "type": "String"
+      }
+    }
   }
 }

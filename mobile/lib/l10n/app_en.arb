@@ -360,5 +360,22 @@
   "shoppingQuantityHint": "e.g. 2 kg, 3 pcs",
   "shoppingHeadingOut": "I'm going shopping",
   "shoppingHeadingOutSent": "Your family was told; what they add shows up here.",
-  "shoppingHeadingOutAlready": "You told them a moment ago."
+  "shoppingHeadingOutAlready": "You told them a moment ago.",
+  "sleepTitle": "Sleep",
+  "sleepBody": "Asleep / awake; night and nap summary",
+  "sleepNoChildren": "Add a child on the Family tab to track sleep.",
+  "sleepFellAsleep": "Asleep",
+  "sleepWoke": "Awake",
+  "sleepAsleepFor": "Asleep for {duration} (since {time})",
+  "sleepAwakeFor": "Awake for {duration} (woke at {time})",
+  "sleepNoRecord": "No sleep recorded yet",
+  "sleepAverages": "Average night {night} · naps {nap}",
+  "sleepNight": "Night",
+  "sleepNap": "Nap",
+  "sleepAdd": "Add sleep",
+  "sleepDelete": "Delete",
+  "sleepToday": "Today",
+  "sleepYesterday": "Yesterday",
+  "sleepInFuture": "That wake-up time has not come yet.",
+  "sleepAddFailed": "Could not save. It may overlap another sleep."
 }
