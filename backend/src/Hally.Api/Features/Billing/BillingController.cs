@@ -28,7 +28,8 @@ public record EntitlementDto(
     bool TrialAvailable,
     bool PurchasedByMe,
     PlanLimitsDto Limits,
-    UsageDto Usage);
+    UsageDto Usage,
+    bool SellingEnabled);
 
 public record PurchaseRequest(SubscriptionSource Store, string ProductId, string Token);
 
@@ -145,7 +146,8 @@ public class BillingController(
             e.TrialAvailable,
             sub?.PurchasedByUserId == userId,
             ToDto(e.Limits),
-            new UsageDto(u.Adults, u.ScansThisWeek, u.ScansThisMonth, u.ActiveShareLinks));
+            new UsageDto(u.Adults, u.ScansThisWeek, u.ScansThisMonth, u.ActiveShareLinks),
+            !options.Value.FreeLaunch);
     }
 
     private static PlanLimitsDto ToDto(PlanLimits l) => new(l.MaxAdults, l.ScansPerWeek, l.ScansPerMonth, l.ActiveShareLinks, l.RemindersPerItem);

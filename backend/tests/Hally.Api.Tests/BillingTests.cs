@@ -15,7 +15,7 @@ namespace Hally.Api.Tests;
 public record LimitsBody(int MaxAdults, int ScansPerWeek, int ScansPerMonth, int ActiveShareLinks, int RemindersPerItem);
 public record UsageBody(int Adults, int ScansThisWeek, int ScansThisMonth, int ActiveShareLinks);
 public record EntitlementBody(string Plan, string State, string? Source, string? ProductId, DateTimeOffset? ExpiresAt, bool WillRenew,
-    bool TrialAvailable, bool PurchasedByMe, LimitsBody Limits, UsageBody Usage);
+    bool TrialAvailable, bool PurchasedByMe, LimitsBody Limits, UsageBody Usage, bool SellingEnabled);
 
 [Collection(ApiCollection.Name)]
 public class BillingTests(HallyApiFactory api)
@@ -60,6 +60,15 @@ public class BillingTests(HallyApiFactory api)
     }
 
     [Fact]
+    public void Free_launch_gives_every_family_the_plus_limits()
+    {
+        var options = new BillingOptions { FreeLaunch = true };
+        options.LimitsFor(Plan.Free).Should().Be(options.LimitsFor(Plan.Plus));
+        options.LimitsFor(Plan.Free).ScansPerMonth.Should().Be(100, "the Plus limits still cap AI cost");
+        new BillingOptions().LimitsFor(Plan.Free).ScansPerWeek.Should().Be(3);
+    }
+
+    [Fact]
     public async Task Free_family_gets_three_scans_a_week_then_the_paywall_and_the_trial_unlocks_more()
     {
         var (owner, familyId) = await Family();
@@ -67,6 +76,7 @@ public class BillingTests(HallyApiFactory api)
         start.Plan.Should().Be("Free");
         start.TrialAvailable.Should().BeTrue();
         start.Limits.ScansPerWeek.Should().Be(3);
+        start.SellingEnabled.Should().BeTrue();
 
         for (var i = 0; i < 3; i++)
         {

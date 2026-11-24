@@ -122,6 +122,19 @@ void _phone(WidgetTester tester) {
 }
 
 void main() {
+  test('free launch: the server says nothing is sold', () {
+    Map<String, dynamic> json({bool? selling}) => {
+          'plan': 'Free',
+          'state': 'Free',
+          'trialAvailable': false,
+          'limits': {'maxAdults': 6, 'scansPerWeek': 0, 'scansPerMonth': 100, 'activeShareLinks': 0, 'remindersPerItem': 5},
+          'usage': {'adults': 1, 'scansThisWeek': 0, 'scansThisMonth': 0, 'activeShareLinks': 0},
+          if (selling != null) 'sellingEnabled': selling,
+        };
+    expect(Entitlement.fromJson(json(selling: false)).sellingEnabled, isFalse);
+    expect(Entitlement.fromJson(json()).sellingEnabled, isTrue, reason: 'older servers sell');
+  });
+
   testWidgets('a 402 opens the paywall with the reason, and the trial unlocks Plus', (tester) async {
     _phone(tester);
     final billing = _FakeBilling();
