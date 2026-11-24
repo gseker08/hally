@@ -9,6 +9,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../family/family_repository.dart';
+import 'ai_consent.dart';
 import 'privacy_repository.dart';
 
 /// Plain-language privacy summary, data export, leaving the family and deleting the account.
@@ -95,6 +96,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
     final familyId = ref.watch(meProvider).valueOrNull?.primaryFamily?.id;
     final family = familyId == null ? null : ref.watch(familyProvider(familyId)).valueOrNull;
     final theme = Theme.of(context);
+    final aiConsent = ref.watch(aiConsentProvider).valueOrNull ?? false;
 
     final points = [
       (Icons.verified_user_rounded, HallyColors.cherry, l10n.privacyPointApproval),
@@ -105,6 +107,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       ),
       (Icons.lock_rounded, HallyColors.mint, l10n.privacyPointPhotos(info?.originalsRetentionDays ?? 30)),
       (Icons.child_care_rounded, HallyColors.apricot, l10n.privacyPointChildren),
+      (Icons.forum_rounded, HallyColors.mint, l10n.privacyPointChat),
       (Icons.link_rounded, HallyColors.rose, l10n.privacyPointLinks),
       (Icons.analytics_rounded, HallyColors.cherry, l10n.privacyPointAnalytics),
     ];
@@ -131,6 +134,16 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
                 ),
               ),
             ),
+          Card(
+            child: SwitchListTile(
+              key: const Key('privacy.aiConsent'),
+              secondary: const Icon(Icons.psychology_rounded),
+              title: Text(l10n.privacyAiConsent),
+              subtitle: Text(aiConsent ? l10n.privacyAiConsentOn : l10n.privacyAiConsentOff),
+              value: aiConsent,
+              onChanged: (v) => v ? ensureAiConsent(context, ref) : ref.read(aiConsentProvider.notifier).set(false),
+            ),
+          ),
           if (info?.policyUrl != null)
             TextButton(
               onPressed: () => launchUrl(Uri.parse(info!.policyUrl!), mode: LaunchMode.externalApplication),

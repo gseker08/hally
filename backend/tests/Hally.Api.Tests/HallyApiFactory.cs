@@ -132,8 +132,14 @@ public sealed class TestClock : TimeProvider
 {
     public TimeSpan Offset { get; private set; } = ToFamilyNoon(TimeProvider.System.GetUtcNow());
 
-    private static TimeSpan ToFamilyNoon(DateTimeOffset now) =>
-        TimeSpan.FromHours(12) - FamilyTimeZone.ToFamilyTime(now, FamilyTimeZone.Default).TimeOfDay;
+    /// <summary>Moves to the next noon in the family's zone, never back: rows stamped with the real time (such as
+    /// <c>Entity.CreatedAt</c>) must not end up later than the test clock, or "joined after this message" and
+    /// "overdue" checks flip depending on the hour the suite runs.</summary>
+    private static TimeSpan ToFamilyNoon(DateTimeOffset now)
+    {
+        var offset = TimeSpan.FromHours(12) - FamilyTimeZone.ToFamilyTime(now, FamilyTimeZone.Default).TimeOfDay;
+        return offset < TimeSpan.Zero ? offset + TimeSpan.FromDays(1) : offset;
+    }
 
     public override DateTimeOffset GetUtcNow() => base.GetUtcNow() + Offset;
 

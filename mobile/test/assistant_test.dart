@@ -7,6 +7,8 @@ import 'package:hally/core/design/theme.dart';
 import 'package:hally/features/assistant/assistant_repository.dart';
 import 'package:hally/features/assistant/assistant_screen.dart';
 import 'package:hally/features/capture/capture_models.dart';
+import 'package:hally/features/privacy/ai_consent.dart';
+import 'package:hally/features/privacy/privacy_repository.dart';
 import 'package:hally/l10n/gen/app_localizations.dart';
 
 const _me = Me(id: 'u1', displayName: 'Ayşe', locale: 'tr', families: [FamilyRef(id: 'f1', name: 'Yılmaz')]);
@@ -34,8 +36,25 @@ class _FakeAssistant implements AssistantRepository {
   }
 }
 
-Widget _app(_FakeAssistant repo) => ProviderScope(
-      overrides: [meProvider.overrideWith((ref) async => _me), assistantRepositoryProvider.overrideWithValue(repo)],
+class _MemoryConsent implements AiConsentStorage {
+  bool granted = false;
+
+  @override
+  Future<bool> read() async => granted;
+
+  @override
+  Future<void> write(bool value) async => granted = value;
+}
+
+Widget _app(_FakeAssistant repo, _MemoryConsent consent) => ProviderScope(
+      overrides: [
+        meProvider.overrideWith((ref) async => _me),
+        assistantRepositoryProvider.overrideWithValue(repo),
+        aiConsentStorageProvider.overrideWithValue(consent),
+        privacyInfoProvider.overrideWith(
+          (ref) async => const PrivacyInfo(aiProviderNoTraining: false, aiProviderName: 'TestAI', originalsRetentionDays: 30),
+        ),
+      ],
       child: MaterialApp(
         theme: buildHallyTheme(Brightness.light),
         locale: const Locale('tr'),
@@ -58,14 +77,28 @@ void main() {
     addTearDown(tester.view.reset);
 
     final repo = _FakeAssistant();
-    await tester.pumpWidget(_app(repo));
+    final consent = _MemoryConsent();
+    await tester.pumpWidget(_app(repo, consent));
     await tester.pumpAndSettle();
 
     final starter = find.byKey(const Key('assistant.starter.0'));
     await tester.ensureVisible(starter);
     await tester.pumpAndSettle();
+
+    // The first message asks for the AI consent; "Not now" sends nothing.
     await tester.tap(starter);
     await tester.pumpAndSettle();
+    expect(find.textContaining('TestAI'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('aiConsent.decline')));
+    await tester.pumpAndSettle();
+    expect(repo.sent, isEmpty);
+    expect(consent.granted, isFalse);
+
+    await tester.tap(starter);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('aiConsent.accept')));
+    await tester.pumpAndSettle();
+    expect(consent.granted, isTrue);
     expect(find.text('Yarın ne lazım?'), findsOneWidget);
     expect(find.text('Yarın: Okul gezisi (09:00)'), findsOneWidget);
 

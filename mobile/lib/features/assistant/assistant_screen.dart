@@ -7,6 +7,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_repository.dart';
+import '../privacy/ai_consent.dart';
 import 'assistant_repository.dart';
 
 /// Chat with Hally. Answers come from the family's own data; anything to add arrives as a suggestion to approve.
@@ -34,6 +35,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   Future<void> _send(String familyId, String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || _sending) return;
+    if (!await ensureAiConsent(context, ref) || !mounted) return;
     final l10n = AppLocalizations.of(context);
     setState(() {
       _entries.add(ChatEntry(id: 'local-${_entries.length}', fromUser: true, text: trimmed));

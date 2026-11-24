@@ -11,6 +11,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/paywall_screen.dart';
+import '../privacy/ai_consent.dart';
 import 'capture_models.dart';
 import 'capture_repository.dart';
 import 'quick_log.dart';
@@ -127,6 +128,7 @@ Future<void> _pick(BuildContext? sheetContext, BuildContext context, WidgetRef r
 
 /// Shows a progress dialog while the API extracts, then opens the review screen.
 Future<void> runCapture(BuildContext context, WidgetRef ref, Future<CaptureResult> Function() action) async {
+  if (!await ensureAiConsent(context, ref) || !context.mounted) return;
   final l10n = AppLocalizations.of(context);
   final navigator = Navigator.of(context, rootNavigator: true);
   showDialog<void>(
