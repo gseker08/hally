@@ -16,6 +16,7 @@ using Hally.Infrastructure.Persistence;
 using Hally.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
@@ -143,7 +144,24 @@ builder.Services.AddRateLimiter(o =>
 });
 builder.Services.AddHealthChecks().AddNpgSql(connectionString, name: "postgres", tags: ["ready"]);
 
+// Behind a reverse proxy (Caddy in deploy/docker-compose.prod.yml) the client IP and https scheme arrive in
+// X-Forwarded-* headers. Only trust them when the API is reachable through the proxy alone.
+if (builder.Configuration.GetValue<bool>("ReverseProxy:TrustForwardedHeaders"))
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(o =>
+    {
+        o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+        o.KnownNetworks.Clear(); // the proxy's container address is not known in advance
+        o.KnownProxies.Clear();
+    });
+}
+
 var app = builder.Build();
+
+if (app.Configuration.GetValue<bool>("ReverseProxy:TrustForwardedHeaders"))
+{
+    app.UseForwardedHeaders(); // first, so logging and the per-IP demo rate limit see the real client
+}
 
 app.UseSerilogRequestLogging();
 app.UseExceptionHandler();
