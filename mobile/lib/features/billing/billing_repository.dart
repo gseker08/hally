@@ -1,7 +1,12 @@
+import 'dart:async';
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_repository.dart';
+import 'store_gateway_iap.dart';
 
 class PlanLimits {
   const PlanLimits({
@@ -191,21 +196,37 @@ class StorePurchaseResult {
 
 class StoreUnavailableException implements Exception {}
 
+/// The store accepted the order but the payment is not confirmed yet (for example a slow card or cash payment on
+/// Google Play). The purchase arrives later on [StoreGateway.backgroundPurchases].
+class StorePendingException implements Exception {}
+
+class StorePurchaseException implements Exception {
+  StorePurchaseException(this.message);
+
+  final String? message;
+
+  @override
+  String toString() => 'StorePurchaseException: $message';
+}
+
 /// Device-side store boundary (StoreKit / Play Billing). Prices shown on the paywall come from here.
 abstract interface class StoreGateway {
   bool get available;
 
-  /// Localized price per product id, e.g. {'hally_plus_monthly': '₺139,99'}.
+  /// Localized price per product id, e.g. {'hally_plus_monthly': '₺79,99'}.
   Future<Map<String, String>> prices(List<String> productIds);
 
-  /// Null when the user cancelled.
+  /// Null when the user cancelled. Throws [StorePendingException] while the payment is still pending.
   Future<StorePurchaseResult?> buy(String productId);
 
   Future<List<StorePurchaseResult>> restore();
+
+  /// Purchases the store finished outside [buy] and [restore] (a pending payment that cleared, a purchase completed
+  /// while the app was closed). [storePurchaseSyncProvider] sends them to the server.
+  Stream<StorePurchaseResult> get backgroundPurchases;
 }
 
-/// Used until the native in_app_purchase setup lands (see docs/mobile/billing.md):
-/// the trial works, buying says the store is not connected yet.
+/// Used where there is no store (tests, desktop, web): buying says the store is not available.
 class UnavailableStoreGateway implements StoreGateway {
   @override
   bool get available => false;
@@ -218,6 +239,31 @@ class UnavailableStoreGateway implements StoreGateway {
 
   @override
   Future<List<StorePurchaseResult>> restore() async => const [];
+
+  @override
+  Stream<StorePurchaseResult> get backgroundPurchases => const Stream.empty();
 }
 
-final storeGatewayProvider = Provider<StoreGateway>((ref) => UnavailableStoreGateway());
+final storeGatewayProvider = Provider<StoreGateway>((ref) {
+  if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) return UnavailableStoreGateway();
+  final gateway = InAppPurchaseStoreGateway();
+  unawaited(gateway.init());
+  ref.onDispose(gateway.dispose);
+  return gateway;
+});
+
+/// Watched by the app root: sends purchases that finished in the background to the server, so a payment that
+/// cleared later still unlocks Plus without opening the paywall again.
+final storePurchaseSyncProvider = Provider<void>((ref) {
+  final sub = ref.watch(storeGatewayProvider).backgroundPurchases.listen((p) async {
+    try {
+      final familyId = (await ref.read(meProvider.future))?.primaryFamily?.id;
+      if (familyId == null) return;
+      await ref.read(billingRepositoryProvider).registerPurchase(familyId, store: p.store, productId: p.productId, token: p.token);
+      ref.invalidate(entitlementProvider);
+    } catch (_) {
+      // The store delivers unfinished purchases again on the next start, and "Restore purchases" also works.
+    }
+  });
+  ref.onDispose(sub.cancel);
+});
