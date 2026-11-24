@@ -252,7 +252,13 @@
   "reminderNone": "Hatırlatma yok",
   "reminderPastTime": "Bu saat geçti. Daha ileri bir saat seç.",
   "eventReminderSet": "Hatırlatma kuruldu: {time}",
-  "@eventReminderSet": {"placeholders": {"time": {"type": "String"}}},
+  "@eventReminderSet": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "eventReminderSkipped": "Etkinliğin saati geçtiği için hatırlatma kurulmadı",
   "eventReminderFailed": "Etkinlik kaydedildi ama hatırlatma kurulamadı",
   "notificationsTitle": "Bildirimler",
@@ -459,9 +465,28 @@
       }
     }
   },
-  "privacyPointChildren": "Çocuklar için yalnızca ad ve isteğe bağlı doğum yılı tutulur. Çocuk fotoğrafı gerekmez.",
+  "privacyPointChildren": "Çocukların için senin eklediğin bilgiler tutulur: ad, doğum yılı, isteğe bağlı fotoğraf ve kullandığın takipçilerin kayıtları (uyku, beslenme, ilaç, aşı, boy-kilo, ödev gibi). Bunlar sadece ailende görünür, reklam için kullanılmaz ve hesabınla birlikte silinir.",
   "privacyPointLinks": "Yardımcı linkleri sadece paylaştığın işi gösterir, kısa sürede kendiliğinden kapanır ve istediğinde kapatılabilir.",
   "privacyPointAnalytics": "Kullanım ölçümlerinde isim, e-posta ya da yazdığın metinler yer almaz.",
+  "privacyPointChat": "Aile sohbetini sadece aile üyeleri görür. Sohbet fotoğrafları şifreli saklanır ve hesabını sildiğinde gönderdiğin fotoğraflar da silinir.",
+  "privacyAiConsent": "Yapay zekâ ile işleme",
+  "privacyAiConsentOn": "Açık: fotoğraf, metin ve Hally'ye yazdıkların yapay zekâ servisine gönderilebilir.",
+  "privacyAiConsentOff": "Kapalı: fotoğraf okuma ve Hally'ye sor, onay verene kadar çalışmaz.",
+  "aiConsentTitle": "Yapay zekâ kullanımı için onayın",
+  "aiConsentWhat": "Hally, gönderdiğin fotoğrafı, metni ya da Hally'ye yazdığın mesajı okuyup görev ve etkinlik önermek için bir yapay zekâ servisine gönderir.",
+  "aiConsentWhatNamed": "Hally, gönderdiğin fotoğrafı, metni ya da Hally'ye yazdığın mesajı okuyup görev ve etkinlik önermek için yapay zekâ servisine ({provider}) gönderir.",
+  "@aiConsentWhatNamed": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "aiConsentChildren": "Bu içerikte çocuklarına ait bilgiler (ad, okul, etkinlik) olabilir. Sadece işine yarayacak şeyleri gönder.",
+  "aiConsentNoAds": "Veriler yalnızca isteğini yanıtlamak için kullanılır. Reklam ya da satış için kullanılmaz.",
+  "aiConsentWithdraw": "Onayını istediğin an Profil → Gizlilik ve hesap ekranından geri alabilirsin.",
+  "aiConsentAccept": "Kabul ediyorum",
+  "aiConsentDecline": "Şimdi değil",
   "privacyPolicy": "Gizlilik politikasının tamamı",
   "privacyYourData": "Verilerin",
   "privacyExport": "Verilerimi indir",

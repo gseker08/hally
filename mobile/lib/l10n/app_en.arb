@@ -249,9 +249,28 @@
   "privacyPointAiNoTraining": "Your family's data is never used to train AI models.",
   "privacyPointAiProcessing": "Photos and messages are sent to the AI service only to answer your request. Hally does not use your data to train models.",
   "privacyPointPhotos": "Photos are stored encrypted and deleted after {days} days. The tasks and events taken from them stay.",
-  "privacyPointChildren": "For children we keep only a first name and an optional birth year. No child photos needed.",
+  "privacyPointChildren": "For your children we keep what you add: a first name, birth year, an optional photo and the records of the trackers you use (sleep, feeding, medication, vaccines, growth, homework and so on). Only your family sees them, they are never used for ads and they are deleted with your account.",
   "privacyPointLinks": "Helper links show only what you shared, expire on their own and can be turned off anytime.",
   "privacyPointAnalytics": "Usage metrics never include names, emails or what you write.",
+  "privacyPointChat": "Only family members see the family chat. Chat photos are stored encrypted, and the ones you sent are deleted with your account.",
+  "privacyAiConsent": "AI processing",
+  "privacyAiConsentOn": "On: photos, text and what you ask Hally may be sent to the AI service.",
+  "privacyAiConsentOff": "Off: photo reading and Ask Hally stay off until you agree.",
+  "aiConsentTitle": "Your OK for AI processing",
+  "aiConsentWhat": "To suggest tasks and events, Hally sends the photo, text or message you give it to an AI service.",
+  "aiConsentWhatNamed": "To suggest tasks and events, Hally sends the photo, text or message you give it to an AI service ({provider}).",
+  "@aiConsentWhatNamed": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "aiConsentChildren": "This content may include details about your children (names, school, activities). Only send what you need help with.",
+  "aiConsentNoAds": "The data is used only to answer your request. Never for ads or sale.",
+  "aiConsentWithdraw": "You can withdraw this anytime in Profile → Privacy & account.",
+  "aiConsentAccept": "I agree",
+  "aiConsentDecline": "Not now",
   "privacyPolicy": "Full privacy policy",
   "privacyYourData": "Your data",
   "privacyExport": "Download my data",
