@@ -94,6 +94,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           if (mounted) context.pop(true);
         } on StoreUnavailableException {
           messenger.showSnackBar(SnackBar(content: Text(l10n.paywallStoreSoon)));
+        } on StorePendingException {
+          messenger.showSnackBar(SnackBar(content: Text(l10n.paywallPending)));
         } catch (_) {
           messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
         }

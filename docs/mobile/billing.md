@@ -13,8 +13,11 @@ Create the same two auto-renewing subscriptions in App Store Connect and Google 
 | `hally_plus_yearly` | 1 year | about 2 months free compared to monthly |
 
 Ids are configurable with `Billing:Products` (each `{ Id, Period, FallbackPrices }`). Prices are set in the stores, per country;
-the paywall shows the store's localized price. **TL prices are not decided yet** (the spec suggests about ₺129–149 a month).
-`FallbackPrices` is only for display before the store SDK answers and can stay empty.
+the paywall shows the store's localized price. **Türkiye prices (decided 2026-11-24): ₺79,99 a month, ₺599,99 a year.**
+`FallbackPrices` (default TRY values above) is only for display before the store answers.
+
+In Play Console each subscription needs one auto-renewing **base plan** (monthly: `monthly`, yearly: `yearly`); the app buys
+the first base plan the store returns.
 
 Do not configure a store-side free trial: the 7-day trial is handled by the server so it works without a card.
 
@@ -36,11 +39,26 @@ Do not configure a store-side free trial: the 7-day trial is handled by the serv
 
 ## App side
 
-`StoreGateway` (`lib/features/billing/billing_repository.dart`) is the device boundary. Until the native folders and the
-`in_app_purchase` plugin are added, `UnavailableStoreGateway` is used: the trial works and "Get Family Plus" explains
-that store purchases open with the beta. To wire the stores, implement `StoreGateway` with `in_app_purchase`
-(`queryProductDetails` for prices, `buyNonConsumable` for the subscription, `restorePurchases`) and override
-`storeGatewayProvider` in `main.dart`.
+`InAppPurchaseStoreGateway` (`lib/features/billing/store_gateway_iap.dart`) implements `StoreGateway` with the official
+`in_app_purchase` plugin (Play Billing, StoreKit 2). It is used on Android and iPhone; tests and desktop get
+`UnavailableStoreGateway`.
+
+- Prices: `queryProductDetails`. Buy: `buyNonConsumable` (auto-renewing subscriptions use the same call).
+- Token sent to the server: the Play `purchaseToken` on Android, the StoreKit 2 transaction id on iPhone.
+- Every purchased/restored update is `completePurchase`d (StoreKit re-delivers unfinished ones; Play ones are also
+  acknowledged by the server).
+- A Google Play "pending" payment shows "Ödemen onay bekliyor"; when it clears, the update arrives on
+  `backgroundPurchases` and `storePurchaseSyncProvider` (watched in `app.dart`) registers it with the server.
+- "Satın alımları geri yükle" calls `restorePurchases` and sends what comes back within 2 seconds.
+
+While `Billing:FreeLaunch` is on the paywall never opens, so none of this runs for users.
+
+### Testing on a device
+
+- Android: the build must be signed with the upload key and uploaded once to a testing track, and your Google account
+  must be a **license tester** (Play Console → Settings → License testing). Test cards are free; subscriptions renew every
+  few minutes. Set `BILLING_FREE_LAUNCH=false` on a test server to see the paywall.
+- iPhone: a Sandbox tester (App Store Connect → Users and Access → Sandbox) on a TestFlight build.
 
 ## Local testing
 

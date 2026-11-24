@@ -71,6 +71,9 @@ class _FakeStore implements StoreGateway {
 
   @override
   Future<List<StorePurchaseResult>> restore() async => const [];
+
+  @override
+  Stream<StorePurchaseResult> get backgroundPurchases => const Stream.empty();
 }
 
 /// Home has a button that fails with a 402 like the API does, so the paywall opens through the real helper.
@@ -175,14 +178,14 @@ void main() {
     expect(billing.purchases, ['GooglePlay:hally_plus_monthly:tok-1']);
   });
 
-  testWidgets('without a store, buying explains that purchases open with the beta', (tester) async {
+  testWidgets('without a store, buying says the store is not available', (tester) async {
     _phone(tester);
     await tester.pumpWidget(_app(_FakeBilling(trialAvailable: false), start: '/paywall?trigger=plan_screen'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('paywall.buy')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('beta sürümünde açılacak'), findsOneWidget);
+    expect(find.textContaining('Mağaza şu an bu cihazda kullanılamıyor'), findsOneWidget);
   });
 
   testWidgets('plan screen shows usage against the free limits', (tester) async {

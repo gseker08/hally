@@ -36,8 +36,9 @@ public class BillingOptions
 
     public static readonly IReadOnlyList<ProductOptions> DefaultProducts =
     [
-        new() { Id = "hally_plus_monthly", Period = "monthly" },
-        new() { Id = "hally_plus_yearly", Period = "yearly" },
+        // Shown only until the store answers with its own localized price (decided 2026-11-24).
+        new() { Id = "hally_plus_monthly", Period = "monthly", FallbackPrices = new() { ["TRY"] = "₺79,99" } },
+        new() { Id = "hally_plus_yearly", Period = "yearly", FallbackPrices = new() { ["TRY"] = "₺599,99" } },
     ];
 
     public TimeSpan Grace => TimeSpan.FromDays(Math.Max(0, GraceDays));
