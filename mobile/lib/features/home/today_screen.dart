@@ -7,7 +7,6 @@ import 'package:intl/intl.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
-import '../../core/text/locale_case.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_repository.dart';
 import '../family/children.dart';
@@ -100,11 +99,11 @@ class TodayScreen extends ConsumerWidget {
         for (final t in d.overdue) HallyEntrance(index: i++, child: TaskTile(task: t, familyId: familyId, color: HallyColors.apricot)),
       ],
       if (d.dueToday.isNotEmpty) ...[
-        HallySectionHeader(title: l10n.todayDue, color: HallyColors.mint, count: d.dueToday.length),
+        HallySectionHeader(title: l10n.todayDue, color: HallyModule.tasks, count: d.dueToday.length),
         for (final t in d.dueToday) HallyEntrance(index: i++, child: TaskTile(task: t, familyId: familyId, color: HallyColors.mint)),
       ],
       if (d.events.isNotEmpty) ...[
-        HallySectionHeader(title: l10n.todayEvents, color: HallyColors.cherry, count: d.events.length),
+        HallySectionHeader(title: l10n.todayEvents, color: HallyModule.calendar, count: d.events.length),
         for (final (n, e) in d.events.indexed)
           HallyEntrance(index: i++, child: _EventTile(event: e, familyId: familyId, last: n == d.events.length - 1)),
       ],
@@ -112,7 +111,7 @@ class TodayScreen extends ConsumerWidget {
   }
 }
 
-/// Header with date, greeting, the day's counts and the "Ask Hally" bar that opens the assistant.
+/// Header: wordmark and shortcuts, date, greeting, the Hally assistant card and the day's counts as pastel tiles.
 class TodayHero extends StatelessWidget {
   const TodayHero({super.key, required this.name, required this.data});
 
@@ -131,10 +130,9 @@ class TodayHero extends StatelessWidget {
             ? l10n.todayGreetingAfternoon(first)
             : l10n.todayGreetingEvening(first);
     final locale = Localizations.localeOf(context);
-    final date = upperCaseFor(DateFormat('d MMMM EEEE', locale.toLanguageTag()).format(now), locale);
+    final date = DateFormat('d MMMM EEEE', locale.toLanguageTag()).format(now);
     final d = data;
     final ink = theme.colorScheme.onSurface;
-    final accent = theme.brightness == Brightness.dark ? HallyColors.cherryDark : HallyColors.cherry;
 
     return SafeArea(
       bottom: false,
@@ -145,9 +143,8 @@ class TodayHero extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(date, style: theme.textTheme.labelMedium?.copyWith(color: accent, letterSpacing: 1.2, fontWeight: FontWeight.w700)),
-                ),
+                const HallyWordmark(height: 26),
+                const Spacer(),
                 IconButton(
                   key: const Key('today.tasks'),
                   tooltip: l10n.todayAllTasks,
@@ -160,20 +157,49 @@ class TodayHero extends StatelessWidget {
                 const ProfileButton(),
               ],
             ),
-            Text(greeting, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, height: 1.1)),
             const SizedBox(height: HallySpace.md),
+            Text(date, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(greeting, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, height: 1.1)),
+            const SizedBox(height: HallySpace.xs),
+            Text(l10n.brandEmotional, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            const SizedBox(height: HallySpace.md + 4),
             const AskHallyBar(),
-            const SizedBox(height: HallySpace.sm + 2),
+            const SizedBox(height: HallySpace.md - 4),
             AnimatedOpacity(
               opacity: d == null ? 0 : 1,
               duration: HallyMotion.medium,
-              child: Wrap(
-                spacing: HallySpace.sm,
-                runSpacing: HallySpace.sm,
+              child: Row(
                 children: [
-                  _Stat(icon: Icons.check_circle_outline_rounded, label: l10n.todayStatTasks((d?.overdue.length ?? 0) + (d?.dueToday.length ?? 0))),
-                  _Stat(icon: Icons.event_rounded, label: l10n.todayStatEvents(d?.events.length ?? 0)),
-                  if ((d?.waiting.length ?? 0) > 0) _Stat(icon: Icons.auto_awesome, label: l10n.todayStatWaiting(d!.waiting.length), hot: true),
+                  Expanded(
+                    child: _Stat(
+                      icon: Icons.checklist_rounded,
+                      color: HallyModule.tasks,
+                      count: (d?.overdue.length ?? 0) + (d?.dueToday.length ?? 0),
+                      label: l10n.todayTileTasks,
+                      semantics: l10n.todayStatTasks((d?.overdue.length ?? 0) + (d?.dueToday.length ?? 0)),
+                    ),
+                  ),
+                  const SizedBox(width: HallySpace.sm + 2),
+                  Expanded(
+                    child: _Stat(
+                      icon: Icons.calendar_month_rounded,
+                      color: HallyModule.calendar,
+                      count: d?.events.length ?? 0,
+                      label: l10n.todayTileEvents,
+                      semantics: l10n.todayStatEvents(d?.events.length ?? 0),
+                    ),
+                  ),
+                  const SizedBox(width: HallySpace.sm + 2),
+                  Expanded(
+                    child: _Stat(
+                      icon: Icons.auto_awesome_rounded,
+                      color: HallyColors.powder,
+                      count: d?.waiting.length ?? 0,
+                      label: l10n.todayTileWaiting,
+                      semantics: l10n.todayStatWaiting(d?.waiting.length ?? 0),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -184,7 +210,8 @@ class TodayHero extends StatelessWidget {
   }
 }
 
-/// Tappable "Ask Hally or type…" field. The assistant used to have its own tab; now it is one tap from Today.
+/// The Hally assistant card: sage, the brand's campaign line and a field that opens the assistant.
+/// The assistant used to have its own tab; now it is one tap from Today.
 class AskHallyBar extends StatelessWidget {
   const AskHallyBar({super.key});
 
@@ -192,70 +219,117 @@ class AskHallyBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final accent = theme.brightness == Brightness.dark ? HallyColors.cherryDark : HallyColors.cherry;
-    return Semantics(
-      button: true,
-      label: l10n.askHally,
-      excludeSemantics: true,
-      child: HallyPressable(
-        key: const Key('today.askHally'),
-        onTap: () => context.push('/assistant'),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(HallySpace.md, 10, 10, 10),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(HallyRadius.lg),
-            border: Border.all(color: accent.withValues(alpha: 0.28), width: 1.5),
-          ),
-          child: Row(
+    final b = theme.brightness;
+    final dark = b == Brightness.dark;
+    final onCard = theme.colorScheme.onSurface;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(HallySpace.md + 2, HallySpace.md + 2, HallySpace.md, HallySpace.md),
+      decoration: BoxDecoration(
+        gradient: dark ? HallyGradients.magicDark : HallyGradients.magic,
+        borderRadius: BorderRadius.circular(HallyRadius.lg + 4),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.auto_awesome_rounded, color: accent, size: 20),
-              const SizedBox(width: HallySpace.sm + 2),
-              Expanded(child: Text(l10n.askHally, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.brandCampaign, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: onCard)),
+                    const SizedBox(height: 2),
+                    Text(l10n.brandSlogan, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700, color: onCard)),
+                    const SizedBox(height: HallySpace.xs),
+                    Text(l10n.askHallyCardBody, style: theme.textTheme.bodyMedium?.copyWith(color: HallyColors.readableOn(HallyModule.assistant, b))),
+                  ],
+                ),
+              ),
+              const SizedBox(width: HallySpace.sm),
               Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(color: HallyColors.cherry, borderRadius: BorderRadius.circular(11)),
-                child: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 18),
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(color: theme.colorScheme.surface.withValues(alpha: dark ? 0.5 : 0.7), shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: HallyMark(size: 50, colors: dark ? HallyMarkColors.onDark : HallyMarkColors.onLight),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.icon, required this.label, this.hot = false});
-
-  final IconData icon;
-  final String label;
-  final bool hot;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = hot ? HallyColors.cherry : theme.colorScheme.onSurfaceVariant;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: hot ? HallyColors.softOf(HallyColors.cherry, theme.brightness) : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(HallyRadius.pill),
-        border: Border.all(color: hot ? Colors.transparent : theme.colorScheme.outlineVariant),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: hot ? HallyColors.readableOn(HallyColors.cherry, theme.brightness) : color),
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: hot ? HallyColors.readableOn(HallyColors.cherry, theme.brightness) : theme.colorScheme.onSurface, fontWeight: FontWeight.w700, fontSize: 13)),
+          const SizedBox(height: HallySpace.md - 2),
+          Semantics(
+            button: true,
+            label: l10n.askHally,
+            excludeSemantics: true,
+            child: HallyPressable(
+              key: const Key('today.askHally'),
+              onTap: () => context.push('/assistant'),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(HallySpace.md, 8, 8, 8),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(HallyRadius.md),
+                  boxShadow: HallyShadows.soft(b),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome_rounded, color: HallyColors.readableOn(HallyModule.assistant, b), size: 20),
+                    const SizedBox(width: HallySpace.sm + 2),
+                    Expanded(child: Text(l10n.askHally, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
+                      child: Icon(Icons.arrow_upward_rounded, color: theme.colorScheme.onPrimary, size: 18),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
+/// One pastel count tile (tasks, events, suggestions).
+class _Stat extends StatelessWidget {
+  const _Stat({required this.icon, required this.color, required this.count, required this.label, required this.semantics});
+
+  final IconData icon;
+  final Color color;
+  final int count;
+  final String label;
+  final String semantics;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final b = theme.brightness;
+    final fg = HallyColors.readableOn(color, b);
+    return Semantics(
+      label: semantics,
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
+        decoration: BoxDecoration(color: HallyColors.softOf(color, b), borderRadius: BorderRadius.circular(HallyRadius.md + 2)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 22, color: fg),
+            const SizedBox(height: HallySpace.sm),
+            Text('$count', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, height: 1, color: theme.colorScheme.onSurface)),
+            const SizedBox(height: HallySpace.xs),
+            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Hally's suggestions waiting for approval: a calm sage card (the assistant's colour) with one cherry action.
 class _WaitingCard extends StatelessWidget {
   const _WaitingCard({required this.titles, required this.onTap});
 
@@ -266,76 +340,57 @@ class _WaitingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final b = theme.brightness;
+    final accent = HallyColors.readableOn(HallyModule.assistant, b);
     return Padding(
       padding: const EdgeInsets.only(top: HallySpace.md),
       child: HallyPressable(
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            gradient: HallyGradients.magicCard,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(HallyRadius.lg),
-            boxShadow: HallyShadows.glow(HallyColors.rose),
+            border: Border.all(color: HallyColors.softOf(HallyModule.assistant, b), width: 1.5),
+            boxShadow: HallyShadows.soft(b),
           ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
+          padding: const EdgeInsets.all(HallySpace.md + 2),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Positioned(right: -30, top: -30, child: HallyGlow(color: Colors.white, size: 140)),
-              Padding(
-                padding: const EdgeInsets.all(HallySpace.md + 2),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
+                children: [
+                  const HallyIconBadge(icon: Icons.auto_awesome_rounded, color: HallyModule.assistant, size: 40),
+                  const SizedBox(width: HallySpace.sm + 4),
+                  Expanded(child: Text(l10n.todayWaiting, style: theme.textTheme.titleLarge)),
+                  HallyPill(label: '${titles.length}', color: HallyModule.assistant),
+                ],
+              ),
+              const SizedBox(height: HallySpace.sm),
+              Text(l10n.todayWaitingBody(titles.length), style: theme.textTheme.bodyMedium),
+              const SizedBox(height: HallySpace.sm + 4),
+              for (final t in titles.take(3))
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Icon(Icons.circle, size: 6, color: accent),
+                      const SizedBox(width: HallySpace.sm),
+                      Expanded(
+                        child: Text(t, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleSmall),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: HallySpace.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(HallyRadius.pill)),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.22), borderRadius: BorderRadius.circular(12)),
-                          child: const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
-                        ),
-                        const SizedBox(width: HallySpace.sm + 4),
-                        Expanded(
-                          child: Text(l10n.todayWaiting, style: theme.textTheme.titleLarge?.copyWith(color: Colors.white)),
-                        ),
-                        HallyPill(label: '${titles.length}', color: Colors.white, solid: true, textColor: HallyColors.cherryStrong),
-                      ],
-                    ),
-                    const SizedBox(height: HallySpace.sm),
-                    Text(l10n.todayWaitingBody(titles.length), style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.35)),
-                    const SizedBox(height: HallySpace.md),
-                    for (final t in titles.take(3))
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.circle, size: 6, color: Colors.white70),
-                            const SizedBox(width: HallySpace.sm),
-                            Expanded(
-                              child: Text(
-                                t,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    const SizedBox(height: HallySpace.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(HallyRadius.pill)),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            l10n.todayReview,
-                            style: const TextStyle(color: HallyColors.cherryStrong, fontWeight: FontWeight.w800),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.arrow_forward_rounded, size: 18, color: HallyColors.cherryStrong),
-                        ],
-                      ),
-                    ),
+                    Text(l10n.todayReview, style: TextStyle(color: theme.colorScheme.onPrimary, fontWeight: FontWeight.w700)),
+                    const SizedBox(width: 6),
+                    Icon(Icons.arrow_forward_rounded, size: 18, color: theme.colorScheme.onPrimary),
                   ],
                 ),
               ),
@@ -451,14 +506,14 @@ class _TaskTileState extends ConsumerState<TaskTile> {
                       height: 28,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: done ? widget.color : Colors.transparent,
-                        border: Border.all(color: widget.color, width: 2.2),
+                        color: done ? HallyColors.accent(widget.color, theme.brightness) : Colors.transparent,
+                        border: Border.all(color: HallyColors.accent(widget.color, theme.brightness), width: 2.2),
                       ),
                       child: AnimatedScale(
                         scale: done ? 1 : 0,
                         duration: HallyMotion.medium,
                         curve: Curves.easeOutBack,
-                        child: const Icon(Icons.check_rounded, size: 18, color: Colors.white),
+                        child: Icon(Icons.check_rounded, size: 18, color: theme.colorScheme.surface),
                       ),
                     ),
                   ),
@@ -492,7 +547,7 @@ class _TaskTileState extends ConsumerState<TaskTile> {
                     ChildBadges(familyId: widget.familyId, childIds: t.childIds),
                     const SizedBox(width: HallySpace.sm),
                   ],
-                  Container(width: 4, height: 28, decoration: BoxDecoration(color: widget.color.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(2))),
+                  Container(width: 4, height: 28, decoration: BoxDecoration(color: HallyColors.softOf(widget.color, theme.brightness), borderRadius: BorderRadius.circular(2))),
                 ],
               ),
             ),
@@ -524,7 +579,7 @@ class _EventTile extends ConsumerWidget {
             width: 58,
             child: Padding(
               padding: const EdgeInsets.only(top: HallySpace.md),
-              child: Text(time, style: theme.textTheme.labelLarge?.copyWith(fontSize: 13, color: HallyColors.cherry)),
+              child: Text(time, style: theme.textTheme.labelLarge?.copyWith(fontSize: 13, color: HallyColors.readableOn(HallyModule.calendar, theme.brightness))),
             ),
           ),
           Column(
@@ -535,12 +590,12 @@ class _EventTile extends ConsumerWidget {
                 height: 12,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: HallyColors.cherry,
-                  border: Border.all(color: HallyColors.softOf(HallyColors.cherry, theme.brightness), width: 3),
+                  color: HallyColors.accent(HallyModule.calendar, theme.brightness),
+                  border: Border.all(color: HallyColors.softOf(HallyModule.calendar, theme.brightness), width: 3),
                 ),
               ),
               Expanded(
-                child: Container(width: 2, color: last ? Colors.transparent : HallyColors.softOf(HallyColors.cherry, theme.brightness)),
+                child: Container(width: 2, color: last ? Colors.transparent : HallyColors.softOf(HallyModule.calendar, theme.brightness)),
               ),
             ],
           ),
@@ -560,7 +615,7 @@ class _EventTile extends ConsumerWidget {
                         ChildBadges(familyId: familyId, childIds: event.childIds),
                         const SizedBox(width: HallySpace.sm),
                       ],
-                      const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.cherry, size: 34),
+                      const HallyIconBadge(icon: Icons.event_rounded, color: HallyModule.calendar, size: 34),
                     ],
                   ),
                 ),

@@ -83,7 +83,7 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
                                 background: Container(
                                   alignment: Alignment.centerRight,
                                   padding: const EdgeInsets.symmetric(horizontal: HallySpace.lg),
-                                  child: const Icon(Icons.delete_outline_rounded, color: HallyColors.inkMuted),
+                                  child: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
                                 ),
                                 onDismissed: (_) async {
                                   await ref.read(habitsRepositoryProvider).delete(familyId, h.id);

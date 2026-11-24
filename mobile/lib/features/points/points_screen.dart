@@ -99,20 +99,20 @@ class _PointsScreenState extends ConsumerState<PointsScreen> {
                       ),
                     const SizedBox(height: HallySpace.sm),
                     Card(
-                      color: HallyColors.apricotSoft,
+                      color: HallyColors.softOf(HallyModule.rewards, Theme.of(context).brightness),
                       child: Padding(
                         padding: const EdgeInsets.all(HallySpace.lg),
                         child: Row(
                           children: [
-                            const Icon(Icons.star_rounded, size: 44, color: HallyColors.apricot),
+                            const Icon(Icons.star_rounded, size: 44, color: HallyModule.rewards),
                             const SizedBox(width: HallySpace.md),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(l10n.pointsBalance(mine.balance), key: const Key('points.balance'),
-                                      style: theme.textTheme.headlineSmall?.copyWith(color: HallyColors.ink, fontWeight: FontWeight.w800)),
-                                  Text(l10n.pointsThisWeek(mine.weekPoints), style: theme.textTheme.bodySmall?.copyWith(color: HallyColors.inkMuted)),
+                                      style: theme.textTheme.headlineSmall?.copyWith(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w800)),
+                                  Text(l10n.pointsThisWeek(mine.weekPoints), style: theme.textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                                 ],
                               ),
                             ),
@@ -177,7 +177,7 @@ class _PointsScreenState extends ConsumerState<PointsScreen> {
   Widget _deleteBackground() => Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: HallySpace.lg),
-        child: const Icon(Icons.delete_outline_rounded, color: HallyColors.inkMuted),
+        child: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
       );
 }
 
@@ -190,7 +190,7 @@ class _Stars extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, color: HallyColors.apricot, size: 20),
+          const Icon(Icons.star_rounded, color: HallyModule.rewards, size: 20),
           Text('$count', style: Theme.of(context).textTheme.titleSmall),
         ],
       );
@@ -354,7 +354,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
               SizedBox(
                 width: 110,
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.star_rounded, color: HallyColors.apricot),
+                  const Icon(Icons.star_rounded, color: HallyModule.rewards),
                   Text('$_stars', key: const Key('points.value'), style: theme.textTheme.headlineSmall),
                 ]),
               ),

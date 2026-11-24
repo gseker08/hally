@@ -341,7 +341,7 @@ class _Section extends StatelessWidget {
               for (final l in lines)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(l, style: theme.textTheme.bodyMedium?.copyWith(color: warn && l == lines.first ? HallyColors.error : HallyColors.inkMuted)),
+                  child: Text(l, style: theme.textTheme.bodyMedium?.copyWith(color: warn && l == lines.first ? HallyColors.error : Theme.of(context).colorScheme.onSurfaceVariant)),
                 ),
               if (progress != null) ...[
                 const SizedBox(height: HallySpace.sm),

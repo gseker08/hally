@@ -13,13 +13,13 @@ class HallyMarkColors {
   final bool shine;
 
   /// White cherries on the brand cherry tile (app icon, splash, dark headers).
-  static const onBrand = HallyMarkColors(cherry: Colors.white, stem: Color(0xFFFFD3DE), leaf: Color(0xFF7FE0C4));
+  static const onBrand = HallyMarkColors(cherry: Colors.white, stem: HallyColors.cherrySoft, leaf: HallyColors.sagePastel);
 
   /// Full-colour mark on light surfaces.
-  static const onLight = HallyMarkColors(cherry: HallyColors.cherry, stem: HallyColors.cherryStem, leaf: HallyColors.mint, shine: true);
+  static const onLight = HallyMarkColors(cherry: HallyColors.cherry, stem: HallyColors.cherryStem, leaf: HallyColors.leaf, shine: true);
 
   /// Full-colour mark on dark surfaces.
-  static const onDark = HallyMarkColors(cherry: HallyColors.cherryDark, stem: HallyColors.cherryStrongDark, leaf: HallyColors.mint, shine: true);
+  static const onDark = HallyMarkColors(cherry: HallyColors.cherryDark, stem: HallyColors.powderDark, leaf: HallyColors.sageDark, shine: true);
 }
 
 /// The Hally mark: two cherries on one branch. The cherries are the two parents sharing the load, the joined
@@ -99,7 +99,7 @@ class HallyLogo extends StatelessWidget {
         decoration: BoxDecoration(
           color: onDark ? Colors.white : HallyColors.cherry,
           borderRadius: BorderRadius.circular(size * 0.26),
-          boxShadow: [BoxShadow(color: (onDark ? Colors.black : HallyColors.cherry).withValues(alpha: 0.22), blurRadius: size * 0.4, offset: Offset(0, size * 0.12))],
+          boxShadow: [BoxShadow(color: (onDark ? Colors.black : HallyColors.cherry).withValues(alpha: 0.14), blurRadius: size * 0.3, offset: Offset(0, size * 0.08))],
         ),
         child: HallyMark(size: size, colors: onDark ? HallyMarkColors.onLight : HallyMarkColors.onBrand),
       ),
@@ -119,7 +119,7 @@ class HallyWordmark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final text = onBrand || dark ? Colors.white : HallyColors.ink;
+    final text = onBrand ? Colors.white : (dark ? HallyColors.inkDark : HallyColors.ink);
     final colors = onBrand ? HallyMarkColors.onBrand : (dark ? HallyMarkColors.onDark : HallyMarkColors.onLight);
     return Semantics(
       label: 'Hally',

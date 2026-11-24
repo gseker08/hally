@@ -52,10 +52,11 @@ class HallyIconBadge extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: gradient,
         color: filled ? null : HallyColors.softOf(color, brightness),
-        borderRadius: BorderRadius.circular(size * 0.32),
+        borderRadius: BorderRadius.circular(size * 0.3),
         boxShadow: glow ? HallyShadows.glow(color) : null,
       ),
-      child: Icon(icon, color: filled ? Colors.white : color, size: size * 0.5),
+      // Soft Living: icons on a pastel use the deep readable tone, not the raw accent.
+      child: Icon(icon, color: filled ? Colors.white : HallyColors.readableOn(color, brightness), size: size * 0.5),
     );
   }
 }
@@ -111,14 +112,18 @@ class HallySectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = color ?? theme.colorScheme.primary;
+    final accent = color ?? HallyColors.cherry;
     return Padding(
       padding: const EdgeInsets.fromLTRB(HallySpace.xs, HallySpace.lg, HallySpace.xs, HallySpace.sm + 2),
       child: Row(
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: accent, shape: BoxShape.circle)),
-          const SizedBox(width: HallySpace.sm),
-          Expanded(child: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontSize: 17))),
+          Container(
+            width: 6,
+            height: 18,
+            decoration: BoxDecoration(color: HallyColors.softOf(accent, theme.brightness), borderRadius: BorderRadius.circular(3)),
+          ),
+          const SizedBox(width: HallySpace.sm + 2),
+          Expanded(child: Text(title, style: theme.textTheme.titleLarge?.copyWith(fontSize: 19))),
           if (count != null) HallyPill(label: '$count', color: accent),
         ],
       ),
@@ -230,17 +235,18 @@ class HallyAvatar extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color, Color.lerp(color, Colors.white, 0.35)!],
-        ),
-        border: ring ? Border.all(color: Colors.white, width: 2.5) : null,
+        color: HallyColors.softOf(color, Theme.of(context).brightness),
+        border: ring ? Border.all(color: Theme.of(context).colorScheme.surface, width: 2.5) : null,
       ),
       alignment: Alignment.center,
       child: Text(
         initial,
-        style: TextStyle(fontFamily: HallyFonts.display, fontWeight: FontWeight.w700, color: Colors.white, fontSize: size * 0.42),
+        style: TextStyle(
+          fontFamily: HallyFonts.display,
+          fontWeight: FontWeight.w700,
+          color: HallyColors.readableOn(color, Theme.of(context).brightness),
+          fontSize: size * 0.42,
+        ),
       ),
     );
   }
@@ -278,20 +284,23 @@ class HallyEmptyState extends StatelessWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    Container(decoration: BoxDecoration(shape: BoxShape.circle, color: HallyColors.softOf(accent, brightness))),
+                    Container(decoration: BoxDecoration(shape: BoxShape.circle, color: HallyColors.softOf(accent, brightness).withValues(alpha: 0.55))),
                     Container(
-                      width: 92,
-                      height: 92,
+                      width: 96,
+                      height: 96,
                       decoration: BoxDecoration(shape: BoxShape.circle, color: HallyColors.softOf(accent, brightness)),
                     ),
-                    HallyIconBadge(
-                      icon: icon,
-                      color: accent,
-                      size: 60,
-                      glow: true,
-                      gradient: LinearGradient(colors: [accent, Color.lerp(accent, Colors.white, 0.3)!]),
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: HallyShadows.soft(brightness),
+                      ),
+                      child: Icon(icon, color: HallyColors.readableOn(accent, brightness), size: 30),
                     ),
-                    const Positioned(top: 10, right: 18, child: Icon(Icons.auto_awesome, size: 18, color: HallyColors.apricot)),
+                    Positioned(top: 10, right: 18, child: Icon(Icons.auto_awesome, size: 18, color: HallyColors.accent(HallyColors.cherry, brightness))),
                   ],
                 ),
               ),

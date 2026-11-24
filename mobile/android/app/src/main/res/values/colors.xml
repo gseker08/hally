@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Hally canvas colours (HallyColors.canvas / canvasDark) for the launch screen. -->
-    <color name="splash_background">#FBF5F6</color>
+    <color name="splash_background">#F7F3ED</color>
     <!-- Home screen "Today" widget (HallyColors). Cherry is the brand accent, never an error colour. -->
     <color name="widget_surface">#FFFFFF</color>
-    <color name="widget_ink">#231A1D</color>
-    <color name="widget_muted">#625A5E</color>
-    <color name="widget_accent">#A8133C</color>
-    <color name="widget_task">#23937A</color>
-    <color name="widget_chip">#FBF2F4</color>
-    <color name="widget_accent_soft">#FBE6EC</color>
+    <color name="widget_ink">#374B45</color>
+    <color name="widget_muted">#5E6F63</color>
+    <color name="widget_accent">#AD5268</color>
+    <color name="widget_task">#5E7D68</color>
+    <color name="widget_chip">#F7F3ED</color>
+    <color name="widget_accent_soft">#F3E4E7</color>
 </resources>

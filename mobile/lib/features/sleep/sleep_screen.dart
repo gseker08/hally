@@ -112,7 +112,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
                                             Text(c.firstName, style: theme.textTheme.titleMedium),
                                             const SizedBox(width: HallySpace.xs),
                                             Icon(asleep != null ? Icons.bedtime_rounded : Icons.wb_sunny_rounded,
-                                                size: 18, color: asleep != null ? HallyColors.sky : HallyColors.apricot),
+                                                size: 18, color: asleep != null ? HallyModule.sleep : HallyColors.apricot),
                                           ],
                                         ),
                                         Text(line, key: Key('sleep.line.${c.id}'), style: theme.textTheme.bodySmall),
@@ -125,7 +125,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
                                     style: FilledButton.styleFrom(
                                       minimumSize: const Size(0, 44),
                                       padding: const EdgeInsets.symmetric(horizontal: HallySpace.md),
-                                      backgroundColor: asleep != null ? HallyColors.apricot : HallyColors.sky,
+                                      backgroundColor: asleep != null ? HallyColors.apricot : HallyModule.sleep,
                                     ),
                                     onPressed: _busy.contains(c.id) || s == null ? null : () => _toggle(familyId, c.id, asleep != null),
                                     icon: Icon(asleep != null ? Icons.wb_sunny_rounded : Icons.bedtime_rounded),

@@ -67,7 +67,7 @@ class KidsScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(HallySpace.lg),
               child: HallyEmptyState(
                 icon: Icons.child_care_rounded,
-                color: HallyColors.sky,
+                color: HallyModule.kids,
                 title: l10n.kidsEmptyTitle,
                 body: l10n.childAddBody,
                 action: FilledButton.icon(
@@ -201,26 +201,26 @@ class _ChildDayState extends ConsumerState<_ChildDay> {
     final fits = trackersForAge(age);
 
     _TileData tile(Tracker t) => switch (t) {
-          Tracker.study => _TileData(t, Icons.menu_book_rounded, HallyColors.study, l10n.studyTitle, '/study',
+          Tracker.study => _TileData(t, Icons.menu_book_rounded, HallyModule.study, l10n.studyTitle, '/study',
               value: today == null ? null : dur(today.studyMinutes),
               progress: data?.studyGoalMinutes == null || today == null ? null : today.studyMinutes / data!.studyGoalMinutes!),
-          Tracker.habits => _TileData(t, Icons.local_fire_department_rounded, HallyColors.apricot, l10n.habitsTitle, '/habits',
+          Tracker.habits => _TileData(t, Icons.local_fire_department_rounded, HallyModule.habits, l10n.habitsTitle, '/habits',
               value: data == null || data.habits.isEmpty ? null : l10n.kidsStreakDays(data.habits.map((h) => h.streak).reduce(math.max)),
               note: today == null || today.habitsScheduled == 0 ? null : l10n.kidsDoneOf(today.habitsDone, today.habitsScheduled),
               ring: today == null || today.habitsScheduled == 0 ? null : '${today.habitsDone}/${today.habitsScheduled}',
               ringProgress: today == null || today.habitsScheduled == 0 ? null : today.habitsDone / today.habitsScheduled),
-          Tracker.stars => _TileData(t, Icons.star_rounded, HallyColors.star, l10n.pointsTitle, '/stars', value: data == null ? null : '${data.starBalance}'),
-          Tracker.screenTime => _TileData(t, Icons.phone_android_rounded, HallyColors.apricot, l10n.screenTimeTitle, '/screen-time',
+          Tracker.stars => _TileData(t, Icons.star_rounded, HallyModule.rewards, l10n.pointsTitle, '/stars', value: data == null ? null : '${data.starBalance}'),
+          Tracker.screenTime => _TileData(t, Icons.phone_android_rounded, HallyModule.screenTime, l10n.screenTimeTitle, '/screen-time',
               value: today == null ? null : dur(today.screenMinutes),
               progress: data?.screenGoalMinutes == null || today == null ? null : today.screenMinutes / data!.screenGoalMinutes!,
               overIsBad: true),
-          Tracker.sleep => _TileData(t, Icons.bedtime_rounded, HallyColors.sky, l10n.sleepTitle, '/sleep',
+          Tracker.sleep => _TileData(t, Icons.bedtime_rounded, HallyModule.sleep, l10n.sleepTitle, '/sleep',
               value: today == null || today.sleepMinutes == 0 ? null : dur(today.sleepMinutes)),
-          Tracker.feeding => _TileData(t, Icons.baby_changing_station_rounded, HallyColors.mint, l10n.feedingTitle, '/feeding',
+          Tracker.feeding => _TileData(t, Icons.baby_changing_station_rounded, HallyModule.feeding, l10n.feedingTitle, '/feeding',
               value: today == null || today.feeds == 0 ? null : l10n.kidsFeeds(today.feeds)),
-          Tracker.medications => _TileData(t, Icons.medication_rounded, HallyColors.cherry, l10n.medicationsTitle, '/medications',
+          Tracker.medications => _TileData(t, Icons.medication_rounded, HallyModule.medications, l10n.medicationsTitle, '/medications',
               value: today == null || today.doses == 0 ? null : l10n.kidsDoses(today.doses)),
-          Tracker.health => _TileData(t, Icons.health_and_safety_rounded, HallyColors.mint, l10n.healthTitle, '/health',
+          Tracker.health => _TileData(t, Icons.health_and_safety_rounded, HallyModule.health, l10n.healthTitle, '/health',
               note: data == null
                   ? null
                   : data.health.vaccinesOverdue > 0
@@ -361,7 +361,7 @@ class _Ring extends StatelessWidget {
               strokeWidth: 6,
               strokeCap: StrokeCap.round,
               backgroundColor: theme.colorScheme.outlineVariant,
-              color: over ? HallyColors.error : (p == null ? HallyColors.softOf(color, theme.brightness) : color),
+              color: over ? theme.colorScheme.error : (p == null ? HallyColors.softOf(color, theme.brightness) : HallyColors.accent(color, theme.brightness)),
             ),
           ),
           Padding(
@@ -393,31 +393,37 @@ class _Tile extends StatelessWidget {
     final theme = Theme.of(context);
     final p = data.progress;
     final over = data.overIsBad && p != null && p > 1;
-    final noteColor = data.warn ? HallyColors.error : HallyColors.readableOn(data.color, theme.brightness);
+    final b = theme.brightness;
+    final fg = HallyColors.readableOn(data.color, b);
+    final noteColor = data.warn ? theme.colorScheme.error : fg;
     return HallyPressable(
       key: Key('kids.tile.${data.tracker.name}'),
       onTap: () => context.push(data.route),
       child: Container(
-        padding: const EdgeInsets.all(HallySpace.md - 4),
+        padding: const EdgeInsets.all(HallySpace.md - 2),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: HallyColors.softOf(data.color, b),
           borderRadius: BorderRadius.circular(HallyRadius.lg),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                HallyIconBadge(icon: data.icon, color: data.color, size: 34),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(color: theme.colorScheme.surface.withValues(alpha: b == Brightness.dark ? 0.35 : 0.7), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(data.icon, size: 20, color: fg),
+                ),
                 const Spacer(),
-                Icon(Icons.chevron_right_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                Icon(Icons.chevron_right_rounded, size: 18, color: fg),
               ],
             ),
             const SizedBox(height: HallySpace.sm + 2),
             const Spacer(),
             if (data.value != null) Text(data.value!, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800, height: 1.1)),
-            Text(data.title, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+            Text(data.title, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700, color: fg), maxLines: 1, overflow: TextOverflow.ellipsis),
             if (data.note != null)
               Text(data.note!, style: theme.textTheme.labelSmall?.copyWith(color: noteColor, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
             if (p != null)
@@ -428,8 +434,8 @@ class _Tile extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: p.clamp(0, 1).toDouble(),
                     minHeight: 5,
-                    backgroundColor: theme.colorScheme.outlineVariant,
-                    color: over ? HallyColors.error : data.color,
+                    backgroundColor: theme.colorScheme.surface.withValues(alpha: b == Brightness.dark ? 0.3 : 0.75),
+                    color: over ? theme.colorScheme.error : HallyColors.accent(data.color, b),
                   ),
                 ),
               ),

@@ -81,7 +81,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                       const SizedBox(height: HallySpace.sm),
                       // Basics
                       Card(
-                        color: HallyColors.skySoft,
+                        color: HallyColors.softOf(HallyModule.health, Theme.of(context).brightness),
                         child: Padding(
                           padding: const EdgeInsets.all(HallySpace.md),
                           child: Column(
@@ -89,7 +89,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Expanded(child: Text(l10n.healthBasics, style: theme.textTheme.titleMedium?.copyWith(color: HallyColors.ink))),
+                                  Expanded(child: Text(l10n.healthBasics, style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface))),
                                   TextButton.icon(
                                     key: const Key('health.editProfile'),
                                     style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
@@ -99,7 +99,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                                   ),
                                 ],
                               ),
-                              if (p.isEmpty) Text(l10n.healthBasicsEmpty, style: theme.textTheme.bodyMedium?.copyWith(color: HallyColors.ink)),
+                              if (p.isEmpty) Text(l10n.healthBasicsEmpty, style: theme.textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                               if (p.bloodType != null) _Line(icon: Icons.bloodtype_rounded, label: l10n.healthBloodType, value: p.bloodType!),
                               if (p.allergies != null)
                                 _Line(key: const Key('health.allergies'), icon: Icons.warning_amber_rounded, label: l10n.healthAllergies, value: p.allergies!, strong: true),
@@ -131,8 +131,8 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                           onDismissed: (_) => _act(familyId, child.id, (r) => r.deleteAppointment(familyId, child.id, a.id)),
                           child: Card(
                             child: ListTile(
-                              leading: Icon(Icons.event_rounded, color: a.past ? HallyColors.inkMuted : HallyColors.sky),
-                              title: Text(a.title, style: a.past ? const TextStyle(color: HallyColors.inkMuted) : null),
+                              leading: Icon(Icons.event_rounded, color: a.past ? Theme.of(context).colorScheme.onSurfaceVariant : HallyModule.health),
+                              title: Text(a.title, style: a.past ? TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant) : null),
                               subtitle: Text([DateFormat.MMMEd(locale).add_Hm().format(a.startsAt), if (a.doctor != null) a.doctor!, if (a.location != null) a.location!]
                                   .join(' · ')),
                             ),
@@ -155,7 +155,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                           child: Card(
                             child: ListTile(
                               leading: Icon(v.given ? Icons.check_circle_rounded : Icons.vaccines_rounded,
-                                  color: v.given ? HallyColors.mintDeep : (v.overdue ? HallyColors.error : HallyColors.sky)),
+                                  color: v.given ? HallyColors.mintDeep : (v.overdue ? HallyColors.error : HallyModule.health)),
                               title: Text(v.name),
                               subtitle: Text(v.given
                                   ? l10n.healthGivenOn(DateFormat.yMMMd(locale).format(v.givenOn!))
@@ -188,7 +188,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                           onDismissed: (_) => _act(familyId, child.id, (r) => r.deleteGrowth(familyId, child.id, g.id)),
                           child: ListTile(
                             contentPadding: EdgeInsets.zero,
-                            leading: const Icon(Icons.straighten_rounded, color: HallyColors.sky),
+                            leading: const Icon(Icons.straighten_rounded, color: HallyModule.health),
                             title: Text([
                               if (g.heightCm != null) '${_n(g.heightCm!, locale)} cm',
                               if (g.weightKg != null) '${_n(g.weightKg!, locale)} kg',
@@ -204,7 +204,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                         label: Text(l10n.healthMedicationsLink),
                       ),
                       const SizedBox(height: HallySpace.sm),
-                      Text(l10n.healthDisclaimer, style: theme.textTheme.bodySmall?.copyWith(color: HallyColors.inkMuted)),
+                      Text(l10n.healthDisclaimer, style: theme.textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ],
                   );
                 },
@@ -215,7 +215,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
   Widget _deleteBackground() => Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: HallySpace.lg),
-        child: const Icon(Icons.delete_outline_rounded, color: HallyColors.inkMuted),
+        child: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
       );
 }
 
@@ -257,15 +257,15 @@ class _Line extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 20, color: strong ? HallyColors.error : HallyColors.sky),
+            Icon(icon, size: 20, color: strong ? HallyColors.error : HallyModule.health),
             const SizedBox(width: HallySpace.sm),
             Expanded(
               child: Text.rich(TextSpan(children: [
-                TextSpan(text: '$label: ', style: theme.textTheme.bodyMedium?.copyWith(color: HallyColors.inkMuted)),
-                TextSpan(text: value, style: theme.textTheme.bodyMedium?.copyWith(color: HallyColors.ink, fontWeight: strong ? FontWeight.w700 : null)),
+                TextSpan(text: '$label: ', style: theme.textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                TextSpan(text: value, style: theme.textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface, fontWeight: strong ? FontWeight.w700 : null)),
               ])),
             ),
-            if (onTap != null) const Icon(Icons.call_rounded, size: 18, color: HallyColors.sky),
+            if (onTap != null) const Icon(Icons.call_rounded, size: 18, color: HallyModule.health),
           ],
         ),
       ),
@@ -289,12 +289,12 @@ class _GrowthPainter extends CustomPainter {
       path.lineTo(at(i).dx, at(i).dy);
     }
     canvas.drawPath(path, Paint()
-      ..color = HallyColors.sky
+      ..color = HallyModule.health
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round);
     for (var i = 0; i < values.length; i++) {
-      canvas.drawCircle(at(i), 4, Paint()..color = HallyColors.sky);
+      canvas.drawCircle(at(i), 4, Paint()..color = HallyModule.health);
     }
   }
 

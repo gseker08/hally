@@ -173,7 +173,7 @@ class _StudyCard extends StatelessWidget {
                     ),
                     FilledButton.icon(
                       key: Key('study.stop.${child.id}'),
-                      style: FilledButton.styleFrom(minimumSize: const Size(0, 44), backgroundColor: HallyColors.apricot),
+                      style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
                       onPressed: busy ? null : onStop,
                       icon: const Icon(Icons.stop_rounded),
                       label: Text(l10n.studyStop),

@@ -39,7 +39,7 @@ Future<void> showCaptureSheet(BuildContext context, WidgetRef ref) {
               const SizedBox(height: HallySpace.md),
               Row(
                 children: [
-                  const Icon(Icons.auto_awesome_rounded, color: HallyColors.cherry, size: 18),
+                  Icon(Icons.auto_awesome_rounded, color: HallyColors.readableOn(HallyModule.assistant, theme.brightness), size: 18),
                   const SizedBox(width: 6),
                   Text(l10n.addCaptureSection, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
                 ],
@@ -53,7 +53,7 @@ Future<void> showCaptureSheet(BuildContext context, WidgetRef ref) {
                     child: CaptureOption(
                       key: const Key('capture.camera'),
                       icon: Icons.photo_camera_rounded,
-                      color: HallyColors.cherry,
+                      color: HallyColors.powder,
                       label: l10n.captureCameraShort,
                       onTap: () => _pick(sheetContext, context, ref, ImageSource.camera, 'Camera'),
                     ),
@@ -63,7 +63,7 @@ Future<void> showCaptureSheet(BuildContext context, WidgetRef ref) {
                     child: CaptureOption(
                       key: const Key('capture.gallery'),
                       icon: Icons.photo_library_rounded,
-                      color: HallyColors.mint,
+                      color: HallyColors.mist,
                       label: l10n.captureGalleryShort,
                       onTap: () => _pick(sheetContext, context, ref, ImageSource.gallery, 'Gallery'),
                     ),
@@ -73,7 +73,7 @@ Future<void> showCaptureSheet(BuildContext context, WidgetRef ref) {
                     child: CaptureOption(
                       key: const Key('capture.text'),
                       icon: Icons.chat_rounded,
-                      color: HallyColors.apricot,
+                      color: HallyModule.assistant,
                       label: l10n.captureTextShort2,
                       onTap: () {
                         Navigator.of(sheetContext).pop();
@@ -234,14 +234,14 @@ class _CaptureProgressDialogState extends State<CaptureProgressDialog> with Sing
                     height: 84,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: HallyGradients.magic,
-                      boxShadow: [BoxShadow(color: HallyColors.rose.withValues(alpha: 0.25 + t * 0.25), blurRadius: 20 + t * 20)],
+                      color: HallyColors.softOf(HallyModule.assistant, theme.brightness),
+                      boxShadow: [BoxShadow(color: HallyModule.assistant.withValues(alpha: 0.12 + t * 0.18), blurRadius: 20 + t * 20)],
                     ),
                     child: child,
                   ),
                 );
               },
-              child: const Icon(Icons.auto_awesome, color: Colors.white, size: 38),
+              child: Icon(Icons.auto_awesome, color: HallyColors.readableOn(HallyModule.assistant, theme.brightness), size: 38),
             ),
             const SizedBox(height: HallySpace.lg),
             Text(l10n.captureWorking, style: theme.textTheme.titleLarge),

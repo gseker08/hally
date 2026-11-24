@@ -144,23 +144,23 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                 ],
               ),
               Card(
-                color: HallyColors.mintSoft,
+                color: HallyColors.softOf(HallyColors.mint, Theme.of(context).brightness),
                 child: Padding(
                   padding: const EdgeInsets.all(HallySpace.lg),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(money.format(m.total), key: const Key('expenses.total'),
-                          style: theme.textTheme.headlineSmall?.copyWith(color: HallyColors.ink, fontWeight: FontWeight.w800)),
-                      Text(l10n.expensesMonthTotal, style: theme.textTheme.bodySmall?.copyWith(color: HallyColors.inkMuted)),
+                          style: theme.textTheme.headlineSmall?.copyWith(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w800)),
+                      Text(l10n.expensesMonthTotal, style: theme.textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                       const SizedBox(height: HallySpace.sm),
                       if (m.balances.length < 2)
-                        Text(l10n.expensesSolo, style: theme.textTheme.bodyMedium?.copyWith(color: HallyColors.ink))
+                        Text(l10n.expensesSolo, style: theme.textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface))
                       else if (s == null)
-                        Text(l10n.expensesAllSquare, key: const Key('expenses.square'), style: theme.textTheme.bodyMedium?.copyWith(color: HallyColors.ink))
+                        Text(l10n.expensesAllSquare, key: const Key('expenses.square'), style: theme.textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface))
                       else ...[
                         Text(l10n.expensesOwes(s.fromName, s.toName, money.format(s.amount)), key: const Key('expenses.suggestion'),
-                            style: theme.textTheme.titleSmall?.copyWith(color: HallyColors.ink)),
+                            style: theme.textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                         if (s.fromUserId == me.id) ...[
                           const SizedBox(height: HallySpace.sm),
                           FilledButton.icon(
@@ -235,7 +235,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
   Widget _deleteBackground() => Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: HallySpace.lg),
-        child: const Icon(Icons.delete_outline_rounded, color: HallyColors.inkMuted),
+        child: Icon(Icons.delete_outline_rounded, color: Theme.of(context).colorScheme.onSurfaceVariant),
       );
 }
 

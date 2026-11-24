@@ -14,12 +14,12 @@ import 'family_repository.dart';
 const childColorKeys = ['sky', 'mint', 'lavender', 'sun', 'teal', 'indigo'];
 
 Color childColor(String key) => switch (key) {
-      'mint' => HallyColors.mint,
-      'lavender' => const Color(0xFF8E7CDB),
-      'sun' => const Color(0xFFD4A21A),
-      'teal' => const Color(0xFF1E9AA0),
-      'indigo' => const Color(0xFF5C6BC0),
-      _ => HallyColors.sky,
+      'mint' => HallyColors.childMint,
+      'lavender' => HallyColors.childLavender,
+      'sun' => HallyColors.childSun,
+      'teal' => HallyColors.childTeal,
+      'indigo' => HallyColors.childIndigo,
+      _ => HallyColors.childSky,
     };
 
 /// The child selected in the filter bar on Today, Calendar and Tasks (null = everyone). Shared so the

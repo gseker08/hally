@@ -42,13 +42,13 @@ class FamilyScreen extends ConsumerWidget {
                     margin: EdgeInsets.zero,
                     child: ListTile(
                       key: const Key('family.chats'),
-                      leading: const HallyIconBadge(icon: Icons.forum_rounded, color: HallyColors.cherry, size: 40),
+                      leading: const HallyIconBadge(icon: Icons.forum_rounded, color: HallyModule.messages, size: 40),
                       title: Text(l10n.chatsTitle),
                       subtitle: Text(l10n.familyChatsBody),
                       trailing: Badge(
                         isLabelVisible: unread > 0,
                         label: Text('$unread'),
-                        backgroundColor: HallyColors.cherry,
+                        backgroundColor: HallyColors.accent(HallyColors.cherry, Theme.of(context).brightness),
                         child: const Icon(Icons.chevron_right_rounded),
                       ),
                       onTap: () async {
@@ -61,13 +61,13 @@ class FamilyScreen extends ConsumerWidget {
                 HallySectionHeader(title: l10n.familyTogether),
                 HallyTileGrid(
                   children: [
-                    _SharedTile(key: const Key('family.shopping'), icon: Icons.shopping_basket_rounded, color: HallyColors.mint,
+                    _SharedTile(key: const Key('family.shopping'), icon: Icons.shopping_basket_rounded, color: HallyModule.shopping,
                         title: l10n.shoppingTitle, body: l10n.shoppingBody, route: '/shopping'),
-                    _SharedTile(key: const Key('family.schoolRun'), icon: Icons.directions_car_rounded, color: HallyColors.sky,
+                    _SharedTile(key: const Key('family.schoolRun'), icon: Icons.directions_car_rounded, color: HallyModule.duties,
                         title: l10n.dutiesTitle, body: l10n.dutiesBody, route: '/school-run'),
-                    _SharedTile(key: const Key('family.expenses'), icon: Icons.account_balance_wallet_rounded, color: HallyColors.apricot,
+                    _SharedTile(key: const Key('family.expenses'), icon: Icons.account_balance_wallet_rounded, color: HallyModule.expenses,
                         title: l10n.expensesTitle, body: l10n.expensesBody, route: '/expenses'),
-                    _SharedTile(key: const Key('family.weeklyCard'), icon: Icons.auto_awesome_rounded, color: HallyColors.rose,
+                    _SharedTile(key: const Key('family.weeklyCard'), icon: Icons.auto_awesome_rounded, color: HallyColors.lavender,
                         title: l10n.familyWeeklyCard, body: l10n.familyWeeklyCardBody, route: '/weekly-card'),
                   ],
                 ),
@@ -86,7 +86,7 @@ class FamilyScreen extends ConsumerWidget {
                             HallyPill(
                               label: m.role == 'Owner' ? l10n.roleOwner : l10n.roleAdult,
                               icon: m.role == 'Owner' ? Icons.star_rounded : null,
-                              color: m.role == 'Owner' ? HallyColors.apricot : HallyColors.cherry,
+                              color: m.role == 'Owner' ? HallyColors.butter : HallyColors.sage,
                             ),
                           ],
                         ),
@@ -101,7 +101,6 @@ class FamilyScreen extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: HallyColors.softOf(HallyColors.mint, Theme.of(context).brightness),
                       borderRadius: BorderRadius.circular(HallyRadius.lg),
-                      border: Border.all(color: HallyColors.mint.withValues(alpha: 0.4), width: 1.5),
                     ),
                     child: Row(
                       children: [
@@ -117,7 +116,7 @@ class FamilyScreen extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right_rounded, color: HallyColors.mintDeep),
+                        Icon(Icons.chevron_right_rounded, color: HallyColors.readableOn(HallyColors.mint, Theme.of(context).brightness)),
                       ],
                     ),
                   ),
@@ -143,23 +142,29 @@ class _SharedTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final b = theme.brightness;
+    final fg = HallyColors.readableOn(color, b);
     return HallyPressable(
       onTap: () => context.push(route),
       child: Container(
-        padding: const EdgeInsets.all(HallySpace.md - 4),
+        padding: const EdgeInsets.all(HallySpace.md - 2),
         decoration: BoxDecoration(
-          color: theme.colorScheme.surface,
+          color: HallyColors.softOf(color, b),
           borderRadius: BorderRadius.circular(HallyRadius.lg),
-          border: Border.all(color: theme.colorScheme.outlineVariant),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            HallyIconBadge(icon: icon, color: color, size: 34),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(color: theme.colorScheme.surface.withValues(alpha: b == Brightness.dark ? 0.35 : 0.7), borderRadius: BorderRadius.circular(12)),
+              child: Icon(icon, size: 20, color: fg),
+            ),
             const SizedBox(height: HallySpace.sm + 2),
             const Spacer(),
             Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text(body, style: theme.textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+            Text(body, style: theme.textTheme.bodySmall?.copyWith(color: fg), maxLines: 2, overflow: TextOverflow.ellipsis),
           ],
         ),
       ),
@@ -167,7 +172,7 @@ class _SharedTile extends StatelessWidget {
   }
 }
 
-/// Flat cherry card with the family name and overlapping member avatars.
+/// Soft powder card with the family name and overlapping member avatars.
 class _FamilyHero extends StatelessWidget {
   const _FamilyHero({required this.family});
 
@@ -178,10 +183,11 @@ class _FamilyHero extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final shown = family.members.take(5).toList();
+    final b = theme.brightness;
     return Container(
       decoration: BoxDecoration(
-        color: HallyColors.cherry,
-        borderRadius: BorderRadius.circular(HallyRadius.lg),
+        color: HallyColors.softOf(HallyColors.powder, b),
+        borderRadius: BorderRadius.circular(HallyRadius.lg + 4),
       ),
       clipBehavior: Clip.antiAlias,
       child: Stack(
@@ -190,8 +196,8 @@ class _FamilyHero extends StatelessWidget {
             right: -30,
             bottom: -50,
             child: Opacity(
-              opacity: 0.12,
-              child: HallyMark(size: 170, colors: HallyMarkColors(cherry: Colors.white, stem: Colors.white, leaf: Colors.white)),
+              opacity: 0.16,
+              child: HallyMark(size: 170, colors: HallyMarkColors.onLight),
             ),
           ),
           Padding(
@@ -209,15 +215,15 @@ class _FamilyHero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: HallySpace.md),
-                Text(family.name, style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white)),
+                Text(family.name, style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: HallySpace.xs),
                 Row(
                   children: [
-                    const Icon(Icons.favorite_rounded, size: 16, color: Color(0xFFFFC9B0)),
+                    Icon(Icons.favorite_rounded, size: 16, color: HallyColors.accent(HallyColors.cherry, b)),
                     const SizedBox(width: 6),
                     Text(
                       l10n.familyHeroBody(family.members.length),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: HallyColors.readableOn(HallyColors.powder, b), fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),

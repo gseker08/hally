@@ -1575,5 +1575,13 @@
   "childPhotoCropTitle": "Fotoğrafı yerleştir",
   "childPhotoCropHint": "Yakınlaştırmak için iki parmakla aç, kaydırarak ortala.",
   "childPhotoUse": "Kullan",
-  "childPhotoFailed": "Çocuk kaydedildi ama fotoğraf yüklenemedi. Tekrar dene."
+  "childPhotoFailed": "Çocuk kaydedildi ama fotoğraf yüklenemedi. Tekrar dene.",
+  "brandSlogan": "Hally ile halledersin.",
+  "brandCampaign": "Boşverrr!",
+  "brandEmotional": "Daha az telaş, daha çok hayat.",
+  "askHallyCardBody": "Aklında ne varsa bana anlat.",
+  "todayTileTasks": "Görevler",
+  "todayTileEvents": "Etkinlikler",
+  "todayTileWaiting": "Öneriler",
+  "todaySeeAll": "Tümünü gör"
 }

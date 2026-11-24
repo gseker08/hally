@@ -112,10 +112,10 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
                 )
               : null,
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 40,
-              backgroundColor: HallyColors.cherrySoft,
-              child: Icon(Icons.family_restroom, size: 40, color: HallyColors.cherry),
+              backgroundColor: HallyColors.softOf(HallyColors.cherry, Theme.of(context).brightness),
+              child: Icon(Icons.family_restroom, size: 40, color: HallyColors.readableOn(HallyColors.cherry, Theme.of(context).brightness)),
             ),
             const SizedBox(height: HallySpace.lg),
             Text(

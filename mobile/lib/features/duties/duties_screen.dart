@@ -61,13 +61,13 @@ class _DutiesScreenState extends ConsumerState<DutiesScreen> {
             children: [
               if (today != null)
                 Card(
-                  color: HallyColors.skySoft,
+                  color: HallyColors.softOf(HallyModule.duties, Theme.of(context).brightness),
                   child: Padding(
                     padding: const EdgeInsets.all(HallySpace.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(l10n.dutiesToday, style: theme.textTheme.titleMedium?.copyWith(color: HallyColors.ink)),
+                        Text(l10n.dutiesToday, style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface)),
                         for (final kind in ['DropOff', 'PickUp'])
                           Builder(builder: (context) {
                             final s = today.slot(kind);
@@ -82,11 +82,11 @@ class _DutiesScreenState extends ConsumerState<DutiesScreen> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(dutyKindLabel(l10n, kind), style: theme.textTheme.labelMedium?.copyWith(color: HallyColors.inkMuted)),
+                                        Text(dutyKindLabel(l10n, kind), style: theme.textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                                         Text(
                                           done ? l10n.dutiesDoneBy(s.doneByName ?? '?', DateFormat.Hm(locale).format(s.doneAt!)) : _who(context, s),
                                           key: Key('duties.today.$kind'),
-                                          style: theme.textTheme.titleSmall?.copyWith(color: done ? HallyColors.mintDeep : HallyColors.ink),
+                                          style: theme.textTheme.titleSmall?.copyWith(color: done ? HallyColors.mintDeep : Theme.of(context).colorScheme.onSurface),
                                         ),
                                       ],
                                     ),
@@ -99,7 +99,7 @@ class _DutiesScreenState extends ConsumerState<DutiesScreen> {
                                         )
                                       : FilledButton(
                                           key: Key('duties.done.$kind'),
-                                          style: FilledButton.styleFrom(minimumSize: const Size(0, 44), backgroundColor: HallyColors.sky),
+                                          style: FilledButton.styleFrom(minimumSize: const Size(0, 44)),
                                           onPressed: _busy ? null : () => _run(familyId, (r) => r.done(familyId, kind)),
                                           child: Text(kind == 'DropOff' ? l10n.dutiesDroppedOff : l10n.dutiesPickedUp),
                                         ),
@@ -137,7 +137,7 @@ class _DutiesScreenState extends ConsumerState<DutiesScreen> {
               const SizedBox(height: HallySpace.sm),
               for (final d in w.days)
                 Card(
-                  color: d.date == w.today ? HallyColors.skySoft.withValues(alpha: 0.5) : null,
+                  color: d.date == w.today ? HallyColors.softOf(HallyModule.duties, Theme.of(context).brightness).withValues(alpha: 0.5) : null,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: HallySpace.sm),
                     child: Row(

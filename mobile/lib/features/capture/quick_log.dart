@@ -64,7 +64,7 @@ class _QuickLogState extends ConsumerState<QuickLog> {
         _QuickTile(
           key: const Key('quick.sleep'),
           icon: asleep ? Icons.wb_sunny_rounded : Icons.bedtime_rounded,
-          color: HallyColors.sky,
+          color: HallyModule.sleep,
           title: asleep ? l10n.quickWokeUp : l10n.quickSleepStart,
           busy: _busy == 'sleep',
           onTap: () => _run('sleep', () async {
@@ -74,16 +74,16 @@ class _QuickLogState extends ConsumerState<QuickLog> {
           }, asleep ? l10n.quickWokeUpDone(name) : l10n.quickSleepDone(name)),
         ),
       if (fits.contains(Tracker.feeding))
-        _QuickTile(key: const Key('quick.feeding'), icon: Icons.baby_changing_station_rounded, color: HallyColors.mint, title: l10n.feedingTitle,
+        _QuickTile(key: const Key('quick.feeding'), icon: Icons.baby_changing_station_rounded, color: HallyModule.feeding, title: l10n.feedingTitle,
             onTap: () => widget.onDone(route: '/feeding')),
       if (fits.contains(Tracker.medications))
-        _QuickTile(key: const Key('quick.medications'), icon: Icons.medication_rounded, color: HallyColors.cherry, title: l10n.quickMedication,
+        _QuickTile(key: const Key('quick.medications'), icon: Icons.medication_rounded, color: HallyModule.medications, title: l10n.quickMedication,
             onTap: () => widget.onDone(route: '/medications')),
       if (fits.contains(Tracker.screenTime))
         _QuickTile(
           key: const Key('quick.screen'),
           icon: screenOn ? Icons.stop_circle_rounded : Icons.phone_android_rounded,
-          color: HallyColors.apricot,
+          color: HallyModule.screenTime,
           title: screenOn ? l10n.quickScreenStop : l10n.quickScreenStart,
           busy: _busy == 'screen',
           onTap: () => _run('screen', () async {
@@ -95,7 +95,7 @@ class _QuickLogState extends ConsumerState<QuickLog> {
         _QuickTile(
           key: const Key('quick.study'),
           icon: studyOn ? Icons.stop_circle_rounded : Icons.menu_book_rounded,
-          color: HallyColors.study,
+          color: HallyModule.study,
           title: studyOn ? l10n.quickStudyStop : l10n.quickStudyStart,
           busy: _busy == 'study',
           onTap: () => _run('study', () async {
@@ -105,7 +105,7 @@ class _QuickLogState extends ConsumerState<QuickLog> {
           }, studyOn ? l10n.quickStudyStopped(name) : l10n.quickStudyStarted(name)),
         ),
       if (fits.contains(Tracker.stars))
-        _QuickTile(key: const Key('quick.stars'), icon: Icons.star_rounded, color: HallyColors.star, title: l10n.quickStars,
+        _QuickTile(key: const Key('quick.stars'), icon: Icons.star_rounded, color: HallyModule.rewards, title: l10n.quickStars,
             onTap: () => widget.onDone(route: '/stars')),
     ];
 

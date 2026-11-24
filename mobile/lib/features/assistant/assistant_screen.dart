@@ -78,7 +78,7 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                 ? ListView(
                     padding: const EdgeInsets.all(HallySpace.lg),
                     children: [
-                      HallyEmptyState(icon: Icons.auto_awesome_rounded, color: HallyColors.cherry, title: l10n.assistantEmptyTitle, body: l10n.assistantEmptyBody),
+                      HallyEmptyState(icon: Icons.auto_awesome_rounded, color: HallyModule.assistant, title: l10n.assistantEmptyTitle, body: l10n.assistantEmptyBody),
                       const SizedBox(height: HallySpace.md),
                       Wrap(
                         alignment: WrapAlignment.center,
@@ -151,9 +151,8 @@ class _Bubble extends ConsumerWidget {
           margin: const EdgeInsets.only(bottom: HallySpace.sm),
           padding: const EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: HallySpace.sm + 2),
           decoration: BoxDecoration(
-            gradient: mine ? HallyGradients.cherry : null,
-            color: mine ? null : theme.colorScheme.surface,
-            border: mine ? null : Border.all(color: theme.colorScheme.outlineVariant),
+            // Hally speaks on sage (the assistant's colour); the parent's own messages sit on a blush tint.
+            color: HallyColors.softOf(mine ? HallyColors.cherry : HallyModule.assistant, theme.brightness),
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(HallyRadius.md),
               topRight: const Radius.circular(HallyRadius.md),
@@ -164,7 +163,7 @@ class _Bubble extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SelectableText(entry.text, style: theme.textTheme.bodyMedium?.copyWith(color: mine ? Colors.white : null, height: 1.4)),
+              SelectableText(entry.text, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface, height: 1.4)),
               if (entry.proposals.isNotEmpty) ...[
                 const SizedBox(height: HallySpace.sm),
                 for (final p in entry.proposals)
@@ -173,7 +172,7 @@ class _Bubble extends ConsumerWidget {
                     child: HallyPill(
                       label: [p.payload.title, if (p.payload.date != null) p.payload.date!, if (p.payload.time != null) p.payload.time!].join(' · '),
                       icon: p.isEvent ? Icons.event_rounded : Icons.check_circle_outline_rounded,
-                      color: p.isEvent ? HallyColors.apricot : HallyColors.cherry,
+                      color: p.isEvent ? HallyModule.calendar : HallyModule.tasks,
                     ),
                   ),
                 Align(

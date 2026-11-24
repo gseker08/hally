@@ -9,12 +9,12 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
-CHERRY = (0xA8, 0x13, 0x3C)
+CHERRY = (0xAD, 0x52, 0x68)  # soft cherry (lib/core/design/tokens.dart HallyColors.cherry)
 SS = 4  # supersampling
 
 # Colour sets: (cherries, stems, leaf)
-ON_BRAND = ((255, 255, 255, 255), (0xFF, 0xD3, 0xDE, 255), (0x7F, 0xE0, 0xC4, 255))
-ON_LIGHT = (CHERRY + (255,), (0x5A, 0x0A, 0x20, 255), (0x3F, 0xB5, 0x9A, 255))
+ON_BRAND = ((255, 255, 255, 255), (0xF3, 0xE4, 0xE7, 255), (0xDC, 0xE5, 0xD7, 255))
+ON_LIGHT = (CHERRY + (255,), (0x6E, 0x3A, 0x44, 255), (0x8F, 0xAE, 0x8F, 255))
 WHITE = ((255, 255, 255, 255),) * 3
 
 

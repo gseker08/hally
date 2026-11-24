@@ -25,10 +25,13 @@ class WelcomeScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Hero: brand gradient with floating "what Hally does" cards.
+                  // Hero: soft powder with floating "what Hally does" cards.
                   Expanded(
                     child: Container(
-                      decoration: const BoxDecoration(color: HallyColors.cherry),
+                      decoration: BoxDecoration(
+                        color: HallyColors.softOf(HallyColors.powder, theme.brightness),
+                        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(HallyRadius.xl)),
+                      ),
                       clipBehavior: Clip.antiAlias,
                       child: Stack(
                         children: [
@@ -36,8 +39,8 @@ class WelcomeScreen extends ConsumerWidget {
                             top: -30,
                             right: -90,
                             child: Opacity(
-                              opacity: 0.09,
-                              child: HallyMark(size: 320, colors: HallyMarkColors(cherry: Colors.white, stem: Colors.white, leaf: Colors.white)),
+                              opacity: 0.12,
+                              child: HallyMark(size: 320, colors: HallyMarkColors.onLight),
                             ),
                           ),
                           SafeArea(
@@ -47,11 +50,16 @@ class WelcomeScreen extends ConsumerWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const HallyWordmark(height: 34, onBrand: true),
+                                  const HallyWordmark(height: 34),
                                   const SizedBox(height: HallySpace.lg),
                                   Text(
                                     l10n.appTagline(AppConfig.appName),
-                                    style: theme.textTheme.displaySmall?.copyWith(color: Colors.white, height: 1.05, fontSize: 34),
+                                    style: theme.textTheme.displaySmall?.copyWith(height: 1.05, fontSize: 34),
+                                  ),
+                                  const SizedBox(height: HallySpace.sm),
+                                  Text(
+                                    l10n.brandEmotional,
+                                    style: theme.textTheme.titleMedium?.copyWith(color: HallyColors.readableOn(HallyColors.powder, theme.brightness)),
                                   ),
                                   const Spacer(),
                                   _FloatingCards(samples: [l10n.welcomeSample1, l10n.welcomeSample2, l10n.welcomeSample3]),
@@ -115,9 +123,9 @@ class _FloatingCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = [
-      (Icons.event_rounded, HallyColors.apricot, -0.035, 0.0),
-      (Icons.checkroom_rounded, HallyColors.cherry, 0.03, 36.0),
-      (Icons.check_circle_rounded, HallyColors.mint, -0.02, 8.0),
+      (Icons.event_rounded, HallyModule.calendar, -0.035, 0.0),
+      (Icons.checkroom_rounded, HallyModule.kids, 0.03, 36.0),
+      (Icons.check_circle_rounded, HallyModule.tasks, -0.02, 8.0),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,9 +140,9 @@ class _FloatingCards extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(10, 10, 16, 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: i == 2 ? 1 : 0.94),
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(HallyRadius.md),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, 8))],
+                    boxShadow: HallyShadows.soft(Brightness.light),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -143,11 +151,11 @@ class _FloatingCards extends StatelessWidget {
                       const SizedBox(width: HallySpace.sm + 2),
                       Text(
                         samples[i],
-                        style: const TextStyle(color: HallyColors.ink, fontWeight: FontWeight.w700, fontSize: 14),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w700, fontSize: 14),
                       ),
                       if (i == 0) ...[
                         const SizedBox(width: HallySpace.sm),
-                        const Icon(Icons.auto_awesome, size: 16, color: HallyColors.rose),
+                        Icon(Icons.auto_awesome, size: 16, color: HallyColors.accent(HallyColors.cherry, Theme.of(context).brightness)),
                       ],
                     ],
                   ),

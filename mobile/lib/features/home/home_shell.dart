@@ -85,12 +85,10 @@ class HallyNavBar extends StatelessWidget {
             Container(
               height: 68,
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface.withValues(alpha: dark ? 0.96 : 0.98),
+                color: theme.colorScheme.surface.withValues(alpha: dark ? 0.97 : 0.98),
                 borderRadius: BorderRadius.circular(HallyRadius.lg + 4),
                 border: Border.all(color: theme.colorScheme.outlineVariant),
-                boxShadow: [
-                  BoxShadow(color: const Color(0xFF3A0E1C).withValues(alpha: dark ? 0.4 : 0.12), blurRadius: 30, offset: const Offset(0, 12)),
-                ],
+                boxShadow: HallyShadows.float(theme.brightness),
               ),
               child: Row(
                 children: [
@@ -116,12 +114,12 @@ class HallyNavBar extends StatelessWidget {
                         width: 62,
                         height: 62,
                         decoration: BoxDecoration(
-                          color: HallyColors.cherry,
+                          color: HallyColors.accent(HallyColors.cherry, theme.brightness),
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(color: theme.colorScheme.surface, width: 4),
-                          boxShadow: [BoxShadow(color: HallyColors.cherry.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
+                          boxShadow: HallyShadows.glow(HallyColors.cherry),
                         ),
-                        child: const Icon(Icons.add_rounded, color: Colors.white, size: 32),
+                        child: Icon(Icons.add_rounded, color: dark ? HallyColors.canvasDark : Colors.white, size: 32),
                       ),
                       const SizedBox(height: 2),
                       Text(centerLabel, style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
@@ -147,7 +145,7 @@ class _Tab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
+    final color = selected ? HallyColors.accent(HallyColors.cherry, theme.brightness) : theme.colorScheme.onSurfaceVariant;
     return Semantics(
       selected: selected,
       button: true,
@@ -162,7 +160,7 @@ class _Tab extends StatelessWidget {
               curve: HallyMotion.curve,
               padding: EdgeInsets.symmetric(horizontal: selected ? 18 : 10, vertical: 4),
               decoration: BoxDecoration(
-                color: selected ? HallyColors.softOf(HallyColors.cherry, theme.brightness) : Colors.transparent,
+                color: selected ? HallyColors.softOf(HallyColors.cherry, theme.brightness).withValues(alpha: 0.7) : Colors.transparent,
                 borderRadius: BorderRadius.circular(HallyRadius.pill),
               ),
               child: Icon(selected ? item.activeIcon : item.icon, color: color, size: 24),

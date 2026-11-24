@@ -82,10 +82,10 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
           ],
         ),
         children: [
-          const CircleAvatar(
+          CircleAvatar(
             radius: 40,
-            backgroundColor: HallyColors.mintSoft,
-            child: Icon(Icons.favorite_outline, size: 40, color: HallyColors.mint),
+            backgroundColor: HallyColors.softOf(HallyColors.mint, Theme.of(context).brightness),
+            child: Icon(Icons.favorite_outline, size: 40, color: HallyColors.readableOn(HallyColors.mint, Theme.of(context).brightness)),
           ),
           const SizedBox(height: HallySpace.lg),
           Text(l10n.inviteBody, style: Theme.of(context).textTheme.bodyLarge),
