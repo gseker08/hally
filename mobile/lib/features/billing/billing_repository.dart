@@ -56,6 +56,7 @@ class Entitlement {
     required this.purchasedByMe,
     required this.limits,
     required this.usage,
+    this.sellingEnabled = true,
   });
 
   factory Entitlement.fromJson(Map<String, dynamic> j) => Entitlement(
@@ -69,8 +70,11 @@ class Entitlement {
         purchasedByMe: j['purchasedByMe'] as bool? ?? false,
         limits: PlanLimits.fromJson(j['limits'] as Map<String, dynamic>),
         usage: Usage.fromJson(j['usage'] as Map<String, dynamic>),
+        sellingEnabled: j['sellingEnabled'] as bool? ?? true,
       );
 
+  /// False during the free launch: nothing is sold, so the app shows no plan card or paywall.
+  final bool sellingEnabled;
   final String plan; // Free | Plus
   final String state; // Free | Trialing | Active | GracePeriod | Expired
   final String? source; // Trial | AppStore | GooglePlay

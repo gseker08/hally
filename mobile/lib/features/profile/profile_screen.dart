@@ -83,8 +83,11 @@ class ProfileScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: HallySpace.lg),
-          _PlanCard(entitlement: ref.watch(entitlementProvider).valueOrNull),
-          const SizedBox(height: HallySpace.md),
+          // Free launch: nothing is sold yet, so there is no plan to show.
+          if (ref.watch(entitlementProvider).valueOrNull?.sellingEnabled ?? true) ...[
+            _PlanCard(entitlement: ref.watch(entitlementProvider).valueOrNull),
+            const SizedBox(height: HallySpace.md),
+          ],
           Card(
             margin: EdgeInsets.zero,
             child: Column(

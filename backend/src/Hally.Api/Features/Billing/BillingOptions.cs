@@ -13,6 +13,11 @@ public class BillingOptions
 
     public int TrialDays { get; set; } = 7;
 
+    /// <summary>Free launch: nothing is sold yet. Every family gets the <see cref="Plus"/> limits (they still cap AI
+    /// cost), no trial is offered and the app hides the plan card and paywall. Turn off once in-app purchases are
+    /// wired up in the app; App Review rejects a paywall that cannot complete a purchase.</summary>
+    public bool FreeLaunch { get; set; }
+
     public PlanLimitOptions Free { get; set; } = new() { MaxAdults = 2, ScansPerWeek = 3, ScansPerMonth = 0, ActiveShareLinks = 3, RemindersPerItem = 1 };
 
     public PlanLimitOptions Plus { get; set; } = new() { MaxAdults = 6, ScansPerWeek = 0, ScansPerMonth = 100, ActiveShareLinks = 0, RemindersPerItem = 5 };
@@ -39,7 +44,7 @@ public class BillingOptions
 
     public PlanLimits LimitsFor(Plan plan)
     {
-        var o = plan == Plan.Plus ? Plus : Free;
+        var o = plan == Plan.Plus || FreeLaunch ? Plus : Free;
         return new PlanLimits(o.MaxAdults, o.ScansPerWeek, o.ScansPerMonth, o.ActiveShareLinks, o.RemindersPerItem);
     }
 }

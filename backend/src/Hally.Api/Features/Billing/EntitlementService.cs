@@ -41,7 +41,7 @@ public class EntitlementService(HallyDbContext db, IOptions<BillingOptions> opti
         var sub = await db.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.FamilyId == familyId, ct);
         var plan = sub?.PlanAt(now, O.Grace) ?? Plan.Free;
         var state = sub?.StateAt(now, O.Grace) ?? SubscriptionState.Free;
-        var trialAvailable = plan == Plan.Free && sub?.TrialUsed != true &&
+        var trialAvailable = !O.FreeLaunch && plan == Plan.Free && sub?.TrialUsed != true &&
                              (userId is null || !await db.Subscriptions.AnyAsync(s => s.TrialStartedByUserId == userId, ct));
         return new Entitlement(plan, state, O.LimitsFor(plan), sub, trialAvailable);
     }
