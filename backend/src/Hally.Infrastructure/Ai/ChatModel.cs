@@ -58,7 +58,7 @@ public class OpenAiCompatibleChatModel(HttpClient http, IOptions<AiOptions> opti
             using var response = await http.SendAsync(message, cts.Token);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning("AI chat provider returned {Status}", (int)response.StatusCode);
+                logger.LogWarning("AI chat provider returned {Status}: {Body}", (int)response.StatusCode, await ErrorBody.ReadAsync(response, cts.Token));
                 throw new AiUnavailableException($"AI provider returned {(int)response.StatusCode}.");
             }
 

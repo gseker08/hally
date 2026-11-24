@@ -35,6 +35,23 @@ public interface IVisionModel
     Task<JsonDocument> CompleteJsonAsync(StructuredRequest request, CancellationToken ct);
 }
 
+internal static class ErrorBody
+{
+    /// <summary>First part of a provider's error response (e.g. "model not found", "invalid api key"), for logs.</summary>
+    public static async Task<string> ReadAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        try
+        {
+            var body = await response.Content.ReadAsStringAsync(ct);
+            return body.Length <= 500 ? body : body[..500];
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException)
+        {
+            return string.Empty;
+        }
+    }
+}
+
 /// <summary>Calls any OpenAI-compatible /chat/completions endpoint with json_schema structured output.</summary>
 public class OpenAiCompatibleVisionModel(HttpClient http, IOptions<AiOptions> options, ILogger<OpenAiCompatibleVisionModel> logger) : IVisionModel
 {
@@ -85,7 +102,7 @@ public class OpenAiCompatibleVisionModel(HttpClient http, IOptions<AiOptions> op
             using var response = await http.SendAsync(message, cts.Token);
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning("AI provider returned {Status}", (int)response.StatusCode);
+                logger.LogWarning("AI provider returned {Status}: {Body}", (int)response.StatusCode, await ErrorBody.ReadAsync(response, cts.Token));
                 throw new AiUnavailableException($"AI provider returned {(int)response.StatusCode}.");
             }
 
