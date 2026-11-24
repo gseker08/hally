@@ -72,7 +72,7 @@ class _LiveNowStripState extends ConsumerState<LiveNowStrip> {
           LiveItem(
             key: 'sleep.${c.id}',
             icon: Icons.bedtime_rounded,
-            color: HallyColors.sky,
+            color: HallyModule.sleep,
             label: l10n.liveAsleep(c.firstName),
             value: dur(now.difference(s.startedAt).inSeconds),
             route: '/sleep',
@@ -81,7 +81,7 @@ class _LiveNowStripState extends ConsumerState<LiveNowStrip> {
           LiveItem(
             key: 'screen.${c.id}',
             icon: Icons.phone_android_rounded,
-            color: HallyColors.apricot,
+            color: HallyModule.screenTime,
             label: l10n.liveScreen(c.firstName),
             value: s.dailyGoalMinutes == null ? dur(s.secondsAt(now)) : '${s.secondsAt(now) ~/ 60} / ${s.dailyGoalMinutes} ${tr ? 'dk' : 'min'}',
             progress: s.progressAt(now),
@@ -91,7 +91,7 @@ class _LiveNowStripState extends ConsumerState<LiveNowStrip> {
           LiveItem(
             key: 'study.${c.id}',
             icon: Icons.menu_book_rounded,
-            color: HallyColors.study,
+            color: HallyModule.study,
             label: l10n.liveStudy(c.firstName),
             value: dur(s.runningSecondsAt(now)),
             route: '/study',

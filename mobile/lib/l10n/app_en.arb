@@ -673,5 +673,13 @@
   "childPhotoCropTitle": "Position the photo",
   "childPhotoCropHint": "Pinch to zoom, drag to centre.",
   "childPhotoUse": "Use",
-  "childPhotoFailed": "The child was saved but the photo could not be uploaded. Try again."
+  "childPhotoFailed": "The child was saved but the photo could not be uploaded. Try again.",
+  "brandSlogan": "With Hally, it's handled.",
+  "brandCampaign": "Relaaax!",
+  "brandEmotional": "Less rush, more life.",
+  "askHallyCardBody": "Tell me whatever's on your mind.",
+  "todayTileTasks": "Tasks",
+  "todayTileEvents": "Events",
+  "todayTileWaiting": "Suggestions",
+  "todaySeeAll": "See all"
 }

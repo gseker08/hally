@@ -136,27 +136,30 @@ class _PlanCard extends StatelessWidget {
         : plus
             ? (e.state == 'Trialing' ? l10n.planTrialShort : l10n.planPlusShort)
             : l10n.planFreeUsage(e.usage.scansThisWeek, e.limits.scansPerWeek);
+    final b = Theme.of(context).brightness;
+    final fg = HallyColors.readableOn(HallyColors.butter, b);
+    final ink = Theme.of(context).colorScheme.onSurface;
     return HallyPressable(
       key: const Key('family.plan'),
       onTap: () => context.push('/plan'),
       child: Container(
         padding: const EdgeInsets.all(HallySpace.md),
-        decoration: BoxDecoration(color: HallyColors.cherry, borderRadius: BorderRadius.circular(HallyRadius.lg)),
+        decoration: BoxDecoration(color: HallyColors.softOf(HallyColors.butter, b), borderRadius: BorderRadius.circular(HallyRadius.lg)),
         child: Row(
           children: [
-            const Icon(Icons.workspace_premium_rounded, color: Color(0xFFFFD27A), size: 28),
+            Icon(Icons.workspace_premium_rounded, color: fg, size: 28),
             const SizedBox(width: HallySpace.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(plus ? l10n.planPlus : l10n.planFree,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16, fontFamily: HallyFonts.display)),
-                  if (subtitle != null) Text(subtitle, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                      style: TextStyle(color: ink, fontWeight: FontWeight.w800, fontSize: 16, fontFamily: HallyFonts.display)),
+                  if (subtitle != null) Text(subtitle, style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: Colors.white),
+            Icon(Icons.chevron_right_rounded, color: fg),
           ],
         ),
       ),

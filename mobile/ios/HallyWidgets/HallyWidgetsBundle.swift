@@ -14,7 +14,7 @@ struct HallyWidgetsBundle: WidgetBundle {
 
 extension Color {
   /// Brand cherry. Never used for errors or delays.
-  static let hallyCherry = Color(red: 0xA8 / 255, green: 0x13 / 255, blue: 0x3C / 255)
+  static let hallyCherry = Color(red: 0xAD / 255, green: 0x52 / 255, blue: 0x68 / 255)
 }
 
 extension View {

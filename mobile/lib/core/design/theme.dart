@@ -5,21 +5,36 @@ import 'tokens.dart';
 
 ThemeData buildHallyTheme(Brightness brightness) {
   final dark = brightness == Brightness.dark;
-  final ink = dark ? const Color(0xFFF6EEF0) : HallyColors.ink;
-  final muted = dark ? const Color(0xFFB5A9AE) : HallyColors.inkMuted;
+  final ink = dark ? HallyColors.inkDark : HallyColors.ink;
+  final muted = dark ? HallyColors.inkMutedDark : HallyColors.inkMuted;
   final surface = dark ? HallyColors.surfaceDark : HallyColors.surface;
   final line = dark ? HallyColors.lineDark : HallyColors.line;
 
   final scheme = ColorScheme.fromSeed(
     seedColor: HallyColors.cherry,
     brightness: brightness,
-    // Light: white text on cherry is well above WCAG AA. Dark: the light cherry needs dark text on top.
-    primary: dark ? HallyColors.cherryDark : HallyColors.cherry,
+    // Primary = deep cherry for actions (white text 6.8:1). Dark: the light cherry carries dark text.
+    primary: dark ? HallyColors.cherryStrongDark : HallyColors.cherryStrong,
     onPrimary: dark ? HallyColors.canvasDark : Colors.white,
-    secondary: HallyColors.mint,
-    tertiary: HallyColors.apricot,
-    error: HallyColors.error,
+    primaryContainer: dark ? HallyColors.cherrySoftDark : HallyColors.cherrySoft,
+    onPrimaryContainer: dark ? HallyColors.cherryStrongDark : HallyColors.cherryStrong,
+    secondary: dark ? HallyColors.sageDark : HallyColors.sage,
+    onSecondary: dark ? HallyColors.canvasDark : Colors.white,
+    secondaryContainer: dark ? HallyColors.sagePastelDark : HallyColors.sagePastel,
+    onSecondaryContainer: ink,
+    tertiary: dark ? HallyColors.peachDark : HallyColors.peach,
+    tertiaryContainer: dark ? HallyColors.peachPastelDark : HallyColors.peachPastel,
+    onTertiaryContainer: ink,
+    error: dark ? HallyColors.errorDark : HallyColors.error,
+    onError: dark ? HallyColors.canvasDark : Colors.white,
+    errorContainer: dark ? HallyColors.peachPastelDark : HallyColors.peachPastel,
+    onErrorContainer: dark ? HallyColors.errorDark : HallyColors.error,
     surface: surface,
+    surfaceContainerLowest: surface,
+    surfaceContainerLow: dark ? HallyColors.surfaceDark : HallyColors.surface,
+    surfaceContainer: dark ? HallyColors.surfaceAltDark : HallyColors.canvas,
+    surfaceContainerHigh: dark ? HallyColors.surfaceAltDark : HallyColors.canvas,
+    surfaceContainerHighest: dark ? HallyColors.lineDark : HallyColors.line,
     onSurface: ink,
     onSurfaceVariant: muted,
     outline: line,
@@ -71,8 +86,9 @@ ThemeData buildHallyTheme(Brightness brightness) {
       margin: const EdgeInsets.only(bottom: HallySpace.sm + 2),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(HallyRadius.lg),
-        side: BorderSide(color: line),
+        side: BorderSide(color: dark ? line : line.withValues(alpha: 0.7)),
       ),
+      shadowColor: Colors.transparent,
       clipBehavior: Clip.antiAlias,
     ),
     listTileTheme: const ListTileThemeData(contentPadding: EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: 2)),
@@ -102,7 +118,7 @@ ThemeData buildHallyTheme(Brightness brightness) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: dark ? const Color(0xFF2A1F23) : HallyColors.surface,
+      fillColor: dark ? HallyColors.surfaceAltDark : HallyColors.surface,
       contentPadding: const EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: HallySpace.md),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(HallyRadius.md), borderSide: BorderSide(color: line)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(HallyRadius.md), borderSide: BorderSide(color: line, width: 1.5)),
@@ -118,6 +134,7 @@ ThemeData buildHallyTheme(Brightness brightness) {
       labelStyle: TextStyle(fontFamily: HallyFonts.body, fontWeight: FontWeight.w600, color: ink, fontSize: 13),
       backgroundColor: surface,
       selectedColor: HallyColors.softOf(HallyColors.cherry, brightness),
+      secondarySelectedColor: HallyColors.softOf(HallyColors.cherry, brightness),
       checkmarkColor: scheme.primary,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
     ),
@@ -135,11 +152,57 @@ ThemeData buildHallyTheme(Brightness brightness) {
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      backgroundColor: HallyColors.ink,
-      contentTextStyle: const TextStyle(fontFamily: HallyFonts.body, color: Colors.white, fontWeight: FontWeight.w500),
+      backgroundColor: dark ? HallyColors.inkDark : HallyColors.ink,
+      actionTextColor: dark ? HallyColors.cherryStrong : HallyColors.cherrySoft,
+      contentTextStyle: TextStyle(fontFamily: HallyFonts.body, color: dark ? HallyColors.canvasDark : Colors.white, fontWeight: FontWeight.w500),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HallyRadius.md)),
     ),
     dividerTheme: DividerThemeData(color: line, thickness: 1),
-    progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary, linearTrackColor: line, circularTrackColor: line),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: scheme.primary,
+      foregroundColor: scheme.onPrimary,
+      elevation: 0,
+      highlightElevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HallyRadius.md)),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: SegmentedButton.styleFrom(
+        selectedBackgroundColor: HallyColors.softOf(HallyColors.cherry, brightness),
+        selectedForegroundColor: dark ? HallyColors.cherryStrongDark : HallyColors.cherryStrong,
+        side: BorderSide(color: line),
+        textStyle: const TextStyle(fontFamily: HallyFonts.body, fontWeight: FontWeight.w600),
+      ),
+    ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? scheme.onPrimary : muted),
+      trackColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? scheme.primary : line),
+      trackOutlineColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? Colors.transparent : line),
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      backgroundColor: surface,
+      indicatorColor: HallyColors.softOf(HallyColors.cherry, brightness),
+      surfaceTintColor: Colors.transparent,
+    ),
+    tabBarTheme: TabBarThemeData(
+      labelColor: dark ? HallyColors.cherryDark : HallyColors.cherryStrong,
+      unselectedLabelColor: muted,
+      indicatorColor: dark ? HallyColors.cherryDark : HallyColors.cherry,
+      dividerColor: line,
+    ),
+    popupMenuTheme: PopupMenuThemeData(
+      color: surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HallyRadius.md), side: BorderSide(color: line)),
+    ),
+    datePickerTheme: DatePickerThemeData(
+      backgroundColor: surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HallyRadius.xl)),
+    ),
+    timePickerTheme: TimePickerThemeData(
+      backgroundColor: surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(HallyRadius.xl)),
+    ),
   );
 }

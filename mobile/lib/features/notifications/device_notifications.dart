@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
-import 'dart:ui' show Color, PlatformDispatcher;
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/design/tokens.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/auth/token_storage.dart';
@@ -96,7 +97,7 @@ class NoDeviceNotifications implements DeviceNotifications {
 }
 
 const notificationIcon = '@mipmap/ic_launcher_monochrome';
-const _cherry = Color(0xFFA8133C);
+const _cherry = HallyColors.cherry;
 const stopTimerAction = 'timer.stop';
 
 /// The action id of the first version (screen time only); old notifications may still carry it.

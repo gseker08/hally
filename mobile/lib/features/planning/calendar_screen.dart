@@ -144,7 +144,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                         child: ListTile(
                           key: Key('event.${e.id}'),
                           onTap: () => _editEvent(familyId, e),
-                          leading: const HallyIconBadge(icon: Icons.event_rounded, color: HallyColors.apricot),
+                          leading: const HallyIconBadge(icon: Icons.event_rounded, color: HallyModule.calendar),
                           title: Row(
                             children: [
                               Expanded(child: Text(e.title, style: theme.textTheme.titleSmall)),
@@ -298,7 +298,7 @@ class _MonthCell extends StatelessWidget {
             Container(
               width: 5,
               height: 5,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: hasEvents ? (selected ? Colors.white : HallyColors.apricot) : Colors.transparent),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: hasEvents ? (selected ? Colors.white : HallyColors.accent(HallyModule.calendar, Theme.of(context).brightness)) : Colors.transparent),
             ),
           ],
         ),
@@ -340,7 +340,7 @@ class _DayChip extends StatelessWidget {
             Container(
               width: 5,
               height: 5,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: hasEvents ? (selected ? Colors.white : HallyColors.apricot) : Colors.transparent),
+              decoration: BoxDecoration(shape: BoxShape.circle, color: hasEvents ? (selected ? Colors.white : HallyColors.accent(HallyModule.calendar, Theme.of(context).brightness)) : Colors.transparent),
             ),
           ],
         ),
