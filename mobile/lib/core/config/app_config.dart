@@ -15,8 +15,11 @@ class AppConfig {
   /// ios/Flutter/Secrets.xcconfig, see docs/mobile/ios.md); Android does not need it.
   static const googleIosClientId = String.fromEnvironment('HALLY_GOOGLE_IOS_CLIENT_ID');
 
-  /// Shows the developer sign-in (backend dev provider). Never enable for store builds.
-  static const enableDevSignIn = bool.fromEnvironment('HALLY_DEV_SIGN_IN', defaultValue: true);
+  /// Shows the developer sign-in (backend dev provider). On by default in debug builds and off in release
+  /// builds, so a store build never shows it even if the flag is forgotten.
+  static const enableDevSignIn = bool.fromEnvironment('HALLY_DEV_SIGN_IN', defaultValue: !_releaseBuild);
+
+  static const _releaseBuild = bool.fromEnvironment('dart.vm.product');
 
   /// development | beta | production. Tags error reports.
   static const environment = String.fromEnvironment('HALLY_ENV', defaultValue: 'development');

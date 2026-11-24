@@ -1,0 +1,100 @@
+# Production: PostgreSQL + API + Caddy (automatic HTTPS from Let's Encrypt) + nightly database backups.
+# Runs on any Linux server with Docker. See docs/deploy.md.
+#
+#   cd deploy
+#   cp .env.prod.example .env   # fill in
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Only Caddy is reachable from the internet (ports 80 and 443). PostgreSQL and the API publish no ports.
+name: hally
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hally
+      POSTGRES_USER: hally
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hally -d hally"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build: { context: .., dockerfile: backend/Dockerfile }
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Hally: Host=postgres;Database=hally;Username=hally;Password=${POSTGRES_PASSWORD}
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?set JWT_SIGNING_KEY in deploy/.env}
+      App__PublicBaseUrl: https://${API_DOMAIN}
+      ReverseProxy__TrustForwardedHeaders: "true"
+      ExternalAuth__GoogleClientIds__0: ${GOOGLE_CLIENT_ID:-}
+      ExternalAuth__AppleAudiences__0: ${APPLE_AUDIENCE:-app.hally}
+      ExternalAuth__EnableDevProvider: "false"
+      Database__MigrateOnStartup: "true"
+      Ai__BaseUrl: ${AI_BASE_URL:-}
+      Ai__ApiKey: ${AI_API_KEY:-}
+      Ai__VisionModel: ${AI_VISION_MODEL:-}
+      Ai__ChatModel: ${AI_CHAT_MODEL:-}
+      Storage__Root: /data/documents
+      Storage__EncryptionKey: ${STORAGE_ENCRYPTION_KEY:?set STORAGE_ENCRYPTION_KEY in deploy/.env}
+      Push__FcmProjectId: ${FCM_PROJECT_ID:-}
+      Push__FcmServiceAccountJson: ${FCM_SERVICE_ACCOUNT_JSON:-}
+      Billing__FreeLaunch: ${BILLING_FREE_LAUNCH:-true}
+      Billing__SandboxPurchases: "false"
+      Privacy__AiProviderName: ${PRIVACY_AI_PROVIDER_NAME:-}
+      Privacy__AiProviderNoTraining: ${PRIVACY_AI_NO_TRAINING:-false}
+      Privacy__ContactEmail: ${PRIVACY_CONTACT_EMAIL:?set PRIVACY_CONTACT_EMAIL in deploy/.env}
+      Privacy__PolicyUrl: ${PRIVACY_POLICY_URL:?set PRIVACY_POLICY_URL in deploy/.env}
+      Sentry__Dsn: ${SENTRY_DSN:-}
+      Sentry__Environment: production
+      Admin__ApiKey: ${ADMIN_API_KEY:-}
+    volumes: [documents:/data/documents]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["80:80", "443:443"]
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # pg_dump every night into the "backups" volume, keeping BACKUP_KEEP_DAYS days. Also copy them off the
+  # server (docs/deploy.md): a backup on the same disk does not survive losing the server.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGHOST: postgres
+      PGUSER: hally
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: hally
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
+    volumes: [backups:/backups]
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          f=/backups/hally-$$(date +%Y-%m-%d).sql.gz
+          pg_dump --no-owner | gzip > "$$f.tmp" && mv "$$f.tmp" "$$f" && echo "backup ok: $$f"
+          find /backups -name 'hally-*.sql.gz' -mtime +$$KEEP_DAYS -delete
+          sleep 86400
+        done
+
+volumes:
+  pgdata:
+  documents:
+  backups:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,8 @@
+{
+  "HALLY_API_URL": "https://api.example.com",
+  "HALLY_ENV": "production",
+  "HALLY_DEV_SIGN_IN": "false",
+  "HALLY_GOOGLE_SERVER_CLIENT_ID": "",
+  "HALLY_GOOGLE_IOS_CLIENT_ID": "",
+  "SENTRY_DSN": ""
+}

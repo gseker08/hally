@@ -1,0 +1,13 @@
+# The HTTPS certificate (Let's Encrypt) is fetched and renewed automatically for API_DOMAIN.
+# The domain's DNS A record must point at this server before the first start.
+{$API_DOMAIN} {
+	encode gzip
+	# Photos are up to 10 MB.
+	request_body {
+		max_size 12MB
+	}
+	# Metrics are for you only: reach them over SSH instead (docs/deploy.md).
+	@admin path /api/v1/admin/*
+	respond @admin 404
+	reverse_proxy api:8080
+}

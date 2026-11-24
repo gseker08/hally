@@ -12,3 +12,6 @@ TestResults/
 # Firebase app config (not secret, but this repo is public)
 mobile/android/app/google-services.json
 mobile/ios/Runner/GoogleService-Info.plist
+
+# Store build settings (mobile/release.example.json is the template)
+mobile/release.json
