@@ -65,7 +65,7 @@
   "todayEmptyTitle": "Bugün için her şey yolunda",
   "todayEmptyBody": "Bir okul duyurusunun fotoğrafını çek, görevleri ben çıkarayım.",
   "familyMembers": "Aile üyeleri",
-  "familyInviteMore": "Bir yetişkin daha davet et",
+  "familyInviteMore": "Kişi davet et",
   "roleOwner": "Kurucu",
   "roleAdult": "Yetişkin",
   "signOut": "Çıkış yap",
@@ -191,7 +191,7 @@
       }
     }
   },
-  "familyInviteBody": "Yükü paylaşmak için eşini ya da partnerini ekle.",
+  "familyInviteBody": "Eşini, partnerini ya da bakıcını ekle.",
   "demoTitle": "Hadi bir deneyelim",
   "demoBody": "Bu örnek okul duyurusunu tara, Hally görevleri çıkarsın. Hesap gerekmez.",
   "demoSampleLabel": "Örnek duyuru",
@@ -1590,5 +1590,62 @@
   "voiceNotHeard": "Seni duyamadım. Tekrar dener misin?",
   "voiceUnavailable": "Mikrofon kullanılamıyor. Ayarlardan Hally'ye mikrofon izni verebilirsin.",
   "voiceShortcut": "Hally'ye söyle",
-  "privacyPointVoice": "Mikrofon yalnızca mikrofon düğmesine bastığında dinler, arka planda asla dinlemez. Konuşman telefonunun konuşma tanıma servisinde (Android'de Google, iPhone'da Apple) yazıya çevrilir. Ses kaydı Hally'ye gönderilmez ya da saklanmaz, sadece metin Hally'ye gider."
+  "privacyPointVoice": "Mikrofon yalnızca mikrofon düğmesine bastığında dinler, arka planda asla dinlemez. Konuşman telefonunun konuşma tanıma servisinde (Android'de Google, iPhone'da Apple) yazıya çevrilir. Ses kaydı Hally'ye gönderilmez ya da saklanmaz, sadece metin Hally'ye gider.",
+  "roleParent": "Ebeveyn",
+  "roleCaregiver": "Bakıcı",
+  "inviteWhoTitle": "Kimi davet ediyorsun?",
+  "inviteRoleParentBody": "Eşin ya da diğer ebeveyn. Seninle aynı yetkiler.",
+  "inviteRoleCaregiverBody": "Dadı, büyükanne, yardımcı. Günü görür; ilaç, uyku, beslenme ve görevleri işaretler.",
+  "inviteCaregiverChildren": "Hangi çocuklara bakacak?",
+  "inviteCaregiverDuration": "Erişim ne kadar sürsün?",
+  "durationForever": "Süresiz",
+  "durationOneMonth": "1 ay",
+  "durationThreeMonths": "3 ay",
+  "durationPick": "Tarih seç",
+  "caregiverHealthTitle": "Sağlık bilgisini görebilsin",
+  "caregiverHealthBody": "Alerji, aşı ve boy-kilo. KVKK gereği varsayılan kapalı.",
+  "caregiverEnds": "Bitiş: {date}",
+  "@caregiverEnds": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "caregiverAllChildren": "Tüm çocuklar",
+  "caregiverBanner": "Bakıcı olarak görüyorsun: {names}",
+  "@caregiverBanner": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "caregiverDetailEnds": "Erişim {date} tarihinde biter. Bitince Hally'den otomatik çıkar.",
+  "@caregiverDetailEnds": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "caregiverDetailNoEnd": "Erişimin bitiş tarihi yok. İstediğin zaman kaldırabilirsin.",
+  "caregiverCanTitle": "Yapabilir",
+  "caregiverCannotTitle": "Yapamaz",
+  "caregiverCanList": "Bugün, takvim ve görevleri görmek\nGörev tamamlamak\nİlaç \"Verdim\", uyku, beslenme\nEkran ve ders süresi başlatmak\nOkul alma-bırakma, alışveriş listesi\nAile sohbeti ve ebeveynlerle mesaj",
+  "caregiverCannotList": "Abonelik, aile ayarları, davet\nHarcamalar\nGörev ve etkinlik eklemek ya da silmek\nHally asistanı ve fotoğraftan ekleme",
+  "caregiverRemove": "Erişimi şimdi kaldır",
+  "caregiverRemoveConfirm": "{name} aileden çıkarılsın mı?",
+  "@caregiverRemoveConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "caregiverRemoved": "Bakıcı aileden çıkarıldı.",
+  "caregiverSaved": "Kaydedildi.",
+  "caregiverEndTitle": "Erişim süresi",
+  "parentsOnly": "Bu işlem ebeveynlere açık.",
+  "joinAsCaregiver": "Bakıcı olarak katılacaksın: günü görür, bakım kayıtlarını işaretlersin."
 }

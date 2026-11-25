@@ -8,7 +8,9 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../messages/messages_repository.dart';
 import '../profile/profile_screen.dart';
+import '../messages/chats_screen.dart';
 import 'family_repository.dart';
+import 'invite_partner_screen.dart';
 
 class FamilyScreen extends ConsumerWidget {
   const FamilyScreen({super.key});
@@ -18,6 +20,8 @@ class FamilyScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final familyId = ref.watch(meProvider).valueOrNull?.primaryFamily?.id;
     if (familyId == null) return const Scaffold(body: HallyLoading());
+    // A caregiver's fourth tab is Messages: family settings, invites and money are for parents.
+    if (ref.watch(isCaregiverProvider)) return const ChatsScreen();
 
     final family = ref.watch(familyProvider(familyId));
     return Scaffold(
@@ -76,20 +80,34 @@ class FamilyScreen extends ConsumerWidget {
                   HallyEntrance(
                     index: i + 1,
                     child: Card(
-                      child: Padding(
+                      child: InkWell(
+                        key: Key('family.member.${m.userId}'),
+                        borderRadius: BorderRadius.circular(HallyRadius.lg),
+                        onTap: m.isCaregiver ? () => context.push('/family/${f.id}/caregiver/${m.userId}') : null,
+                        child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: HallySpace.md - 2, vertical: HallySpace.sm + 2),
                         child: Row(
                           children: [
                             HallyAvatar(name: m.displayName, size: 40),
                             const SizedBox(width: HallySpace.md),
-                            Expanded(child: Text(m.displayName, style: Theme.of(context).textTheme.titleMedium)),
-                            HallyPill(
-                              label: m.role == 'Owner' ? l10n.roleOwner : l10n.roleAdult,
-                              icon: m.role == 'Owner' ? Icons.star_rounded : null,
-                              color: m.role == 'Owner' ? HallyColors.butter : HallyColors.sage,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(m.displayName, style: Theme.of(context).textTheme.titleMedium),
+                                  if (m.isCaregiver)
+                                    Text(_caregiverLine(context, m, f), style: Theme.of(context).textTheme.bodySmall),
+                                ],
+                              ),
                             ),
+                            HallyPill(
+                              label: m.isCaregiver ? l10n.roleCaregiver : l10n.roleParent,
+                              color: m.isCaregiver ? HallyColors.mist : HallyColors.powder,
+                            ),
+                            if (m.isCaregiver) const Icon(Icons.chevron_right_rounded),
                           ],
                         ),
+                      ),
                       ),
                     ),
                   ),
@@ -128,6 +146,16 @@ class FamilyScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// "Ela, Deniz · Bitiş: 31 Mart 2027" for a caregiver row.
+String _caregiverLine(BuildContext context, FamilyMember m, FamilyDetails f) {
+  final l10n = AppLocalizations.of(context);
+  final names = m.childIds.isEmpty
+      ? l10n.caregiverAllChildren
+      : f.children.where((c) => m.childIds.contains(c.id)).map((c) => c.firstName).join(', ');
+  if (m.accessUntil == null) return names;
+  return '$names · ${l10n.caregiverEnds(formatShortDate(m.accessUntil!, Localizations.localeOf(context).toLanguageTag()))}';
 }
 
 class _SharedTile extends StatelessWidget {

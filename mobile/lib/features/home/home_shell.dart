@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/design/tokens.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_sheet.dart';
+import '../family/family_repository.dart';
 import '../share/share_listener.dart';
 
 /// Tabs: Today · Calendar · Add (raised centre action, opens the add sheet) · Kids · Family.
@@ -18,6 +19,8 @@ class HomeShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    // Caregivers get no Add button (planning and AI capture are for parents) and Messages in place of Family.
+    final caregiver = ref.watch(isCaregiverProvider);
     void go(int branch) {
       HapticFeedback.selectionClick();
       shell.goBranch(branch, initialLocation: branch == shell.currentIndex);
@@ -32,9 +35,12 @@ class HomeShell extends ConsumerWidget {
           HallyNavItem(icon: Icons.wb_sunny_outlined, activeIcon: Icons.wb_sunny_rounded, label: l10n.tabToday),
           HallyNavItem(icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month_rounded, label: l10n.tabCalendar),
           HallyNavItem(icon: Icons.child_care_outlined, activeIcon: Icons.child_care_rounded, label: l10n.tabKids),
-          HallyNavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: l10n.tabFamily),
+          if (caregiver)
+            HallyNavItem(icon: Icons.forum_outlined, activeIcon: Icons.forum_rounded, label: l10n.chatsTitle)
+          else
+            HallyNavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: l10n.tabFamily),
         ],
-        centerLabel: l10n.tabCapture,
+        centerLabel: caregiver ? null : l10n.tabCapture,
         onTap: go,
         onCenterTap: () {
           HapticFeedback.mediumImpact();
@@ -66,7 +72,8 @@ class HallyNavBar extends StatelessWidget {
 
   final int currentIndex;
   final List<HallyNavItem> items;
-  final String centerLabel;
+  /// Null hides the raised Add button (caregivers).
+  final String? centerLabel;
   final ValueChanged<int> onTap;
   final VoidCallback onCenterTap;
 
@@ -94,12 +101,13 @@ class HallyNavBar extends StatelessWidget {
                 children: [
                   for (var i = 0; i < items.length ~/ 2; i++)
                     Expanded(child: _Tab(item: items[i], selected: currentIndex == i, onTap: () => onTap(i))),
-                  const SizedBox(width: 76),
+                  if (centerLabel != null) const SizedBox(width: 76),
                   for (var i = items.length ~/ 2; i < items.length; i++)
                     Expanded(child: _Tab(item: items[i], selected: currentIndex == i, onTap: () => onTap(i))),
                 ],
               ),
             ),
+            if (centerLabel != null)
             Positioned(
               top: 0,
               child: Semantics(
@@ -122,7 +130,7 @@ class HallyNavBar extends StatelessWidget {
                         child: Icon(Icons.add_rounded, color: dark ? HallyColors.canvasDark : Colors.white, size: 32),
                       ),
                       const SizedBox(height: 2),
-                      Text(centerLabel, style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
+                      Text(centerLabel!, style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
                     ],
                   ),
                 ),

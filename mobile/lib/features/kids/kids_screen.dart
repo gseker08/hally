@@ -70,7 +70,7 @@ class KidsScreen extends ConsumerWidget {
                 color: HallyModule.kids,
                 title: l10n.kidsEmptyTitle,
                 body: l10n.childAddBody,
-                action: FilledButton.icon(
+                action: ref.watch(isCaregiverProvider) ? null : FilledButton.icon(
                   key: const Key('kids.addFirst'),
                   icon: const Icon(Icons.add_rounded),
                   label: Text(l10n.childAdd),
@@ -152,6 +152,7 @@ class _ChildSwitcher extends ConsumerWidget {
                 ),
               ),
             ),
+          if (!ref.watch(isCaregiverProvider))
           Tooltip(
             message: l10n.childAdd,
             child: HallyPressable(
@@ -198,7 +199,8 @@ class _ChildDayState extends ConsumerState<_ChildDay> {
     final data = ref.watch(childInsightsProvider((widget.familyId, c.id, day, day))).valueOrNull;
     final today = data?.days.lastOrNull;
     final age = childAge(c, widget.now);
-    final fits = trackersForAge(age);
+    // A caregiver without health permission doesn't get the health card at all.
+    final fits = trackersForAge(age).where((t) => t != Tracker.health || ref.watch(canSeeHealthProvider)).toSet();
 
     _TileData tile(Tracker t) => switch (t) {
           Tracker.study => _TileData(t, Icons.menu_book_rounded, HallyModule.study, l10n.studyTitle, '/study',
@@ -240,7 +242,10 @@ class _ChildDayState extends ConsumerState<_ChildDay> {
       (l10n.kidsCare, [for (final t in care) if (fits.contains(t)) tile(t)]),
     ];
     final ordered = careFirst ? groups.reversed.toList() : groups;
-    final more = [for (final t in Tracker.values) if (!fits.contains(t)) tile(t)];
+    final more = [
+      for (final t in Tracker.values)
+        if (!fits.contains(t) && (t != Tracker.health || ref.watch(canSeeHealthProvider))) tile(t),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -249,7 +254,9 @@ class _ChildDayState extends ConsumerState<_ChildDay> {
           child: c,
           tiles: [for (final t in (careFirst ? [Tracker.sleep, Tracker.feeding, Tracker.medications] : [Tracker.study, Tracker.screenTime, Tracker.habits])) if (fits.contains(t)) tile(t)],
           onInsights: () => context.push('/child/${c.id}/insights'),
-          onEdit: () => showChildSheet(context, ref, familyId: widget.familyId, child: c, siblings: widget.siblings),
+          onEdit: ref.watch(isCaregiverProvider)
+              ? null
+              : () => showChildSheet(context, ref, familyId: widget.familyId, child: c, siblings: widget.siblings),
         ),
         for (final (title, tiles) in ordered)
           if (tiles.isNotEmpty) ...[
@@ -296,7 +303,8 @@ class _Summary extends StatelessWidget {
   final ChildProfile child;
   final List<_TileData> tiles;
   final VoidCallback onInsights;
-  final VoidCallback onEdit;
+  /// Null for caregivers: editing a child is for parents.
+  final VoidCallback? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -311,6 +319,7 @@ class _Summary extends StatelessWidget {
             Row(
               children: [
                 Expanded(child: Text(l10n.kidsTodayOf(child.firstName), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                if (onEdit != null)
                 IconButton(key: const Key('kids.edit'), tooltip: l10n.insightsEditChild, onPressed: onEdit, icon: const Icon(Icons.edit_outlined, size: 20)),
                 IconButton(key: const Key('kids.insights'), tooltip: l10n.insightsTitle, onPressed: onInsights, icon: const Icon(Icons.insights_rounded, size: 22)),
               ],

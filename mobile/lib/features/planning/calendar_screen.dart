@@ -8,6 +8,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../family/family_repository.dart';
 import '../family/children.dart';
 import '../notifications/reminder_sheet.dart';
 import '../sharing/helper_share_sheet.dart';
@@ -71,7 +72,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ],
       ),
-      floatingActionButton: Padding(
+      floatingActionButton: ref.watch(isCaregiverProvider) ? null : Padding(
         padding: const EdgeInsets.only(bottom: 88),
         child: FloatingActionButton.extended(
           key: const Key('calendar.add'),
@@ -143,7 +144,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       Card(
                         child: ListTile(
                           key: Key('event.${e.id}'),
-                          onTap: () => _editEvent(familyId, e),
+                          onTap: ref.watch(isCaregiverProvider) ? null : () => _editEvent(familyId, e),
                           leading: const HallyIconBadge(icon: Icons.event_rounded, color: HallyModule.calendar),
                           title: Row(
                             children: [
