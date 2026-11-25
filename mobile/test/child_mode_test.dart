@@ -12,8 +12,10 @@ import 'package:hally/features/family/family_repository.dart';
 import 'package:hally/l10n/gen/app_localizations.dart';
 import 'package:hally/router.dart';
 
-ChildHome _home({List<ChildItem>? today, int balance = 34, ChildScreen screen = const ChildScreen(goalMinutes: 60, limitMinutes: 60, usedSeconds: 1560)}) =>
+ChildHome _home(
+        {List<ChildItem>? today, int balance = 34, ChildScreen screen = const ChildScreen(goalMinutes: 60, limitMinutes: 60, usedSeconds: 1560), String? mood = 'Good'}) =>
     ChildHome(
+      todayMood: mood,
       childId: 'c1',
       firstName: 'Ela',
       color: 'cherry',

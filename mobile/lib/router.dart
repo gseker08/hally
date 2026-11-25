@@ -25,6 +25,7 @@ import 'features/balance/balance_screen.dart';
 import 'features/handoff/handoff_cards.dart';
 import 'features/handoff/handoff_screen.dart';
 import 'features/insights/insights_screen.dart';
+import 'features/mood/mood_widgets.dart';
 import 'features/feeding/feeding_screen.dart';
 import 'features/family/family_setup_screen.dart';
 import 'features/family/invite_partner_screen.dart';
@@ -135,6 +136,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/family/:id/child/:childId/phone',
         builder: (_, s) => ConnectPhoneScreen(familyId: s.pathParameters['id']!, childId: s.pathParameters['childId']!),
       ),
+      GoRoute(path: '/child/:id/moods', builder: (_, s) => MoodScreen(childId: s.pathParameters['id']!)),
       GoRoute(path: '/child/:id/insights', builder: (_, s) => InsightsScreen(childId: s.pathParameters['id']!)),
       GoRoute(path: '/shopping', builder: (_, __) => const ShoppingScreen()),
       GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),

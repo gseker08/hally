@@ -2052,5 +2052,76 @@
   "handoffWrite": "Mesaj yaz",
   "handoffThanked": "Teşekkür edildi 💛",
   "handoffHistory": "Bakıcı raporları",
-  "handoffHistoryEmpty": "Henüz bakıcı raporu yok."
+  "handoffHistoryEmpty": "Henüz bakıcı raporu yok.",
+  "moodQuestion": "Bugün nasılsın?",
+  "moodQuestionHint": "Birine dokun. Doğru ya da yanlış yok.",
+  "moodGreat": "Çok iyi",
+  "moodGood": "İyi",
+  "moodOkay": "İdare",
+  "moodSad": "Üzgün",
+  "moodAngry": "Kızgın",
+  "moodTired": "Yorgun",
+  "moodWhy": "Neden? (istersen)",
+  "moodFriends": "Arkadaşlar",
+  "moodSchool": "Okul",
+  "moodHome": "Evde",
+  "moodPlay": "Oyun",
+  "moodSave": "Kaydet · +1",
+  "moodLater": "Sonra",
+  "moodThanks": "Teşekkürler! +1 kiraz kazandın.",
+  "moodSaved": "Kaydedildi.",
+  "moodTitle": "Duygular",
+  "moodTitleFor": "{name} · Duygular",
+  "@moodTitleFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moodThisWeek": "Bu hafta",
+  "moodFourWeeks": "4 hafta",
+  "moodWeekOf": "Bu hafta {name}",
+  "@moodWeekOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "moodGoodLabel": "iyi",
+  "moodHardLabel": "zor",
+  "moodNudgeTitle": "{day} {name} \"{mood}\" dedi",
+  "@moodNudgeTitle": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "mood": {
+        "type": "String"
+      }
+    }
+  },
+  "moodNudgeBody": "Akşam yemekte gününün nasıl geçtiğini sorabilirsin.",
+  "moodNudgeSchool": "Akşam yemekte okulda nasıl geçtiğini sorabilirsin.",
+  "moodNudgeFriends": "Arkadaşlarıyla nasıl geçtiğini sormak iyi gelebilir.",
+  "moodMostCommon": "En sık",
+  "moodMostCommonValue": "{mood} · {days} gün",
+  "@moodMostCommonValue": {
+    "placeholders": {
+      "mood": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "moodTopReason": "Sık geçen neden",
+  "moodEmpty": "Henüz cevap yok. Çocuk modunda her gün bir kez sorulur.",
+  "moodPrivacy": "Sadece ebeveynler görür, bakıcı görmez. Kayıtlar 90 gün sonra silinir. Tıbbi değerlendirme değildir.",
+  "moodCherryTitle": "Duygu kontrolü"
 }

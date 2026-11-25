@@ -8,7 +8,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../family/children.dart';
-import '../family/family_repository.dart' show familyProvider;
+import '../family/family_repository.dart' show familyProvider, isCaregiverProvider;
 import '../sleep/sleep_screen.dart' show formatSleepMinutes;
 import 'insights_repository.dart';
 
@@ -76,6 +76,15 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
             error: (_, __) => [HallyErrorState(onRetry: () => ref.invalidate(childInsightsProvider(key)))],
             data: (d) => _sections(context, d),
           ),
+          if (!ref.watch(isCaregiverProvider))
+            ListTile(
+              key: const Key('insights.moods'),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.mood_rounded),
+              title: Text(l10n.moodTitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/child/${widget.childId}/moods'),
+            ),
           if (ref.watch(familyProvider(familyId)).valueOrNull?.members.any((m) => m.isCaregiver) ?? false)
             ListTile(
               key: const Key('insights.handoffs'),

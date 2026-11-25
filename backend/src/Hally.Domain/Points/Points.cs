@@ -64,6 +64,9 @@ public enum PointKind
 
     /// <summary>The streak bonus every seven days in a row.</summary>
     Bonus,
+
+    /// <summary>Answering "Bugün nasılsın?" (one cherry a day, whatever the answer).</summary>
+    Mood,
 }
 
 /// <summary>
@@ -150,6 +153,17 @@ public class PointEntry : Entity
         Kind = PointKind.Bonus,
         Title = $"{days}",
         Points = ChildMode.CherryStreak.BonusCherries,
+        Day = day,
+        CreatedAt = now,
+    };
+
+    public static PointEntry ForMood(Guid familyId, Guid childId, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Mood,
+        Title = "mood",
+        Points = 1,
         Day = day,
         CreatedAt = now,
     };

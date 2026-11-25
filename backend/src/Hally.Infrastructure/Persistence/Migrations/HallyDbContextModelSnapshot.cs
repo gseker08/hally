@@ -1808,6 +1808,55 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("message_threads", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Mood.MoodCheck", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Mood")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("mood");
+
+                    b.Property<int[]>("Reasons")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("reasons");
+
+                    b.HasKey("Id")
+                        .HasName("pk_mood_checks");
+
+                    b.HasIndex("Day")
+                        .HasDatabaseName("ix_mood_checks_day");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_mood_checks_family_id");
+
+                    b.HasIndex("ChildId", "Day")
+                        .IsUnique()
+                        .HasDatabaseName("ix_mood_checks_child_id_day");
+
+                    b.ToTable("mood_checks", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Notifications.Device", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3431,6 +3480,23 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_message_threads_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Mood.MoodCheck", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_mood_checks_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_mood_checks_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Notifications.Device", b =>

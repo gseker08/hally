@@ -40,7 +40,8 @@ public record ChildHomeDto(
     bool RequireApproval,
     IReadOnlyList<ChildItemDto> Today,
     IReadOnlyList<ChildRewardDto> Rewards,
-    ChildScreenDto Screen);
+    ChildScreenDto Screen,
+    string? TodayMood = null);
 
 public record ClaimDto(Guid Id, Guid ChildId, string ChildName, string Kind, string Title, int Cherries, DateOnly Day, DateTimeOffset At);
 
@@ -89,7 +90,8 @@ public class ChildModeService(
         return new ChildHomeDto(
             new ChildProfileDto(child.Id, child.FirstName, child.Color, child.PhotoKey is not null),
             family.Name, balance, week, streak, CherryStreak.BonusEvery - streak % CherryStreak.BonusEvery,
-            family.RequireChildApproval, items, rewards, await ScreenAsync(child, today, ct));
+            family.RequireChildApproval, items, rewards, await ScreenAsync(child, today, ct),
+            (await db.MoodChecks.AsNoTracking().Where(m => m.ChildId == childId && m.Day == today).Select(m => (Hally.Domain.Mood.Mood?)m.Mood).FirstOrDefaultAsync(ct))?.ToString());
     }
 
     /// <summary>The child says "Yaptım!". With approval on it waits for a parent, otherwise the cherries land at once.
