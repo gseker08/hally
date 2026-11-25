@@ -4,13 +4,58 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/auth/auth_repository.dart';
 
 class FamilyMember {
-  const FamilyMember({required this.userId, required this.displayName, required this.role});
+  const FamilyMember({
+    required this.userId,
+    required this.displayName,
+    required this.role,
+    this.accessUntil,
+    this.childIds = const [],
+    this.canSeeHealth = true,
+  });
+
+  factory FamilyMember.fromJson(Map<String, dynamic> m) => FamilyMember(
+        userId: m['userId'] as String,
+        displayName: m['displayName'] as String,
+        role: m['role'] as String,
+        accessUntil: m['accessUntil'] == null ? null : DateTime.parse(m['accessUntil'] as String).toLocal(),
+        childIds: [for (final id in m['childIds'] as List? ?? const []) id as String],
+        canSeeHealth: m['canSeeHealth'] as bool? ?? true,
+      );
 
   final String userId;
   final String displayName;
+
+  /// Owner or Adult (parents, equal rights) or Caregiver.
   final String role;
+
+  /// Caregivers: when access ends (null = until a parent removes them).
+  final DateTime? accessUntil;
+
+  /// Caregivers: the children they look after; empty means all.
+  final List<String> childIds;
+
+  /// Caregivers: may read the health card. Always true for parents.
+  final bool canSeeHealth;
+
+  bool get isCaregiver => role == 'Caregiver';
+}
+
+/// What a caregiver can reach. Null [until] = no end; empty [childIds] = every child.
+class CaregiverAccess {
+  const CaregiverAccess({this.until, this.childIds = const [], this.canSeeHealth = false});
+
+  final DateTime? until;
+  final List<String> childIds;
+  final bool canSeeHealth;
+
+  Map<String, dynamic> toJson() => {
+        'accessUntil': until?.toUtc().toIso8601String(),
+        'childIds': childIds,
+        'canSeeHealth': canSeeHealth,
+      };
 }
 
 /// A child profile: first name only, an optional birth year, a colour key (see `childColor`) and an optional photo.
@@ -42,8 +87,7 @@ class FamilyDetails {
         name: json['name'] as String,
         timeZoneId: json['timeZoneId'] as String,
         members: [
-          for (final m in json['members'] as List)
-            FamilyMember(userId: m['userId'] as String, displayName: m['displayName'] as String, role: m['role'] as String),
+          for (final m in json['members'] as List) FamilyMember.fromJson(m as Map<String, dynamic>),
         ],
         children: [for (final c in json['children'] as List? ?? const []) ChildProfile.fromJson(c as Map<String, dynamic>)],
       );
@@ -64,11 +108,14 @@ class Invitation {
 }
 
 class InvitationPreview {
-  const InvitationPreview({required this.familyName, required this.invitedBy, required this.status});
+  const InvitationPreview({required this.familyName, required this.invitedBy, required this.status, this.role = 'parent'});
 
   final String familyName;
   final String invitedBy;
   final String status;
+
+  /// "parent" or "caregiver".
+  final String role;
 
   bool get isPending => status == 'pending';
 }
@@ -76,7 +123,14 @@ class InvitationPreview {
 abstract interface class FamilyRepository {
   Future<FamilyDetails> create(String name, String timeZoneId);
   Future<FamilyDetails> get(String familyId);
-  Future<Invitation> invite(String familyId);
+  /// Invites a parent, or a caregiver when [caregiver] is given.
+  Future<Invitation> invite(String familyId, {CaregiverAccess? caregiver});
+
+  /// Changes a caregiver's end date, children and health permission. Parents only.
+  Future<FamilyMember> setCaregiverAccess(String familyId, String userId, CaregiverAccess access);
+
+  /// Removes a caregiver from the family right away. Parents only.
+  Future<void> removeCaregiver(String familyId, String userId);
   Future<InvitationPreview> preview(String token);
   Future<String> accept(String token);
   Future<ChildProfile> addChild(String familyId, {required String firstName, int? birthYear, String? color});
@@ -115,8 +169,9 @@ class ApiFamilyRepository implements FamilyRepository {
       });
 
   @override
-  Future<Invitation> invite(String familyId) => _call(() async {
-        final res = await _api.dio.post<Map<String, dynamic>>('/api/v1/families/$familyId/invitations');
+  Future<Invitation> invite(String familyId, {CaregiverAccess? caregiver}) => _call(() async {
+        final res = await _api.dio.post<Map<String, dynamic>>('/api/v1/families/$familyId/invitations',
+            data: caregiver == null ? null : {'role': 'caregiver', ...caregiver.toJson()});
         final d = res.data!;
         return Invitation(url: d['url'] as String, shareText: d['shareText'] as String, whatsAppUrl: d['whatsAppUrl'] as String);
       });
@@ -125,8 +180,23 @@ class ApiFamilyRepository implements FamilyRepository {
   Future<InvitationPreview> preview(String token) => _call(() async {
         final res = await _api.dio.get<Map<String, dynamic>>('/api/v1/invitations/$token');
         final d = res.data!;
-        return InvitationPreview(familyName: d['familyName'] as String, invitedBy: d['invitedBy'] as String, status: d['status'] as String);
+        return InvitationPreview(
+          familyName: d['familyName'] as String,
+          invitedBy: d['invitedBy'] as String,
+          status: d['status'] as String,
+          role: d['role'] as String? ?? 'parent',
+        );
       });
+
+  @override
+  Future<FamilyMember> setCaregiverAccess(String familyId, String userId, CaregiverAccess access) => _call(() async {
+        final res = await _api.dio.put<Map<String, dynamic>>('/api/v1/families/$familyId/members/$userId/access', data: access.toJson());
+        return FamilyMember.fromJson(res.data!);
+      });
+
+  @override
+  Future<void> removeCaregiver(String familyId, String userId) =>
+      _call(() => _api.dio.delete<dynamic>('/api/v1/families/$familyId/members/$userId'));
 
   @override
   Future<String> accept(String token) => _call(() async {
@@ -176,6 +246,19 @@ class ApiFamilyRepository implements FamilyRepository {
 final familyRepositoryProvider = Provider<FamilyRepository>((ref) => ApiFamilyRepository(ref.watch(apiClientProvider)));
 
 final familyProvider = FutureProvider.family<FamilyDetails, String>((ref, id) => ref.watch(familyRepositoryProvider).get(id));
+
+/// True when the signed-in person is a caregiver in their family: parent-only actions are hidden then.
+/// Parents (mother, father) have equal rights.
+final isCaregiverProvider = Provider<bool>((ref) => ref.watch(meProvider).valueOrNull?.primaryFamily?.isCaregiver ?? false);
+
+/// Whether the signed-in person may read the health card: parents always, caregivers when a parent allowed it.
+final canSeeHealthProvider = Provider<bool>((ref) {
+  final me = ref.watch(meProvider).valueOrNull;
+  final family = me?.primaryFamily;
+  if (family == null || !family.isCaregiver) return true;
+  final details = ref.watch(familyProvider(family.id)).valueOrNull;
+  return details?.members.where((m) => m.userId == me!.id).firstOrNull?.canSeeHealth ?? false;
+});
 
 /// A child's photo by its URL. Kept for the session: the URL changes when the photo does, so it never goes stale.
 final childPhotoProvider = FutureProvider.family<Uint8List, String>((ref, url) => ref.watch(familyRepositoryProvider).childPhoto(url));

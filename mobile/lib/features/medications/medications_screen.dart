@@ -52,7 +52,7 @@ class _MedicationsScreenState extends ConsumerState<MedicationsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.medicationsTitle)),
-      floatingActionButton: children.isEmpty
+      floatingActionButton: children.isEmpty || ref.watch(isCaregiverProvider)
           ? null
           : FloatingActionButton.extended(
               key: const Key('medication.add'),
@@ -265,6 +265,7 @@ class _DoseHistory extends ConsumerWidget {
           Wrap(
             spacing: HallySpace.xs,
             children: [
+              if (!ref.watch(isCaregiverProvider))
               TextButton.icon(
                 key: const Key('medication.edit'),
                 onPressed: () async {
@@ -274,6 +275,7 @@ class _DoseHistory extends ConsumerWidget {
                 icon: const Icon(Icons.edit_outlined),
                 label: Text(l10n.medicationEdit),
               ),
+              if (!ref.watch(isCaregiverProvider))
               TextButton.icon(
                 key: const Key('medication.end'),
                 onPressed: () async {

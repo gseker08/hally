@@ -41,7 +41,7 @@
   "todayEmptyTitle": "All clear for today",
   "todayEmptyBody": "Snap a photo of a school notice and I'll pull out the tasks.",
   "familyMembers": "Family members",
-  "familyInviteMore": "Invite another adult",
+  "familyInviteMore": "Invite someone",
   "roleOwner": "Founder",
   "roleAdult": "Adult",
   "signOut": "Sign out",
@@ -104,7 +104,7 @@
   "trustSubtitle": "Hally helps; you make the calls.",
   "signInSubtitle": "Sign in with one tap and plan together with your family.",
   "familyHeroBody": "{count, plural, =1{1 person planning} other{{count} people planning together}}",
-  "familyInviteBody": "Add your partner to share the load.",
+  "familyInviteBody": "Add your partner or a caregiver.",
   "demoTitle": "Let's try it",
   "demoBody": "Scan this sample school notice and Hally will find the tasks. No account needed.",
   "demoSampleLabel": "Sample notice",
@@ -688,5 +688,62 @@
   "voiceNotHeard": "I didn't catch that. Try again?",
   "voiceUnavailable": "The microphone isn't available. You can allow Hally to use it in Settings.",
   "voiceShortcut": "Speak to Hally",
-  "privacyPointVoice": "The microphone listens only while you use the mic button, never in the background. Your phone's speech service (Google on Android, Apple on iPhone) turns your speech into text. Hally never receives or stores the audio, only the text."
+  "privacyPointVoice": "The microphone listens only while you use the mic button, never in the background. Your phone's speech service (Google on Android, Apple on iPhone) turns your speech into text. Hally never receives or stores the audio, only the text.",
+  "roleParent": "Parent",
+  "roleCaregiver": "Caregiver",
+  "inviteWhoTitle": "Who are you inviting?",
+  "inviteRoleParentBody": "Your partner or the other parent. Same rights as you.",
+  "inviteRoleCaregiverBody": "Nanny, grandparent, helper. Sees the day and logs medicine, sleep, feeding and tasks.",
+  "inviteCaregiverChildren": "Which children will they look after?",
+  "inviteCaregiverDuration": "How long should access last?",
+  "durationForever": "No end",
+  "durationOneMonth": "1 month",
+  "durationThreeMonths": "3 months",
+  "durationPick": "Pick a date",
+  "caregiverHealthTitle": "Can see health info",
+  "caregiverHealthBody": "Allergies, vaccines, height and weight. Off by default to protect health data.",
+  "caregiverEnds": "Until {date}",
+  "@caregiverEnds": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "caregiverAllChildren": "All children",
+  "caregiverBanner": "You're seeing this as a caregiver: {names}",
+  "@caregiverBanner": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "caregiverDetailEnds": "Access ends on {date}. They leave Hally automatically then.",
+  "@caregiverDetailEnds": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "caregiverDetailNoEnd": "Access has no end date. You can remove it any time.",
+  "caregiverCanTitle": "Can",
+  "caregiverCannotTitle": "Can't",
+  "caregiverCanList": "See today, the calendar and tasks\nComplete tasks\nLog medicine, sleep and feeding\nStart screen and study timers\nSchool run, shopping list\nFamily chat and messages with parents",
+  "caregiverCannotList": "Subscription, family settings, invites\nExpenses\nAdding or deleting tasks and events\nHally assistant and adding from photos",
+  "caregiverRemove": "Remove access now",
+  "caregiverRemoveConfirm": "Remove {name} from the family?",
+  "@caregiverRemoveConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "caregiverRemoved": "The caregiver was removed.",
+  "caregiverSaved": "Saved.",
+  "caregiverEndTitle": "Access period",
+  "parentsOnly": "Only parents can do this.",
+  "joinAsCaregiver": "You'll join as a caregiver: you see the day and log care."
 }

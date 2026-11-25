@@ -41,7 +41,11 @@ class _RecordingFamilyRepository implements FamilyRepository {
   @override
   Future<FamilyDetails> get(String familyId) => throw UnimplementedError();
   @override
-  Future<Invitation> invite(String familyId) => throw UnimplementedError();
+  Future<Invitation> invite(String familyId, {CaregiverAccess? caregiver}) => throw UnimplementedError();
+  @override
+  Future<FamilyMember> setCaregiverAccess(String familyId, String userId, CaregiverAccess access) => throw UnimplementedError();
+  @override
+  Future<void> removeCaregiver(String familyId, String userId) => throw UnimplementedError();
   @override
   Future<InvitationPreview> preview(String token) => throw UnimplementedError();
   @override

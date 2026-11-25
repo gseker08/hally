@@ -261,6 +261,7 @@ class _ChildActions extends ConsumerWidget {
       child: Wrap(
         spacing: HallySpace.xs,
         children: [
+          if (!ref.watch(isCaregiverProvider))
           TextButton.icon(
             key: Key('screenTime.goal.${child.id}'),
             onPressed: () => _showGoalSheet(context, ref, familyId, child, goal),

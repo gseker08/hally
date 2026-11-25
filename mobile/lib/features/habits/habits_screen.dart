@@ -46,7 +46,7 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.habitsTitle)),
-      floatingActionButton: children.isEmpty
+      floatingActionButton: children.isEmpty || ref.watch(isCaregiverProvider)
           ? null
           : FloatingActionButton.extended(
               key: const Key('habits.add'),
@@ -79,7 +79,7 @@ class _HabitsScreenState extends ConsumerState<HabitsScreen> {
                             for (final h in b.habits.where((h) => h.childId == c.id))
                               Dismissible(
                                 key: Key('habits.item.${h.id}'),
-                                direction: DismissDirection.endToStart,
+                                direction: ref.watch(isCaregiverProvider) ? DismissDirection.none : DismissDirection.endToStart,
                                 background: Container(
                                   alignment: Alignment.centerRight,
                                   padding: const EdgeInsets.symmetric(horizontal: HallySpace.lg),

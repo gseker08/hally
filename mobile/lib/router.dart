@@ -15,6 +15,7 @@ import 'features/capture/review_screen.dart';
 import 'features/demo/demo_scan_screen.dart';
 import 'features/duties/duties_screen.dart';
 import 'features/expenses/expenses_screen.dart';
+import 'features/family/caregiver_screen.dart';
 import 'features/family/family_screen.dart';
 import 'features/health/health_screen.dart';
 import 'features/insights/insights_screen.dart';
@@ -96,6 +97,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/i/:token', builder: (_, s) => JoinFamilyScreen(token: s.pathParameters['token']!)),
       GoRoute(path: '/family/new', builder: (_, __) => const FamilySetupScreen()),
       GoRoute(path: '/family/:id/invite', builder: (_, s) => InvitePartnerScreen(familyId: s.pathParameters['id']!)),
+      GoRoute(
+        path: '/family/:id/caregiver/:userId',
+        builder: (_, s) => CaregiverScreen(familyId: s.pathParameters['id']!, userId: s.pathParameters['userId']!),
+      ),
       GoRoute(path: '/capture/text', builder: (_, __) => const CaptureTextScreen()),
       GoRoute(path: '/capture/review', builder: (_, __) => const ReviewScreen()),
       GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),

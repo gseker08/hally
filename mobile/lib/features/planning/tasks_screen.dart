@@ -37,7 +37,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabTasks)),
-      floatingActionButton: Padding(
+      floatingActionButton: ref.watch(isCaregiverProvider) ? null : Padding(
         padding: const EdgeInsets.only(bottom: 88),
         child: FloatingActionButton.extended(
           key: const Key('tasks.add'),
@@ -76,7 +76,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                               child: ListTile(
                                 key: Key('task.${t.id}'),
                                 // Tapping the row opens the task; only the checkbox completes it.
-                                onTap: () => showTaskSheet(context, ref, familyId: familyId, task: t),
+                                onTap: ref.watch(isCaregiverProvider) ? null : () => showTaskSheet(context, ref, familyId: familyId, task: t),
                                 contentPadding: const EdgeInsets.only(left: HallySpace.xs, right: HallySpace.sm),
                                 leading: Checkbox(
                                   key: Key('task.${t.id}.check'),

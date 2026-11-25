@@ -18,7 +18,8 @@ class Me {
         displayName: json['displayName'] as String,
         locale: json['locale'] as String,
         families: [
-          for (final f in json['families'] as List) FamilyRef(id: f['id'] as String, name: f['name'] as String),
+          for (final f in json['families'] as List)
+            FamilyRef(id: f['id'] as String, name: f['name'] as String, role: f['role'] as String? ?? 'Adult'),
         ],
       );
 
@@ -31,10 +32,15 @@ class Me {
 }
 
 class FamilyRef {
-  const FamilyRef({required this.id, required this.name});
+  const FamilyRef({required this.id, required this.name, this.role = 'Adult'});
 
   final String id;
   final String name;
+
+  /// Owner, Adult (both parents with equal rights) or Caregiver.
+  final String role;
+
+  bool get isCaregiver => role == 'Caregiver';
 }
 
 /// Talks to /api/v1/auth and /api/v1/me. Native sign-in SDKs only produce an ID token;

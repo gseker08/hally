@@ -126,6 +126,10 @@ class _JoinFamilyScreenState extends ConsumerState<JoinFamilyScreen> {
               },
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            if (p.isPending && p.role == 'caregiver') ...[
+              const SizedBox(height: HallySpace.md),
+              Text(l10n.joinAsCaregiver, key: const Key('join.caregiver'), style: Theme.of(context).textTheme.bodyLarge),
+            ],
           ],
         ),
       ),

@@ -242,6 +242,7 @@ class StudyHistoryScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.sm, HallySpace.md, 120),
             children: [
+              if (!ref.watch(isCaregiverProvider))
               Align(
                 alignment: Alignment.centerLeft,
                 child: OutlinedButton.icon(

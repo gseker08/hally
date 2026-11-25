@@ -62,7 +62,7 @@ class _PointsScreenState extends ConsumerState<PointsScreen> {
             ),
         ],
       ),
-      floatingActionButton: children.isEmpty
+      floatingActionButton: children.isEmpty || ref.watch(isCaregiverProvider)
           ? null
           : FloatingActionButton.extended(
               key: const Key('points.add'),
@@ -126,7 +126,7 @@ class _PointsScreenState extends ConsumerState<PointsScreen> {
                     for (final c in chores)
                       Dismissible(
                         key: Key('points.chore.${c.id}'),
-                        direction: DismissDirection.endToStart,
+                        direction: ref.watch(isCaregiverProvider) ? DismissDirection.none : DismissDirection.endToStart,
                         background: _deleteBackground(),
                         onDismissed: (_) => _act(familyId, (r) => r.deleteChore(familyId, c.id)),
                         child: Card(
@@ -150,7 +150,7 @@ class _PointsScreenState extends ConsumerState<PointsScreen> {
                     for (final r in b.rewards)
                       Dismissible(
                         key: Key('points.reward.${r.id}'),
-                        direction: DismissDirection.endToStart,
+                        direction: ref.watch(isCaregiverProvider) ? DismissDirection.none : DismissDirection.endToStart,
                         background: _deleteBackground(),
                         onDismissed: (_) => _act(familyId, (repo) => repo.deleteReward(familyId, r.id)),
                         child: Card(
@@ -158,7 +158,7 @@ class _PointsScreenState extends ConsumerState<PointsScreen> {
                             leading: _Stars(r.cost),
                             title: Text(r.title),
                             subtitle: mine.balance < r.cost ? Text(l10n.pointsMissing(r.cost - mine.balance)) : null,
-                            trailing: FilledButton(
+                            trailing: ref.watch(isCaregiverProvider) ? null : FilledButton(
                               key: Key('points.redeem.${r.id}'),
                               style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
                               onPressed: _busy || mine.balance < r.cost ? null : () => _act(familyId, (repo) => repo.redeem(familyId, child.id, r.id)),
@@ -231,6 +231,7 @@ class PointsHistoryScreen extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(e.points > 0 ? '+${e.points}' : '${e.points}', style: Theme.of(context).textTheme.titleMedium),
+                          if (!ref.watch(isCaregiverProvider))
                           IconButton(
                             key: Key('points.undo.${e.id}'),
                             tooltip: l10n.pointsUndo,

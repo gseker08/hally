@@ -74,7 +74,7 @@ class ProfileScreen extends ConsumerWidget {
                     Text(me.displayName, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
                     if (family != null)
                       Text(
-                        role == null ? family.name : '${family.name} · ${role == 'Owner' ? l10n.roleOwner : l10n.roleAdult}',
+                        role == null ? family.name : '${family.name} · ${role == 'Caregiver' ? l10n.roleCaregiver : l10n.roleParent}',
                         style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                   ],

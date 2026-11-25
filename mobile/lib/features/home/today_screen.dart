@@ -8,6 +8,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../family/family_repository.dart';
 import '../capture/capture_repository.dart';
 import '../family/children.dart';
 import '../messages/chats_screen.dart';
@@ -35,7 +36,7 @@ class TodayScreen extends ConsumerWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           slivers: [
-            SliverToBoxAdapter(child: TodayHero(name: me.displayName, data: today.valueOrNull)),
+            SliverToBoxAdapter(child: TodayHero(name: me.displayName, data: today.valueOrNull, caregiverFor: _caregiverFor(context, ref, familyId))),
             ...today.when(
               loading: () => [const SliverFillRemaining(hasScrollBody: false, child: HallyLoading())],
               error: (_, __) => [
@@ -55,6 +56,14 @@ class TodayScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// For a caregiver: the names of the children they look after (shown in a banner). Null for parents.
+  String? _caregiverFor(BuildContext context, WidgetRef ref, String familyId) {
+    if (!ref.watch(isCaregiverProvider)) return null;
+    // The server only sends a caregiver the children they look after.
+    final children = ref.watch(familyProvider(familyId)).valueOrNull?.children ?? const [];
+    return children.isEmpty ? AppLocalizations.of(context).caregiverAllChildren : children.map((c) => c.firstName).join(', ');
   }
 
   List<Widget> _body(BuildContext context, WidgetRef ref, TodayData all, String familyId) {
@@ -113,10 +122,13 @@ class TodayScreen extends ConsumerWidget {
 
 /// Header: wordmark and shortcuts, date, greeting, the Hally assistant card and the day's counts as pastel tiles.
 class TodayHero extends StatelessWidget {
-  const TodayHero({super.key, required this.name, required this.data});
+  const TodayHero({super.key, required this.name, required this.data, this.caregiverFor});
 
   final String name;
   final TodayData? data;
+
+  /// Set for a caregiver: a banner names their children and the assistant card and suggestion count are hidden.
+  final String? caregiverFor;
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +176,25 @@ class TodayHero extends StatelessWidget {
             const SizedBox(height: HallySpace.xs),
             Text(l10n.brandEmotional, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: HallySpace.md + 4),
-            const AskHallyBar(),
+            if (caregiverFor case final names?)
+              Container(
+                key: const Key('today.caregiverBanner'),
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: HallySpace.sm + 2),
+                decoration: BoxDecoration(
+                  color: HallyColors.softOf(HallyColors.mist, theme.brightness),
+                  borderRadius: BorderRadius.circular(HallyRadius.lg),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.volunteer_activism_rounded, size: 20, color: HallyColors.readableOn(HallyColors.mist, theme.brightness)),
+                    const SizedBox(width: HallySpace.sm),
+                    Expanded(child: Text(l10n.caregiverBanner(names), style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600))),
+                  ],
+                ),
+              )
+            else
+              const AskHallyBar(),
             const SizedBox(height: HallySpace.md - 4),
             AnimatedOpacity(
               opacity: d == null ? 0 : 1,
@@ -190,7 +220,8 @@ class TodayHero extends StatelessWidget {
                       semantics: l10n.todayStatEvents(d?.events.length ?? 0),
                     ),
                   ),
-                  const SizedBox(width: HallySpace.sm + 2),
+                  if (caregiverFor == null) const SizedBox(width: HallySpace.sm + 2),
+                  if (caregiverFor == null)
                   Expanded(
                     child: _Stat(
                       icon: Icons.auto_awesome_rounded,
@@ -506,7 +537,7 @@ class _TaskTileState extends ConsumerState<TaskTile> {
           child: InkWell(
             key: ValueKey('task.${t.id}.row'),
             // Tapping the row opens the task; only the circle (or a swipe) completes it, so a stray tap can't tick it off.
-            onTap: () => showTaskSheet(context, ref, familyId: widget.familyId, task: t),
+            onTap: ref.watch(isCaregiverProvider) ? null : () => showTaskSheet(context, ref, familyId: widget.familyId, task: t),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(HallySpace.md - 10, HallySpace.md - 12, HallySpace.md, HallySpace.md - 12),
               child: Row(
@@ -621,7 +652,7 @@ class _EventTile extends ConsumerWidget {
               clipBehavior: Clip.antiAlias,
               child: InkWell(
                 key: Key('today.event.${event.id}'),
-                onTap: () => showEventEditor(context, ref, familyId: familyId, event: event),
+                onTap: ref.watch(isCaregiverProvider) ? null : () => showEventEditor(context, ref, familyId: familyId, event: event),
                 child: Padding(
                   padding: const EdgeInsets.all(HallySpace.md),
                   child: Row(

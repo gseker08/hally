@@ -9,6 +9,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../family/family_repository.dart';
 import '../family/children.dart';
 import 'health_repository.dart';
 
@@ -90,6 +91,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                               Row(
                                 children: [
                                   Expanded(child: Text(l10n.healthBasics, style: theme.textTheme.titleMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface))),
+                                  if (!ref.watch(isCaregiverProvider))
                                   TextButton.icon(
                                     key: const Key('health.editProfile'),
                                     style: TextButton.styleFrom(minimumSize: const Size(0, 44)),
@@ -120,13 +122,13 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                       _Header(
                         title: l10n.healthAppointments,
                         addKey: const Key('health.addAppointment'),
-                        onAdd: () => _sheet(_AppointmentSheet(familyId: familyId, childId: child.id)),
+                        onAdd: ref.watch(isCaregiverProvider) ? null : () => _sheet(_AppointmentSheet(familyId: familyId, childId: child.id)),
                       ),
                       if (card.appointments.isEmpty) Text(l10n.healthNoAppointments),
                       for (final a in card.appointments)
                         Dismissible(
                           key: Key('health.appointment.${a.id}'),
-                          direction: DismissDirection.endToStart,
+                          direction: ref.watch(isCaregiverProvider) ? DismissDirection.none : DismissDirection.endToStart,
                           background: _deleteBackground(),
                           onDismissed: (_) => _act(familyId, child.id, (r) => r.deleteAppointment(familyId, child.id, a.id)),
                           child: Card(
@@ -143,13 +145,13 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                       _Header(
                         title: l10n.healthVaccines,
                         addKey: const Key('health.addVaccine'),
-                        onAdd: () => _sheet(_VaccineSheet(familyId: familyId, childId: child.id)),
+                        onAdd: ref.watch(isCaregiverProvider) ? null : () => _sheet(_VaccineSheet(familyId: familyId, childId: child.id)),
                       ),
                       if (card.vaccines.isEmpty) Text(l10n.healthNoVaccines),
                       for (final v in card.vaccines)
                         Dismissible(
                           key: Key('health.vaccine.${v.id}'),
-                          direction: DismissDirection.endToStart,
+                          direction: ref.watch(isCaregiverProvider) ? DismissDirection.none : DismissDirection.endToStart,
                           background: _deleteBackground(),
                           onDismissed: (_) => _act(familyId, child.id, (r) => r.deleteVaccine(familyId, child.id, v.id)),
                           child: Card(
@@ -160,7 +162,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                               subtitle: Text(v.given
                                   ? l10n.healthGivenOn(DateFormat.yMMMd(locale).format(v.givenOn!))
                                   : (v.overdue ? l10n.healthOverdue(DateFormat.yMMMd(locale).format(v.dueOn!)) : l10n.healthDueOn(DateFormat.yMMMd(locale).format(v.dueOn!)))),
-                              trailing: v.given
+                              trailing: v.given || ref.watch(isCaregiverProvider)
                                   ? null
                                   : FilledButton.tonal(
                                       key: Key('health.given.${v.id}'),
@@ -175,7 +177,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                       _Header(
                         title: l10n.healthGrowth,
                         addKey: const Key('health.addGrowth'),
-                        onAdd: () => _sheet(_GrowthSheet(familyId: familyId, childId: child.id)),
+                        onAdd: ref.watch(isCaregiverProvider) ? null : () => _sheet(_GrowthSheet(familyId: familyId, childId: child.id)),
                       ),
                       if (last == null) Text(l10n.healthNoGrowth),
                       if (card.growth.where((g) => g.heightCm != null).length > 1)
@@ -183,7 +185,7 @@ class _HealthScreenState extends ConsumerState<HealthScreen> {
                       for (final g in card.growth.reversed)
                         Dismissible(
                           key: Key('health.growth.${g.id}'),
-                          direction: DismissDirection.endToStart,
+                          direction: ref.watch(isCaregiverProvider) ? DismissDirection.none : DismissDirection.endToStart,
                           background: _deleteBackground(),
                           onDismissed: (_) => _act(familyId, child.id, (r) => r.deleteGrowth(familyId, child.id, g.id)),
                           child: ListTile(
@@ -224,7 +226,8 @@ class _Header extends StatelessWidget {
 
   final String title;
   final Key addKey;
-  final VoidCallback onAdd;
+  /// Null hides the add button (caregivers only read the health card).
+  final VoidCallback? onAdd;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -232,7 +235,7 @@ class _Header extends StatelessWidget {
         child: Row(
           children: [
             Expanded(child: Text(title, style: Theme.of(context).textTheme.titleMedium)),
-            IconButton(key: addKey, tooltip: AppLocalizations.of(context).healthAdd, onPressed: onAdd, icon: const Icon(Icons.add_circle_outline_rounded)),
+            if (onAdd != null) IconButton(key: addKey, tooltip: AppLocalizations.of(context).healthAdd, onPressed: onAdd, icon: const Icon(Icons.add_circle_outline_rounded)),
           ],
         ),
       );
