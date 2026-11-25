@@ -12,6 +12,7 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'child_lock.dart';
+import '../activities/activity_screens.dart' show KidIdeasCard;
 import '../mood/mood.dart' show moodSkippedProvider;
 import '../mood/mood_widgets.dart' show KidMoodCard;
 import 'child_mode_repository.dart';
@@ -579,64 +580,74 @@ class _KidLockViewState extends ConsumerState<KidLockView> {
       key: const Key('kid.lock'),
       backgroundColor: HallyColors.softOf(HallyColors.cherry, b),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(HallySpace.lg),
-          child: Column(
-            children: [
-              const Spacer(),
-              CircleAvatar(radius: 56, backgroundColor: theme.colorScheme.surface, child: const CherryIcon(size: 64)),
-              const SizedBox(height: HallySpace.lg),
-              Text(l10n.kidLockTitle,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: HallyColors.accent(HallyColors.cherry, b))),
-              const SizedBox(height: HallySpace.sm),
-              Text('${l10n.kidLockUsed(_duration(l10n, used))}\n${l10n.kidLockTomorrow}', textAlign: TextAlign.center),
-              const SizedBox(height: HallySpace.md),
-              Text(l10n.kidLockIdea, textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
-              const Spacer(flex: 2),
-              if (buy != null) ...[
-                FilledButton(
-                  key: const Key('kid.lock.buy'),
-                  onPressed: () => _act(context, ref, (api) => api.redeem(buy.id), (_) => l10n.kidBoughtScreen(buy.screenMinutes!)),
-                  child: Text(l10n.kidLockBuy(buy.cost, buy.screenMinutes!)),
+        child: LayoutBuilder(
+          builder: (context, box) => SingleChildScrollView(
+            padding: const EdgeInsets.all(HallySpace.lg),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: box.maxHeight - HallySpace.lg * 2),
+              child: IntrinsicHeight(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Spacer(),
+                    Center(child: CircleAvatar(radius: 48, backgroundColor: theme.colorScheme.surface, child: const CherryIcon(size: 56))),
+                    const SizedBox(height: HallySpace.md),
+                    Text(l10n.kidLockTitle,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: HallyColors.accent(HallyColors.cherry, b))),
+                    const SizedBox(height: HallySpace.sm),
+                    Text('${l10n.kidLockUsed(_duration(l10n, used))}\n${l10n.kidLockTomorrow}', textAlign: TextAlign.center),
+                    const SizedBox(height: HallySpace.lg),
+                    KidIdeasCard(requireApproval: h.requireApproval),
+                    const Spacer(),
+                    const SizedBox(height: HallySpace.md),
+                    if (buy != null) ...[
+                      OutlinedButton(
+                        key: const Key('kid.lock.buy'),
+                        style: OutlinedButton.styleFrom(backgroundColor: theme.colorScheme.surface),
+                        onPressed: () => _act(context, ref, (api) => api.redeem(buy.id), (_) => l10n.kidBoughtScreen(buy.screenMinutes!)),
+                        child: Text(l10n.kidLockBuy(buy.cost, buy.screenMinutes!)),
+                      ),
+                      const SizedBox(height: HallySpace.sm),
+                    ],
+                    OutlinedButton(
+                      key: const Key('kid.lock.ask'),
+                      style: OutlinedButton.styleFrom(backgroundColor: theme.colorScheme.surface),
+                      onPressed: _asked
+                          ? null
+                          : () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              try {
+                                await ref.read(childApiProvider).requestTime(15);
+                                setState(() => _asked = true);
+                                messenger.showSnackBar(SnackBar(content: Text(l10n.kidLockAsked)));
+                              } catch (_) {
+                                messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
+                              }
+                            },
+                      child: Text(_asked ? l10n.kidLockAsked : l10n.kidLockAsk),
+                    ),
+                    const SizedBox(height: HallySpace.sm),
+                    Row(children: [
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: () => launchUrl(Uri.parse('tel:112')),
+                          icon: const Icon(Icons.call_rounded),
+                          label: Text(l10n.kidLockEmergency),
+                        ),
+                      ),
+                      Expanded(
+                        child: TextButton.icon(
+                          onPressed: () => ref.invalidate(childHomeProvider),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: Text(l10n.kidLockCheck),
+                        ),
+                      ),
+                    ]),
+                  ],
                 ),
-                const SizedBox(height: HallySpace.sm),
-              ],
-              OutlinedButton(
-                key: const Key('kid.lock.ask'),
-                style: OutlinedButton.styleFrom(backgroundColor: theme.colorScheme.surface),
-                onPressed: _asked
-                    ? null
-                    : () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        try {
-                          await ref.read(childApiProvider).requestTime(15);
-                          setState(() => _asked = true);
-                          messenger.showSnackBar(SnackBar(content: Text(l10n.kidLockAsked)));
-                        } catch (_) {
-                          messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
-                        }
-                      },
-                child: Text(_asked ? l10n.kidLockAsked : l10n.kidLockAsk),
               ),
-              const SizedBox(height: HallySpace.sm),
-              Row(children: [
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: () => launchUrl(Uri.parse('tel:112')),
-                    icon: const Icon(Icons.call_rounded),
-                    label: Text(l10n.kidLockEmergency),
-                  ),
-                ),
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: () => ref.invalidate(childHomeProvider),
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: Text(l10n.kidLockCheck),
-                  ),
-                ),
-              ]),
-            ],
+            ),
           ),
         ),
       ),

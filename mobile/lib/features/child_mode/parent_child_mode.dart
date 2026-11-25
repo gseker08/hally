@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/design/brand.dart';
@@ -215,6 +216,18 @@ class _ConnectPhoneScreenState extends ConsumerState<ConnectPhoneScreen> {
                       ref.invalidate(childApprovalProvider(widget.familyId));
                     }
                   : null,
+            ),
+          ),
+          const SizedBox(height: HallySpace.sm),
+          Card(
+            margin: EdgeInsets.zero,
+            child: ListTile(
+              key: const Key('phone.activities'),
+              leading: const Text('🤸', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.actSettingsTitle),
+              subtitle: Text(l10n.actSettingsBody),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/activities?familyId=${widget.familyId}'),
             ),
           ),
         ],

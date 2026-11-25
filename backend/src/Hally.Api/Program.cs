@@ -51,6 +51,8 @@ builder.Services.AddSingleton<IExternalIdentityVerifier, AppleIdentityVerifier>(
 builder.Services.AddSingleton<IExternalIdentityVerifier, DevIdentityVerifier>();
 builder.Services.AddHttpClient<IVisionModel, OpenAiCompatibleVisionModel>();
 builder.Services.AddHttpClient<IChatModel, OpenAiCompatibleChatModel>();
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<Hally.Api.Features.Activities.IWeatherService, Hally.Api.Features.Activities.OpenMeteoWeather>(c => c.Timeout = TimeSpan.FromSeconds(4));
 builder.Services.AddScoped<AssistantService>();
 builder.Services.AddSingleton<IDocumentStore, EncryptedFileDocumentStore>();
 builder.Services.AddScoped<ExtractionService>();

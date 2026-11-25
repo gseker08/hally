@@ -29,6 +29,28 @@ public class Family : Entity
     public bool RequireChildApproval { get; private set; } = true;
 
     public void SetChildApproval(bool required) => RequireChildApproval = required;
+
+    /// <summary>The city whose weather picks screen-free ideas (indoors when it rains). Optional; only the city is
+    /// stored, rounded to about 10 km, never a home address.</summary>
+    public string? WeatherPlace { get; private set; }
+    public double? WeatherLatitude { get; private set; }
+    public double? WeatherLongitude { get; private set; }
+
+    public void SetWeatherPlace(string? name, double? latitude, double? longitude)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            (WeatherPlace, WeatherLatitude, WeatherLongitude) = (null, null, null);
+            return;
+        }
+
+        if (name.Trim().Length > 80 || latitude is not (>= -90 and <= 90) || longitude is not (>= -180 and <= 180))
+        {
+            throw new DomainException("family.weather_place_invalid", "Pick a city from the list.");
+        }
+
+        (WeatherPlace, WeatherLatitude, WeatherLongitude) = (name.Trim(), Math.Round(latitude.Value, 1), Math.Round(longitude.Value, 1));
+    }
     public IReadOnlyCollection<Child> Children => _children;
 
     public void Rename(string name)

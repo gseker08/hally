@@ -67,6 +67,9 @@ public enum PointKind
 
     /// <summary>Answering "Bugün nasılsın?" (one cherry a day, whatever the answer).</summary>
     Mood,
+
+    /// <summary>A screen-free idea done ("Şimdi ne yapsam?"); counts for the streak like chores and habits.</summary>
+    Activity,
 }
 
 /// <summary>
@@ -154,6 +157,18 @@ public class PointEntry : Entity
         Title = $"{days}",
         Points = ChildMode.CherryStreak.BonusCherries,
         Day = day,
+        CreatedAt = now,
+    };
+
+    public static PointEntry ForActivity(Guid familyId, Guid childId, string title, int points, Guid? userId, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Activity,
+        Title = title,
+        Points = points,
+        Day = day,
+        ByUserId = userId,
         CreatedAt = now,
     };
 
