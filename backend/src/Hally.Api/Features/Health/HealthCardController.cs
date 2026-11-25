@@ -2,6 +2,7 @@ using Hally.Api.Auth;
 using Hally.Api.Common;
 using Hally.Api.Features.Messages;
 using Hally.Domain.Common;
+using Hally.Domain.Families;
 using Hally.Domain.Health;
 using Hally.Domain.Notifications;
 using Hally.Domain.Planning;
@@ -251,7 +252,7 @@ public class HealthCardController(HallyDbContext db, IHubContext<ChatHub, IChatC
     {
         try
         {
-            var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId).Select(m => m.UserId).ToListAsync(ct);
+            var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver).Select(m => m.UserId).ToListAsync(ct);
             await hub.Clients.Groups(adults.Select(ChatHub.UserGroup).ToList()).HealthChanged(new HealthEvent(familyId, childId));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

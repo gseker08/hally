@@ -40,6 +40,7 @@ public class SendMessageRequestValidator : AbstractValidator<SendMessageRequest>
 /// </summary>
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
+[CaregiverAllowed]
 [Route("api/v1/families/{familyId:guid}/chats")]
 public class MessagesController(HallyDbContext db, MessagePush push, ChatRealtime realtime, IDocumentStore store, TimeProvider clock) : ControllerBase
 {

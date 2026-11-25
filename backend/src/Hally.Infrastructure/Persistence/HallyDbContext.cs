@@ -128,6 +128,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
         b.Entity<Invitation>(e =>
         {
             e.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
+            e.Property(x => x.Role).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(x => x.TokenHash).IsUnique();
             e.HasOne(x => x.Family).WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
         });

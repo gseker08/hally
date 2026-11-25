@@ -50,7 +50,8 @@ public class AccountService(HallyDbContext db, IDocumentStore store, TimeProvide
     private async Task<List<string>> LeaveAsync(Guid userId, Guid familyId, CancellationToken ct)
     {
         var family = await db.Families.Include(f => f.Members).FirstAsync(f => f.Id == familyId, ct);
-        if (family.Members.Count <= 1)
+        // The last parent takes the family with them; caregivers never keep a family on their own.
+        if (family.IsLastParent(userId))
         {
             var keys = await db.Captures.Where(c => c.FamilyId == familyId && c.StorageKey != null).Select(c => c.StorageKey!).ToListAsync(ct);
             keys.AddRange(await db.FamilyMessages.Where(m => m.FamilyId == familyId && m.PhotoKey != null).Select(m => m.PhotoKey!).ToListAsync(ct));

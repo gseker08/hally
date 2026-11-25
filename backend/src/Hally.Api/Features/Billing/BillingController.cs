@@ -68,6 +68,7 @@ public class BillingController(
             stores);
     }
 
+    [CaregiverAllowed]
     [HttpGet("api/v1/families/{familyId:guid}/entitlements")]
     [Authorize(Policy = Policies.FamilyMember)]
     public async Task<EntitlementDto> Get(Guid familyId, CancellationToken ct) => await Build(familyId, ct);

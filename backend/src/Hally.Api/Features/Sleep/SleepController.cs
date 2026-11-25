@@ -55,6 +55,7 @@ public class AddSleepRequestValidator : AbstractValidator<AddSleepRequest>
 /// </summary>
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
+[CaregiverAllowed]
 [Route("api/v1/families/{familyId:guid}")]
 public class SleepController(HallyDbContext db, IHubContext<ChatHub, IChatClient> hub, TimeProvider clock, ILogger<SleepController> logger) : ControllerBase
 {

@@ -82,10 +82,12 @@ public class FamiliesController(HallyDbContext db, IAnalytics analytics, IDocume
         return CreatedAtAction(nameof(Get), new { familyId = family.Id }, dto);
     }
 
+    [CaregiverAllowed]
     [HttpGet("{familyId:guid}")]
     [Authorize(Policy = Policies.FamilyMember)]
     public async Task<ActionResult<FamilyDto>> Get(Guid familyId, CancellationToken ct) => await LoadDto(familyId, ct);
 
+    [CaregiverAllowed]
     [HttpGet("{familyId:guid}/members")]
     [Authorize(Policy = Policies.FamilyMember)]
     public async Task<ActionResult<IReadOnlyList<MemberDto>>> Members(Guid familyId, CancellationToken ct) =>
@@ -173,6 +175,7 @@ public class FamiliesController(HallyDbContext db, IAnalytics analytics, IDocume
     }
 
     /// <summary>The child's profile photo, decrypted. Only members of the family can read it.</summary>
+    [CaregiverAllowed]
     [HttpGet("{familyId:guid}/children/{childId:guid}/photo")]
     [Authorize(Policy = Policies.FamilyMember)]
     public async Task<IActionResult> ChildPhoto(Guid familyId, Guid childId, CancellationToken ct)

@@ -47,6 +47,7 @@ public class HabitsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
     /// <summary>How far back streaks look.</summary>
     private const int HistoryDays = 120;
 
+    [CaregiverAllowed]
     [HttpGet]
     public async Task<HabitsDto> List(Guid familyId, CancellationToken ct)
     {
@@ -90,6 +91,7 @@ public class HabitsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
     }
 
     /// <summary>Marks the habit done for a day. Already done is not an error.</summary>
+    [CaregiverAllowed]
     [HttpPost("{habitId:guid}/check")]
     public async Task<HabitsDto> Check(Guid familyId, Guid habitId, HabitCheckRequest request, CancellationToken ct)
     {
@@ -113,6 +115,7 @@ public class HabitsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
         return await List(familyId, ct);
     }
 
+    [CaregiverAllowed]
     [HttpDelete("{habitId:guid}/check")]
     public async Task<HabitsDto> Uncheck(Guid familyId, Guid habitId, [FromQuery] DateOnly? day, CancellationToken ct)
     {

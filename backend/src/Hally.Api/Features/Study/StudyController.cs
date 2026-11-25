@@ -88,6 +88,7 @@ public class StudyController(
     /// <summary>How far back the streak looks.</summary>
     private const int StreakDays = 60;
 
+    [CaregiverAllowed]
     [HttpGet("study")]
     public async Task<IReadOnlyList<ChildStudyDto>> Today(Guid familyId, CancellationToken ct)
     {
@@ -101,6 +102,7 @@ public class StudyController(
         return result;
     }
 
+    [CaregiverAllowed]
     [HttpGet("children/{childId:guid}/study")]
     public async Task<ChildStudyHistoryDto> History(Guid familyId, Guid childId, CancellationToken ct)
     {
@@ -124,6 +126,7 @@ public class StudyController(
     }
 
     /// <summary>Starts the child's timer. Already running is not an error: the current status comes back.</summary>
+    [CaregiverAllowed]
     [HttpPost("children/{childId:guid}/study/start")]
     public async Task<ChildStudyDto> Start(Guid familyId, Guid childId, StudyStartRequest request, CancellationToken ct)
     {
@@ -154,6 +157,7 @@ public class StudyController(
         return await Changed(familyId, childId, ct);
     }
 
+    [CaregiverAllowed]
     [HttpPost("children/{childId:guid}/study/stop")]
     public async Task<ChildStudyDto> Stop(Guid familyId, Guid childId, StudyStopRequest request, CancellationToken ct)
     {
@@ -169,6 +173,7 @@ public class StudyController(
     }
 
     /// <summary>Adds finished minutes ending now, for when nobody started the timer.</summary>
+    [CaregiverAllowed]
     [HttpPost("children/{childId:guid}/study/entries")]
     public async Task<ChildStudyDto> AddEntry(Guid familyId, Guid childId, StudyEntryRequest request, CancellationToken ct)
     {
@@ -179,6 +184,7 @@ public class StudyController(
         return await Changed(familyId, childId, ct);
     }
 
+    [CaregiverAllowed]
     [HttpDelete("children/{childId:guid}/study/{entryId:guid}")]
     public async Task<ChildStudyDto> Delete(Guid familyId, Guid childId, Guid entryId, CancellationToken ct)
     {

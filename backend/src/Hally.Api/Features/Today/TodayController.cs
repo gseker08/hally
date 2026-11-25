@@ -17,6 +17,7 @@ public record TodayDto(string Date, string TimeZoneId, IReadOnlyList<TaskDto> Ov
 
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
+[CaregiverAllowed]
 [Route("api/v1/families/{familyId:guid}/today")]
 public class TodayController(HallyDbContext db, TimeProvider clock) : ControllerBase
 {

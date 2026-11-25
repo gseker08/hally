@@ -154,6 +154,7 @@ public class PrivacyController(
     }
 
     /// <summary>Leaves a family. The last adult leaving deletes the family and everything in it.</summary>
+    [CaregiverAllowed]
     [HttpPost("api/v1/families/{familyId:guid}/leave")]
     [Authorize(Policy = Policies.FamilyMember)]
     public async Task<IActionResult> Leave(Guid familyId, CancellationToken ct)

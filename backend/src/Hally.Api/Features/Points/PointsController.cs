@@ -58,6 +58,7 @@ public class RewardRequestValidator : AbstractValidator<RewardRequest>
 [Route("api/v1/families/{familyId:guid}")]
 public class PointsController(HallyDbContext db, IHubContext<ChatHub, IChatClient> hub, TimeProvider clock, ILogger<PointsController> logger) : ControllerBase
 {
+    [CaregiverAllowed]
     [HttpGet("points")]
     public async Task<PointsBoardDto> Board(Guid familyId, CancellationToken ct)
     {
@@ -80,6 +81,7 @@ public class PointsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
     }
 
     /// <summary>The child's latest 50 ledger lines, newest first.</summary>
+    [CaregiverAllowed]
     [HttpGet("children/{childId:guid}/points")]
     public async Task<IReadOnlyList<PointEntryDto>> History(Guid familyId, Guid childId, CancellationToken ct)
     {
@@ -158,6 +160,7 @@ public class PointsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
     }
 
     /// <summary>Ticks a chore for today. Already ticked today (maybe by the other parent) is not an error.</summary>
+    [CaregiverAllowed]
     [HttpPost("children/{childId:guid}/chores/{choreId:guid}/done")]
     public async Task<PointsBoardDto> Done(Guid familyId, Guid childId, Guid choreId, CancellationToken ct)
     {
