@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/token_storage.dart';
 import '../../core/config/app_config.dart';
+import '../activities/activities.dart';
 import '../messages/chat_realtime.dart';
 import 'child_lock.dart';
 
@@ -202,6 +203,12 @@ abstract interface class ChildApi {
 
   /// "Bugün nasılsın?". Returns the cherries earned (1 the first time today, else 0).
   Future<int> answerMood(String mood, List<String> reasons);
+
+  /// "Şimdi ne yapsam?": screen-free ideas by age and weather. [lang] is tr or en.
+  Future<ChildActivities> activities(String lang);
+
+  /// "Yaptım" for an idea; 422 activity.daily_limit after three a day.
+  Future<ChildActivities> activityDone(String id, String lang);
 }
 
 class UnpairedException implements Exception {}
@@ -276,6 +283,14 @@ class DioChildApi implements ChildApi {
         final res = await _dio.post<Map<String, dynamic>>('/api/v1/child/mood', data: {'mood': mood, 'reasons': reasons});
         return (res.data!['cherries'] as num?)?.toInt() ?? 0;
       });
+
+  @override
+  Future<ChildActivities> activities(String lang) =>
+      _call(() async => ChildActivities.fromJson((await _dio.get<Map<String, dynamic>>('/api/v1/child/activities', queryParameters: {'lang': lang})).data!));
+
+  @override
+  Future<ChildActivities> activityDone(String id, String lang) => _call(() async =>
+      ChildActivities.fromJson((await _dio.post<Map<String, dynamic>>('/api/v1/child/activities/$id/done', queryParameters: {'lang': lang})).data!));
 }
 
 final childApiProvider = Provider<ChildApi>((ref) => DioChildApi(ref.watch(childSessionStorageProvider)));

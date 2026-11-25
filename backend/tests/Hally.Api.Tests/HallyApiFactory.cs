@@ -30,6 +30,7 @@ public sealed class HallyApiFactory : WebApplicationFactory<Program>, IAsyncLife
     public FakeVisionModel Ai { get; } = new();
     public RecordingPushSender Push { get; } = new();
     public FakeChatModel Chat { get; } = new();
+    public FakeWeather Weather { get; } = new();
     public string StorageRoot { get; } = Path.Combine(Path.GetTempPath(), $"hally-docs-{Guid.NewGuid():N}");
 
     public async Task InitializeAsync()
@@ -62,6 +63,8 @@ public sealed class HallyApiFactory : WebApplicationFactory<Program>, IAsyncLife
         builder.UseSetting("Jobs:Enabled", "false");
         builder.UseSetting("Billing:SandboxPurchases", "true");
         builder.UseSetting("Admin:ApiKey", HallyApiFactory.AdminKey);
+        // Every test pairs child phones from the same address; the limit itself is not what they test.
+        builder.UseSetting("ChildMode:PairAttemptsPer10Minutes", "1000");
         builder.UseSetting("Storage:EncryptionKey", Convert.ToBase64String(new byte[32].Select((_, i) => (byte)i).ToArray()));
         builder.ConfigureServices(s =>
         {
@@ -76,6 +79,8 @@ public sealed class HallyApiFactory : WebApplicationFactory<Program>, IAsyncLife
             s.AddSingleton<IPushSender>(Push);
             s.RemoveAll<IChatModel>();
             s.AddSingleton<IChatModel>(Chat);
+            s.RemoveAll<Hally.Api.Features.Activities.IWeatherService>();
+            s.AddSingleton<Hally.Api.Features.Activities.IWeatherService>(Weather);
         });
     }
 
@@ -196,4 +201,15 @@ public sealed class FakeChatModel : IChatModel
 
         return Task.FromResult(Respond(messages));
     }
+}
+
+public sealed class FakeWeather : Hally.Api.Features.Activities.IWeatherService
+{
+    public Hally.Api.Features.Activities.WeatherNow? Now { get; set; }
+
+    public Task<Hally.Api.Features.Activities.WeatherNow?> CurrentAsync(double latitude, double longitude, CancellationToken ct) => Task.FromResult(Now);
+
+    public Task<IReadOnlyList<Hally.Api.Features.Activities.WeatherPlaceDto>> SearchAsync(string query, string language, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<Hally.Api.Features.Activities.WeatherPlaceDto>>(
+            query.StartsWith("Ank", StringComparison.OrdinalIgnoreCase) ? [new("Ankara", "Ankara", "Türkiye", 39.9, 32.9)] : []);
 }

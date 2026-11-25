@@ -3,6 +3,7 @@ using Hally.Api.Features.Messages;
 using Hally.Api.Features.Notifications;
 using Hally.Api.Features.Points;
 using Hally.Api.Features.ScreenTime;
+using Hally.Domain.Activities;
 using Hally.Domain.ChildMode;
 using Hally.Domain.Common;
 using Hally.Domain.Families;
@@ -96,7 +97,8 @@ public class ChildModeService(
 
     /// <summary>The child says "Yaptım!". With approval on it waits for a parent, otherwise the cherries land at once.
     /// Doing it twice, or something already ticked by a parent, changes nothing.</summary>
-    public async Task MarkDoneAsync(Guid familyId, Guid childId, ClaimKind kind, Guid itemId, CancellationToken ct)
+    /// <param name="turkish">For a built-in screen-free idea: which language its title is saved in.</param>
+    public async Task MarkDoneAsync(Guid familyId, Guid childId, ClaimKind kind, Guid itemId, CancellationToken ct, bool turkish = true)
     {
         var family = await db.Families.AsNoTracking().FirstAsync(f => f.Id == familyId, ct);
         var now = clock.GetUtcNow();
@@ -113,6 +115,26 @@ public class ChildModeService(
             }
 
             (title, points) = (chore.Title, chore.Points);
+        }
+        else if (kind == ClaimKind.Activity)
+        {
+            if (ActivityCatalog.Find(itemId) is { } idea)
+            {
+                (title, points) = (idea.Title(turkish), idea.Cherries);
+            }
+            else
+            {
+                var own = await db.FamilyActivities.AsNoTracking().FirstOrDefaultAsync(a => a.Id == itemId && a.FamilyId == familyId, ct)
+                          ?? throw new NotFoundException("activity.not_found", "Idea not found.");
+                (title, points) = (own.Title, own.Cherries);
+            }
+
+            if (await db.ChildClaims.CountAsync(c => c.ChildId == childId && c.Kind == ClaimKind.Activity && c.Day == today && c.Status != ClaimStatus.Rejected, ct)
+                >= ActivityCatalog.DailyLimit
+                && !await db.ChildClaims.AnyAsync(c => c.ChildId == childId && c.ItemId == itemId && c.Day == today && c.Status != ClaimStatus.Rejected, ct))
+            {
+                throw new DomainException("activity.daily_limit", $"At most {ActivityCatalog.DailyLimit} ideas a day.");
+            }
         }
         else
         {
@@ -299,7 +321,11 @@ public class ChildModeService(
     /// when today completes seven days in a row. Caller saves.</summary>
     private async Task CreditAsync(ChildClaim claim, Guid? userId, DateOnly today, DateTimeOffset now, CancellationToken ct)
     {
-        if (claim.Kind == ClaimKind.Chore)
+        if (claim.Kind == ClaimKind.Activity)
+        {
+            db.PointEntries.Add(PointEntry.ForActivity(claim.FamilyId, claim.ChildId, claim.Title, claim.Points, userId, claim.Day, now));
+        }
+        else if (claim.Kind == ClaimKind.Chore)
         {
             if (!await db.PointEntries.AnyAsync(p => p.ChoreId == claim.ItemId && p.ChildId == claim.ChildId && p.Day == claim.Day, ct))
             {
@@ -324,7 +350,7 @@ public class ChildModeService(
         // The streak counts days with cherries earned, including the one being added now.
         var since = today.AddDays(-400);
         var earned = await db.PointEntries.AsNoTracking()
-            .Where(p => p.ChildId == claim.ChildId && p.Day >= since && (p.Kind == PointKind.Chore || p.Kind == PointKind.Habit) && p.Points > 0)
+            .Where(p => p.ChildId == claim.ChildId && p.Day >= since && (p.Kind == PointKind.Chore || p.Kind == PointKind.Habit || p.Kind == PointKind.Activity) && p.Points > 0)
             .Select(p => p.Day).Distinct().ToListAsync(ct);
         var days = earned.ToHashSet();
         days.Add(claim.Day);
@@ -338,7 +364,7 @@ public class ChildModeService(
     }
 
     private static HashSet<DateOnly> ActiveDays(IEnumerable<(PointKind Kind, int Points, DateOnly Day)> entries) =>
-        entries.Where(e => e.Points > 0 && e.Kind is PointKind.Chore or PointKind.Habit).Select(e => e.Day).ToHashSet();
+        entries.Where(e => e.Points > 0 && e.Kind is PointKind.Chore or PointKind.Habit or PointKind.Activity).Select(e => e.Day).ToHashSet();
 
     /// <summary>One inbox entry (and push) per parent; caregivers are not asked. Best effort.</summary>
     private async Task NotifyParentsAsync(Guid familyId, NotificationKind kind, Guid childId,

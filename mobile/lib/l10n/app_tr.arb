@@ -1748,7 +1748,6 @@
     }
   },
   "kidLockTomorrow": "Yarın tekrar açılır.",
-  "kidLockIdea": "Kitap okumaya ne dersin? Görev yaparsan kiraz kazanırsın.",
   "kidLockBuy": "{cost} kiraz ile {minutes} dk daha",
   "@kidLockBuy": {
     "placeholders": {
@@ -2123,5 +2122,100 @@
   "moodTopReason": "Sık geçen neden",
   "moodEmpty": "Henüz cevap yok. Çocuk modunda her gün bir kez sorulur.",
   "moodPrivacy": "Sadece ebeveynler görür, bakıcı görmez. Kayıtlar 90 gün sonra silinir. Tıbbi değerlendirme değildir.",
-  "moodCherryTitle": "Duygu kontrolü"
+  "moodCherryTitle": "Duygu kontrolü",
+  "actTitle": "Şimdi ne yapsam?",
+  "actLockBody": "Ekransız bir fikir seç, yapınca kiraz kazan.",
+  "actShow": "Fikirleri göster",
+  "actAge": "{age} yaş",
+  "@actAge": {
+    "placeholders": {
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "actToday": "Bugün {done}/{limit}",
+  "@actToday": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "actIndoor": "Evde",
+  "actOutdoor": "Dışarıda",
+  "actMinutes": "{minutes} dk",
+  "@actMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "actPending": "Onay bekliyor",
+  "actDoneState": "Yapıldı",
+  "actOwn": "Ailenin fikri",
+  "actSheetHint": "Bitirince \"Yaptım\"a bas, ailen onaylasın.",
+  "actSheetHintNoApproval": "Bitirince \"Yaptım\"a bas, kirazlar hemen gelsin.",
+  "actDo": "Yaptım · +{cherries}",
+  "@actDo": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      }
+    }
+  },
+  "actAnother": "Başka fikir",
+  "actSent": "Harika! Ailen onaylayınca kirazların gelecek.",
+  "actEarned": "Harika! +{cherries} kiraz",
+  "@actEarned": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      }
+    }
+  },
+  "actLimit": "Bugünlük bu kadar. Yarın yeni fikirler var!",
+  "actEmpty": "Şimdilik fikir yok.",
+  "actClear": "Güneşli",
+  "actClearNight": "Açık",
+  "actCloudy": "Bulutlu",
+  "actRain": "Yağmurlu",
+  "actSnow": "Karlı",
+  "actStorm": "Fırtınalı",
+  "actSettingsTitle": "Ekransız fikirler",
+  "actSettingsBody": "Ekran süresi dolunca çocuğun telefonunda yaşına ve havaya göre fikirler çıkar.",
+  "actCity": "Hava durumu şehri",
+  "actCityNone": "Seçilmedi",
+  "actCityHint": "Yağmurda ev içi fikirler önerilir. Sadece şehir saklanır, ev adresi değil.",
+  "actCitySearch": "Şehir ara",
+  "actCityClear": "Şehri kaldır",
+  "actCityNoResults": "Şehir bulunamadı.",
+  "actOwnTitle": "Kendi fikirleriniz",
+  "actOwnEmpty": "Henüz eklemediniz. Hally'nin {count} hazır fikri yaşa göre gösterilir.",
+  "@actOwnEmpty": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actBuiltIn": "Hally'nin {count} hazır fikri de yaşa göre gösterilir.",
+  "@actBuiltIn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "actAdd": "Fikir ekle",
+  "actAddTitle": "Ne yapsın?",
+  "actAddTitleHint": "Örn. Dedeye telefon et",
+  "actAddEmoji": "Simge",
+  "actAddCherries": "Kiraz",
+  "actAddPlace": "Nerede?",
+  "actDelete": "Fikri sil"
 }

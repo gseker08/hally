@@ -23,6 +23,58 @@ namespace Hally.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Hally.Domain.Activities.FamilyActivity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("by_user_id");
+
+                    b.Property<int>("Cherries")
+                        .HasColumnType("integer")
+                        .HasColumnName("cherries");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("emoji");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Place")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("place");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_family_activities");
+
+                    b.HasIndex("ByUserId")
+                        .HasDatabaseName("ix_family_activities_by_user_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_family_activities_family_id");
+
+                    b.ToTable("family_activities", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Assistant.ChatMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1045,6 +1097,19 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("time_zone_id");
+
+                    b.Property<double?>("WeatherLatitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("weather_latitude");
+
+                    b.Property<double?>("WeatherLongitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("weather_longitude");
+
+                    b.Property<string>("WeatherPlace")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("weather_place");
 
                     b.HasKey("Id")
                         .HasName("pk_families");
@@ -2919,6 +2984,22 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasName("pk_idempotency_records");
 
                     b.ToTable("idempotency_records", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Activities.FamilyActivity", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_family_activities_users_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_family_activities_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Assistant.ChatMessage", b =>

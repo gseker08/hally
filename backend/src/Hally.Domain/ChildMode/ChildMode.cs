@@ -65,6 +65,9 @@ public enum ClaimKind
 {
     Chore,
     Habit,
+
+    /// <summary>A screen-free idea from "Şimdi ne yapsam?" (built-in or the family's own).</summary>
+    Activity,
 }
 
 public enum ClaimStatus
@@ -96,7 +99,7 @@ public class ChildClaim : Entity
     public Guid ChildId { get; private set; }
     public ClaimKind Kind { get; private set; }
 
-    /// <summary>The chore or habit.</summary>
+    /// <summary>The chore, habit or screen-free idea.</summary>
     public Guid ItemId { get; private set; }
 
     public string Title { get; private set; } = default!;
