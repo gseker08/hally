@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
+import 'features/child_mode/child_mode_repository.dart';
+import 'features/child_mode/kid_screens.dart';
+import 'features/child_mode/parent_child_mode.dart';
 import 'features/kids/kids_screen.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/auth/sign_in_screen.dart';
@@ -41,7 +44,7 @@ import 'features/planning/tasks_screen.dart';
 import 'features/onboarding/trust_screen.dart';
 import 'features/onboarding/welcome_screen.dart';
 
-const _publicRoutes = {'/welcome', '/trust', '/demo', '/sign-in', '/join'};
+const _publicRoutes = {'/welcome', '/trust', '/demo', '/sign-in', '/join', '/kid/pair'};
 
 /// Pure redirect rules so they can be unit tested.
 String? resolveRedirect({
@@ -49,9 +52,14 @@ String? resolveRedirect({
   required bool loading,
   required Me? me,
   required String? pendingInviteToken,
+  bool childMode = false,
 }) {
   final isInvite = location.startsWith('/i/');
   if (loading) return location == '/' ? null : (isInvite ? null : '/');
+
+  // A paired child's phone only ever shows child mode.
+  if (childMode) return location == '/kid' ? null : '/kid';
+  if (location == '/kid') return '/';
 
   if (me == null) {
     if (isInvite || _publicRoutes.contains(location)) return null;
@@ -73,6 +81,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
   ref.listen(meProvider, (_, __) => refresh.value++);
   ref.listen(pendingInviteTokenProvider, (_, __) => refresh.value++);
+  ref.listen(childSessionProvider, (_, __) => refresh.value++);
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
@@ -80,9 +89,11 @@ final routerProvider = Provider<GoRouter>((ref) {
     refreshListenable: refresh,
     redirect: (context, state) {
       final me = ref.read(meProvider);
+      final child = ref.read(childSessionProvider);
       return resolveRedirect(
         location: state.matchedLocation,
-        loading: me.isLoading && !me.hasValue,
+        loading: (me.isLoading && !me.hasValue) || (child.isLoading && !child.hasValue),
+        childMode: child.valueOrNull != null,
         me: me.valueOrNull,
         pendingInviteToken: ref.read(pendingInviteTokenProvider),
       );
@@ -94,6 +105,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/demo', builder: (_, __) => const DemoScanScreen()),
       GoRoute(path: '/sign-in', builder: (_, __) => const SignInScreen()),
       GoRoute(path: '/join', builder: (_, __) => const EnterInviteScreen()),
+      GoRoute(path: '/kid/pair', builder: (_, __) => const KidPairScreen()),
+      GoRoute(path: '/kid', builder: (_, __) => const KidShell()),
       GoRoute(path: '/i/:token', builder: (_, s) => JoinFamilyScreen(token: s.pathParameters['token']!)),
       GoRoute(path: '/family/new', builder: (_, __) => const FamilySetupScreen()),
       GoRoute(path: '/family/:id/invite', builder: (_, s) => InvitePartnerScreen(familyId: s.pathParameters['id']!)),
@@ -115,6 +128,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/school-run', builder: (_, __) => const DutiesScreen()),
       GoRoute(path: '/expenses', builder: (_, __) => const ExpensesScreen()),
       GoRoute(path: '/health', builder: (_, __) => const HealthScreen()),
+      GoRoute(
+        path: '/family/:id/child/:childId/phone',
+        builder: (_, s) => ConnectPhoneScreen(familyId: s.pathParameters['id']!, childId: s.pathParameters['childId']!),
+      ),
       GoRoute(path: '/child/:id/insights', builder: (_, s) => InsightsScreen(childId: s.pathParameters['id']!)),
       GoRoute(path: '/shopping', builder: (_, __) => const ShoppingScreen()),
       GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),

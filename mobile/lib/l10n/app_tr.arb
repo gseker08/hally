@@ -932,10 +932,10 @@
   "studyAdd": "Süre ekle",
   "studyNote": "Not (ör. kitabın adı)",
   "studyNoRecord": "Henüz kayıt yok",
-  "pointsTitle": "Yıldızlar",
-  "pointsBody": "Görev yıldızları, ödüller ve harçlık",
-  "pointsNoChildren": "Yıldız toplamak için Aile sekmesinden çocuk ekleyin.",
-  "pointsBalance": "{count} yıldız",
+  "pointsTitle": "Kirazlar",
+  "pointsBody": "Görev kirazları, ödüller ve harçlık",
+  "pointsNoChildren": "Kiraz toplamak için Aile sekmesinden çocuk ekleyin.",
+  "pointsBalance": "{count} kiraz",
   "@pointsBalance": {
     "placeholders": {
       "count": {
@@ -956,7 +956,7 @@
   "pointsRewards": "Ödüller",
   "pointsNoRewards": "Henüz ödül yok. Ör. 20 TL harçlık, parka gitmek.",
   "pointsRedeem": "Al",
-  "pointsMissing": "{count} yıldız daha lazım",
+  "pointsMissing": "{count} kiraz daha lazım",
   "@pointsMissing": {
     "placeholders": {
       "count": {
@@ -964,9 +964,9 @@
       }
     }
   },
-  "pointsNotEnough": "Yeterli yıldız yok.",
+  "pointsNotEnough": "Yeterli kiraz yok.",
   "pointsHistory": "Geçmiş",
-  "pointsNoHistory": "Henüz yıldız kazanılmadı.",
+  "pointsNoHistory": "Henüz kiraz kazanılmadı.",
   "pointsUndo": "Geri al",
   "pointsAdd": "Ekle",
   "pointsChore": "Görev",
@@ -1247,7 +1247,7 @@
       }
     }
   },
-  "insightsStarsSpent": "{count} yıldız harcandı",
+  "insightsStarsSpent": "{count} kiraz harcandı",
   "@insightsStarsSpent": {
     "placeholders": {
       "count": {
@@ -1435,7 +1435,7 @@
       }
     }
   },
-  "quickStars": "Yıldız ver",
+  "quickStars": "Kiraz ver",
   "liveNow": "Şu an",
   "liveAsleep": "{name} uyuyor",
   "@liveAsleep": {
@@ -1647,5 +1647,248 @@
   "caregiverSaved": "Kaydedildi.",
   "caregiverEndTitle": "Erişim süresi",
   "parentsOnly": "Bu işlem ebeveynlere açık.",
-  "joinAsCaregiver": "Bakıcı olarak katılacaksın: günü görür, bakım kayıtlarını işaretlersin."
+  "joinAsCaregiver": "Bakıcı olarak katılacaksın: günü görür, bakım kayıtlarını işaretlersin.",
+  "welcomeChildPhone": "Bu telefon bir çocuğun",
+  "kidPairTitle": "Bu telefon bir çocuğun",
+  "kidPairBody": "Annenin ya da babanın telefonunda Hally'de senin sayfana gidip telefon simgesine dokunsun. Çıkan 6 haneli kodu buraya yaz.",
+  "kidPairCode": "6 haneli kod",
+  "kidPairButton": "Bağla",
+  "kidPairInvalid": "Kod yanlış ya da süresi dolmuş. Yeni bir kod iste.",
+  "kidHello": "Merhaba {name}!",
+  "@kidHello": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "kidCherries": "kirazın var",
+  "kidStreak": "{days} gün seri",
+  "@kidStreak": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "kidScreenLeft": "dk kaldı",
+  "kidScreenTitle": "Ekran süren",
+  "kidMyTasks": "Benim görevlerim",
+  "kidWaiting": "Onay bekliyor",
+  "kidHabit": "Alışkanlık",
+  "kidNoTasks": "Bugün görev yok. Keyfine bak!",
+  "kidNextReward": "Bir sonraki ödül: {title}",
+  "@kidNextReward": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "kidTabToday": "Bugünüm",
+  "kidTabJar": "Kavanoz",
+  "kidTabRewards": "Ödüller",
+  "kidJarTitle": "Kiraz kavanozum",
+  "kidJarTitleParent": "Kiraz kavanozu",
+  "kidCherryUnit": "kiraz",
+  "kidGoldenIn": "Altın kiraza {days} gün kaldı!",
+  "@kidGoldenIn": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "kidGoldenBody": "7 gün üst üste görev yaparsan +5 bonus kiraz",
+  "kidThisWeek": "Bu hafta",
+  "kidWeekCherries": "{count} kiraz topladın",
+  "@kidWeekCherries": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kidRewardsTitle": "Ödüllerim",
+  "kidScreenReward": "Bugünkü süreye eklenir",
+  "kidMore": "{count} kiraz daha",
+  "@kidMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kidBought": "Aldın! Annene ya da babana haber verdik.",
+  "kidBoughtScreen": "+{minutes} dk eklendi",
+  "@kidBoughtScreen": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "kidNoRewards": "Henüz ödül yok. Annen ya da baban ekleyebilir.",
+  "kidDoneSent": "Harika! Onay bekliyor.",
+  "kidDoneCherry": "+{count} kiraz!",
+  "@kidDoneCherry": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "kidLockTitle": "Ekran süren doldu",
+  "kidLockUsed": "Bugün {duration} kullandın.",
+  "@kidLockUsed": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "kidLockTomorrow": "Yarın tekrar açılır.",
+  "kidLockIdea": "Kitap okumaya ne dersin? Görev yaparsan kiraz kazanırsın.",
+  "kidLockBuy": "{cost} kiraz ile {minutes} dk daha",
+  "@kidLockBuy": {
+    "placeholders": {
+      "cost": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "kidLockAsk": "Annemden/babamdan süre iste",
+  "kidLockAsked": "İsteğin gitti",
+  "kidLockEmergency": "Acil arama",
+  "kidLockCheck": "Yeniden bak",
+  "kidMinutes": "{minutes} dk",
+  "@kidMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "kidHoursMinutes": "{hours} saat {minutes} dakika",
+  "@kidHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "childPhoneConnect": "Telefonunu bağla",
+  "childPhoneTitle": "{name} için telefon",
+  "@childPhoneTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childPhoneSteps": "Çocuğun telefonunda Hally'yi aç, \"Bu telefon bir çocuğun\" seç ve bu kodu gir:",
+  "childPhoneCodeValid": "Kod 10 dakika geçerli, bir kez kullanılır",
+  "childPhoneExpired": "Kodun süresi doldu",
+  "childPhoneNewCode": "Yeni kod al",
+  "childPhoneOnThis": "Bu telefonda",
+  "childPhoneFact1": "Hesap ve e-posta açılmaz",
+  "childPhoneFact2": "{name} sadece kendi gününü görür",
+  "@childPhoneFact2": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childPhoneFact3": "Ekran süresini telefon kendisi sayar",
+  "childPhoneFact4": "Süre dolunca ekran kilitlenir",
+  "childPhonePermissions": "Android'de \"Kullanım erişimi\", \"Diğer uygulamaların üstünde göster\" ve \"Cihaz yöneticisi\" izinleri istenir. Kurulumda adım adım gösterilir.",
+  "childPhoneDevices": "Bağlı telefonlar",
+  "childPhoneUnnamed": "{name} telefonu",
+  "@childPhoneUnnamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childPhoneLastSeen": "Son görülme {time}",
+  "@childPhoneLastSeen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "childPhoneUnpair": "Bağlantıyı kaldır",
+  "childPhoneUnpairConfirm": "Bu telefon çocuk modundan çıkar ve başlangıç ekranına döner.",
+  "childPhoneScreen": "Bugün telefonda",
+  "childPhoneUsed": "{used} / {limit} dk kullanıldı",
+  "@childPhoneUsed": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "childPhoneUsedNoLimit": "{used} dk kullanıldı · sınır yok",
+  "@childPhoneUsedNoLimit": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      }
+    }
+  },
+  "childPhoneLocked": "Kilitli",
+  "childPhoneGiven": "{minutes} dk ek süre verildi",
+  "@childPhoneGiven": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "childApprovalTitle": "Kiraz için onayım gereksin",
+  "childApprovalBody": "Açıkken çocuk görevi işaretleyince kiraz, bir ebeveyn onaylayınca kavanoza düşer.",
+  "claimsTitle": "Çocuklardan gelen istek",
+  "claimLine": "{name}: {title}",
+  "@claimLine": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "claimApprove": "Onayla",
+  "claimReject": "Henüz değil",
+  "claimApproved": "{name} kirazlarını aldı",
+  "@claimApproved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "pointsScreenReward": "Ekran süresi ödülü",
+  "pointsScreenRewardBody": "Çocuk modunda alınca bugünkü süreye eklenir",
+  "pointsScreenMinutes": "{minutes} dk ekstra ekran",
+  "@pointsScreenMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  }
 }

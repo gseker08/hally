@@ -10,6 +10,7 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../family/family_repository.dart';
 import '../capture/capture_repository.dart';
+import '../child_mode/parent_child_mode.dart';
 import '../family/children.dart';
 import '../messages/chats_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -79,6 +80,7 @@ class TodayScreen extends ConsumerWidget {
     return [
       LiveNowStrip(familyId: familyId),
       ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
+      if (!ref.watch(isCaregiverProvider)) ChildClaimsCard(familyId: familyId),
       if (d.waiting.isNotEmpty)
         HallyEntrance(
           index: i++,

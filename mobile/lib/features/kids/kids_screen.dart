@@ -254,6 +254,7 @@ class _ChildDayState extends ConsumerState<_ChildDay> {
           child: c,
           tiles: [for (final t in (careFirst ? [Tracker.sleep, Tracker.feeding, Tracker.medications] : [Tracker.study, Tracker.screenTime, Tracker.habits])) if (fits.contains(t)) tile(t)],
           onInsights: () => context.push('/child/${c.id}/insights'),
+          onPhone: ref.watch(isCaregiverProvider) ? null : () => context.push('/family/${widget.familyId}/child/${c.id}/phone'),
           onEdit: ref.watch(isCaregiverProvider)
               ? null
               : () => showChildSheet(context, ref, familyId: widget.familyId, child: c, siblings: widget.siblings),
@@ -298,13 +299,16 @@ class _TileData {
 }
 
 class _Summary extends StatelessWidget {
-  const _Summary({required this.child, required this.tiles, required this.onInsights, required this.onEdit});
+  const _Summary({required this.child, required this.tiles, required this.onInsights, required this.onEdit, this.onPhone});
 
   final ChildProfile child;
   final List<_TileData> tiles;
   final VoidCallback onInsights;
   /// Null for caregivers: editing a child is for parents.
   final VoidCallback? onEdit;
+
+  /// Pair the child's own phone (child mode). Null for caregivers.
+  final VoidCallback? onPhone;
 
   @override
   Widget build(BuildContext context) {
@@ -321,6 +325,8 @@ class _Summary extends StatelessWidget {
                 Expanded(child: Text(l10n.kidsTodayOf(child.firstName), style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
                 if (onEdit != null)
                 IconButton(key: const Key('kids.edit'), tooltip: l10n.insightsEditChild, onPressed: onEdit, icon: const Icon(Icons.edit_outlined, size: 20)),
+                if (onPhone != null)
+                  IconButton(key: const Key('kids.phone'), tooltip: l10n.childPhoneConnect, onPressed: onPhone, icon: const Icon(Icons.smartphone_rounded, size: 20)),
                 IconButton(key: const Key('kids.insights'), tooltip: l10n.insightsTitle, onPressed: onInsights, icon: const Icon(Icons.insights_rounded, size: 22)),
               ],
             ),
