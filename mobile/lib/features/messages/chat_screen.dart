@@ -14,10 +14,13 @@ import 'messages_repository.dart';
 
 /// One chat (family or direct). Loads the latest page, polls for new messages while open and marks them read.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, required this.chatKey, this.title});
+  const ChatScreen({super.key, required this.chatKey, this.title, this.draft});
 
   final String chatKey;
   final String? title;
+
+  /// Pre-filled into the message box (never sent on its own), e.g. a request from the load balance page.
+  final String? draft;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -42,6 +45,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.draft case final draft? when draft.isNotEmpty) _input.text = draft;
     _load();
     _live = ref.read(chatRealtimeProvider).events.listen(_onLive);
     _timer = Timer.periodic(chatPollInterval, (_) {

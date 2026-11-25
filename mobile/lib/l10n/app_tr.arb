@@ -1895,5 +1895,66 @@
   "kidLockSetupBody": "Süre dolunca telefonun kilitlenmesi için iki izin gerekiyor. Bunu annen ya da baban ayarlasın.",
   "kidLockSetupUsage": "Kullanım erişimi",
   "kidLockSetupOverlay": "Diğer uygulamaların üstünde göster",
-  "kidLockSetupOpen": "Aç"
+  "kidLockSetupOpen": "Aç",
+  "balanceTitle": "Bu hafta kim ne yaptı?",
+  "balanceTileTitle": "Yük dengesi",
+  "balanceTileBody": "Kim ne kadar iş yaptı, haftalık",
+  "balanceThisWeek": "Bu hafta",
+  "balanceLastWeek": "Geçen hafta",
+  "balanceFourWeeks": "4 hafta",
+  "balanceKindTasks": "Görev",
+  "balanceKindSchoolRuns": "Okul servisi",
+  "balanceKindFeedings": "Beslenme",
+  "balanceKindShopping": "Alışveriş",
+  "balanceKindMedications": "İlaç",
+  "balanceEmpty": "Bu aralıkta Hally'de işaretlenmiş iş yok.",
+  "balanceFootnote": "Sayılar Hally'de işaretlenen işlerden gelir. Kimseyi kıyaslamak için değil, paylaşmak için.",
+  "balanceHeavy": "{name} bu hafta işlerin %{percent} kadarını yaptı.",
+  "@balanceHeavy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "balanceAskRun": "{day} {duty} işini {name} alabilir mi?",
+  "@balanceAskRun": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "duty": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceAskGeneric": "Bu hafta bir işi {name} üstlenebilir mi?",
+  "@balanceAskGeneric": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceSuggestTo": "Mesajla sor",
+  "balanceDutyDropOff": "okula bırakma",
+  "balanceDutyPickUp": "okuldan alma",
+  "balanceDraftRun": "{day} {duty} işini sen alabilir misin? Bu hafta biraz yüklendim 🙏",
+  "@balanceDraftRun": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "duty": {
+        "type": "String"
+      }
+    }
+  },
+  "balanceDraftGeneric": "Bu hafta biraz yüklendim, birkaç işi sen alabilir misin? 🙏"
 }
