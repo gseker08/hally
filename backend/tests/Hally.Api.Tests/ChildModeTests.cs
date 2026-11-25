@@ -137,7 +137,7 @@ public class ChildModeTests(HallyApiFactory api)
         using (var scope = api.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<HallyDbContext>();
-            (await db.Notifications.CountAsync(n => n.FamilyId == familyId && n.Kind == Domain.Notifications.NotificationKind.ChildTimeRequest)).Should().Be(1);
+            (await db.Notifications.CountAsync(n => n.FamilyId == familyId && n.Kind == Domain.Notifications.NotificationKind.ChildAsk)).Should().Be(1);
             (await db.Notifications.CountAsync(n => n.FamilyId == familyId && n.Kind == Domain.Notifications.NotificationKind.ScreenTimeGoal)).Should().Be(1);
         }
 

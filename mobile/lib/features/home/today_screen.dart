@@ -12,6 +12,8 @@ import '../family/family_repository.dart';
 import '../capture/capture_repository.dart';
 import '../child_mode/parent_child_mode.dart';
 import '../family/children.dart';
+import '../allowance/allowance_screens.dart' show ParentAllowanceCard;
+import '../asks/ask_screens.dart' show ParentAsksCard;
 import '../goal/goal_widgets.dart' show FamilyGoalCard;
 import '../messages/chats_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -82,7 +84,9 @@ class TodayScreen extends ConsumerWidget {
     return [
       LiveNowStrip(familyId: familyId),
       ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
+      if (!ref.watch(isCaregiverProvider)) ParentAsksCard(familyId: familyId),
       if (!ref.watch(isCaregiverProvider)) ChildClaimsCard(familyId: familyId),
+      if (!ref.watch(isCaregiverProvider)) ParentAllowanceCard(familyId: familyId),
       if (ref.watch(isCaregiverProvider)) CaregiverHandoffCard(familyId: familyId) else ParentHandoffCards(familyId: familyId),
       if (!ref.watch(isCaregiverProvider)) FamilyGoalCard(familyId: familyId),
       if (d.waiting.isNotEmpty)
@@ -119,8 +123,7 @@ class TodayScreen extends ConsumerWidget {
       ],
       if (d.events.isNotEmpty) ...[
         HallySectionHeader(title: l10n.todayEvents, color: HallyModule.calendar, count: d.events.length),
-        for (final (n, e) in d.events.indexed)
-          HallyEntrance(index: i++, child: _EventTile(event: e, familyId: familyId, last: n == d.events.length - 1)),
+        for (final (n, e) in d.events.indexed) HallyEntrance(index: i++, child: _EventTile(event: e, familyId: familyId, last: n == d.events.length - 1)),
       ],
     ];
   }
@@ -228,15 +231,15 @@ class TodayHero extends StatelessWidget {
                   ),
                   if (caregiverFor == null) const SizedBox(width: HallySpace.sm + 2),
                   if (caregiverFor == null)
-                  Expanded(
-                    child: _Stat(
-                      icon: Icons.auto_awesome_rounded,
-                      color: HallyColors.powder,
-                      count: d?.waiting.length ?? 0,
-                      label: l10n.todayTileWaiting,
-                      semantics: l10n.todayStatWaiting(d?.waiting.length ?? 0),
+                    Expanded(
+                      child: _Stat(
+                        icon: Icons.auto_awesome_rounded,
+                        color: HallyColors.powder,
+                        count: d?.waiting.length ?? 0,
+                        label: l10n.todayTileWaiting,
+                        semantics: l10n.todayStatWaiting(d?.waiting.length ?? 0),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -600,7 +603,10 @@ class _TaskTileState extends ConsumerState<TaskTile> {
                     ChildBadges(familyId: widget.familyId, childIds: t.childIds),
                     const SizedBox(width: HallySpace.sm),
                   ],
-                  Container(width: 4, height: 28, decoration: BoxDecoration(color: HallyColors.softOf(widget.color, theme.brightness), borderRadius: BorderRadius.circular(2))),
+                  Container(
+                      width: 4,
+                      height: 28,
+                      decoration: BoxDecoration(color: HallyColors.softOf(widget.color, theme.brightness), borderRadius: BorderRadius.circular(2))),
                 ],
               ),
             ),
@@ -632,7 +638,8 @@ class _EventTile extends ConsumerWidget {
             width: 58,
             child: Padding(
               padding: const EdgeInsets.only(top: HallySpace.md),
-              child: Text(time, style: theme.textTheme.labelLarge?.copyWith(fontSize: 13, color: HallyColors.readableOn(HallyModule.calendar, theme.brightness))),
+              child:
+                  Text(time, style: theme.textTheme.labelLarge?.copyWith(fontSize: 13, color: HallyColors.readableOn(HallyModule.calendar, theme.brightness))),
             ),
           ),
           Column(

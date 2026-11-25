@@ -11,6 +11,7 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/locale/app_language.dart';
 import '../../router.dart';
+import '../asks/asks.dart' show familyAsksProvider;
 import '../messages/messages_repository.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'device_notifications.dart';
@@ -28,7 +29,7 @@ class PushEvent {
 /// Where tapping a push should take the user. Pure so it can be unit tested.
 ///
 /// The server sends `kind=Message` + `chatKey` for chat messages, and `targetKind` (Task/Event) for reminders and
-/// the evening summary, `kind=ScreenTimeGoal` when a child's daily screen time goal is reached, `MedicationGiven`/`MedicationDue` for medications, `ShoppingHeadingOut` for the shopping list, `StudyGoal` for homework/reading, `DutyDone` for the school run, `HandoffReport`/`HandoffThanks` for caregiver reports, `FamilyGoalReached` for the weekly family goal. Anything else opens the inbox.
+/// the evening summary, `kind=ScreenTimeGoal` when a child's daily screen time goal is reached, `MedicationGiven`/`MedicationDue` for medications, `ShoppingHeadingOut` for the shopping list, `StudyGoal` for homework/reading, `DutyDone` for the school run, `HandoffReport`/`HandoffThanks` for caregiver reports, `FamilyGoalReached` for the weekly family goal, `ChildAsk`/`ChildAskAnswered` for a child's requests, `MorningBriefing` for the spoken morning summary. Anything else opens the inbox.
 String pushRoute(Map<String, dynamic> data) {
   final chatKey = data['chatKey'];
   if (data['kind'] == 'Message' && chatKey is String && chatKey.isNotEmpty) return '/chats/$chatKey';
@@ -37,6 +38,11 @@ String pushRoute(Map<String, dynamic> data) {
   if (data['kind'] == 'StudyGoal') return '/study';
   if (data['kind'] == 'DutyDone') return '/school-run';
   if (data['kind'] == 'FamilyGoalReached') return '/family-goal';
+  if (data['kind'] == 'ChildAsk' || data['kind'] == 'ChildAskAnswered') return '/asks';
+  if (data['kind'] == 'MorningBriefing') return '/assistant?briefing=1';
+  final familyId = data['familyId'];
+  final childId = data['targetId'];
+  if (data['kind'] == 'AllowanceRequest' && childId is String && familyId is String) return '/allowance/$childId?familyId=$familyId';
   if (data['kind'] == 'HandoffReport' || data['kind'] == 'HandoffThanks') return '/handoffs';
   if (data['kind'] == 'MedicationGiven' || data['kind'] == 'MedicationDue') return '/medications';
   return switch (data['targetKind']) {
@@ -95,8 +101,7 @@ class FirebasePushMessaging implements PushMessaging {
   @override
   Future<bool> requestPermission() async {
     final settings = await _fm.requestPermission();
-    return settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional;
+    return settings.authorizationStatus == AuthorizationStatus.authorized || settings.authorizationStatus == AuthorizationStatus.provisional;
   }
 
   // The server sends with FCM HTTP v1 `message.token`, which takes this registration token. The newer register()/
@@ -222,9 +227,7 @@ class PushController {
     if (token == null) return;
     _token = null;
     try {
-      await _api.dio
-          .delete<void>('/api/v1/me/devices', queryParameters: {'token': token})
-          .timeout(const Duration(seconds: 5));
+      await _api.dio.delete<void>('/api/v1/me/devices', queryParameters: {'token': token}).timeout(const Duration(seconds: 5));
     } catch (_) {
       // Best effort: a token the server still has is cleaned up when FCM reports it unregistered.
     }
@@ -258,6 +261,15 @@ final pushControllerProvider = Provider<PushController?>((ref) {
     onForeground: (e) {
       final familyId = ref.read(meProvider).valueOrNull?.primaryFamily?.id;
       final kind = e.data['kind'];
+      if (kind == 'ChildAsk' || kind == 'ChildAskAnswered') {
+        // The open app shows the request on Today (live); clear a tray copy the other parent already answered.
+        final language = ref.read(languageProvider);
+        final l10n = lookupAppLocalizations(language.locale ?? resolveDeviceLocale(ref.read(deviceLocaleProvider)));
+        if (kind == 'ChildAskAnswered') {
+          unawaited(handleNotificationPush(e.data, ref.read(deviceNotificationsProvider), l10n).catchError((Object _) => false));
+        }
+        if (familyId != null) ref.invalidate(familyAsksProvider(familyId));
+      }
       if (kind == 'MedicationDue' || kind == 'MedicationGiven') {
         final language = ref.read(languageProvider);
         final l10n = lookupAppLocalizations(language.locale ?? resolveDeviceLocale(ref.read(deviceLocaleProvider)));

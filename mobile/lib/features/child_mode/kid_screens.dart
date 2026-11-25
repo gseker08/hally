@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,10 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'child_lock.dart';
 import '../activities/activity_screens.dart' show KidIdeasCard;
+import '../allowance/allowance_screens.dart' show KidSavingsSection;
+import '../asks/ask_screens.dart' show KidAskCard;
+import '../bedtime/bedtime.dart' show bedtimeLaterProvider;
+import '../bedtime/bedtime_screens.dart' show KidBedtimeCard, KidBedtimeScreen, KidNightView;
 import '../goal/goal_widgets.dart' show GoalBody, GoalMiniCard;
 import '../mood/mood.dart' show moodSkippedProvider;
 import '../mood/mood_widgets.dart' show KidMoodCard;
@@ -109,6 +114,9 @@ class KidShell extends ConsumerStatefulWidget {
 class _KidShellState extends ConsumerState<KidShell> with WidgetsBindingObserver {
   int _tab = 0;
 
+  /// The good-night page after the routine was closed (only when the phone does not lock for the night).
+  bool _nightClosed = false;
+
   @override
   void initState() {
     super.initState();
@@ -126,6 +134,8 @@ class _KidShellState extends ConsumerState<KidShell> with WidgetsBindingObserver
     // Approvals and extra minutes arrive while the app is in the background.
     if (state == AppLifecycleState.resumed) {
       ref.invalidate(childHomeProvider);
+      // Bedtime steps open again each time the app comes back while they wait.
+      ref.read(bedtimeLaterProvider.notifier).state = false;
       // Coming back from the Android settings pages after granting a permission.
       ref.invalidate(childLockStatusProvider);
     }
@@ -149,7 +159,13 @@ class _KidShellState extends ConsumerState<KidShell> with WidgetsBindingObserver
       loading: () => const Scaffold(body: HallyLoading()),
       error: (e, _) => Scaffold(body: HallyErrorState(onRetry: () => ref.invalidate(childHomeProvider))),
       data: (h) {
+        if (h.screen.locked && h.screen.bedtime) return KidNightView(home: h);
         if (h.screen.locked) return KidLockView(home: h);
+        final bed = h.bedtime;
+        if (bed != null && bed.due && !ref.watch(bedtimeLaterProvider)) return KidBedtimeScreen(key: ValueKey(bed.done), bedtime: bed);
+        if (bed != null && bed.finished && !_nightClosed && DateTime.now().difference(bed.finishedAt!).inHours < 2) {
+          return KidNightView(home: h, onClose: () => setState(() => _nightClosed = true));
+        }
         final pages = [_KidToday(home: h), _KidJar(home: h), _KidRewards(home: h)];
         return Scaffold(
           body: SafeArea(
@@ -215,7 +231,9 @@ class _KidToday extends ConsumerWidget {
         Text(DateFormat('EEEE', locale).format(DateTime.now()), style: theme.textTheme.bodySmall),
         Text(l10n.kidHello(home.firstName), key: const Key('kid.hello'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: HallySpace.md),
+        if (home.bedtime case final bed? when bed.due) KidBedtimeCard(bedtime: bed),
         if (home.todayMood == null && !ref.watch(moodSkippedProvider)) const KidMoodCard(),
+        const KidAskCard(),
         const _LockSetupCard(),
         Row(
           children: [
@@ -393,6 +411,7 @@ class _KidJar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: HallySpace.md),
+        const KidSavingsSection(),
         const _KidGoal(),
         _Panel(
           color: HallyColors.softOf(HallyColors.butter, b),
@@ -595,6 +614,13 @@ class KidLockView extends ConsumerStatefulWidget {
 
 class _KidLockViewState extends ConsumerState<KidLockView> {
   bool _asked = false;
+  Timer? _poll;
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -648,6 +674,8 @@ class _KidLockViewState extends ConsumerState<KidLockView> {
                               try {
                                 await ref.read(childApiProvider).requestTime(15);
                                 setState(() => _asked = true);
+                                // A parent's "Evet" adds the minutes; look for it now and then so the lock opens by itself.
+                                _poll ??= Timer.periodic(const Duration(seconds: 15), (_) => ref.invalidate(childHomeProvider));
                                 messenger.showSnackBar(SnackBar(content: Text(l10n.kidLockAsked)));
                               } catch (_) {
                                 messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));

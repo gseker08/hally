@@ -39,6 +39,10 @@ import flutter_local_notifications
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
     let info = response.notification.request.content.userInfo
+    if response.actionIdentifier == "ask.yes" || response.actionIdentifier == "ask.no" {
+      handleAskAction(center, response: response, withCompletionHandler: completionHandler)
+      return
+    }
     guard response.actionIdentifier == "med.given", let family = info["familyId"] as? String,
       let medication = info["medicationId"] as? String
     else {
@@ -59,6 +63,40 @@ import flutter_local_notifications
         content.title = notice["title"] ?? ""
         content.body = notice["body"] ?? ""
         try? await center.add(UNNotificationRequest(identifier: "med-notice-\(medication)", content: content, trigger: nil))
+      }
+      completionHandler()
+    }
+  }
+
+  /// Evet / Hayır on a child's request push (category `hally.ask`, see PushSender.cs): Dart answers in the
+  /// background; if the other parent was faster, a notice says so.
+  private func handleAskAction(
+    _ center: UNUserNotificationCenter,
+    response: UNNotificationResponse,
+    withCompletionHandler completionHandler: @escaping () -> Void
+  ) {
+    let info = response.notification.request.content.userInfo
+    guard let family = info["familyId"] as? String, let ask = info["askId"] as? String else {
+      completionHandler()
+      return
+    }
+    var c = URLComponents()
+    c.scheme = "hally"
+    c.host = "ask"
+    c.path = "/answer"
+    c.queryItems = [
+      URLQueryItem(name: "family", value: family), URLQueryItem(name: "ask", value: ask),
+      URLQueryItem(name: "yes", value: response.actionIdentifier == "ask.yes" ? "1" : "0"),
+    ]
+    let identifier = response.notification.request.identifier
+    Task { @MainActor in
+      let notice = await BackgroundDart.shared.run(c.url!)
+      center.removeDeliveredNotifications(withIdentifiers: [identifier])
+      if let notice {
+        let content = UNMutableNotificationContent()
+        content.title = notice["title"] ?? ""
+        content.body = notice["body"] ?? ""
+        try? await center.add(UNNotificationRequest(identifier: "ask-notice-\(ask)", content: content, trigger: nil))
       }
       completionHandler()
     }

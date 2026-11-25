@@ -43,4 +43,21 @@ public class FcmMessageTests
         given.GetProperty("headers").GetProperty("apns-collapse-id").GetString().Should().Be("med-m1");
         given.GetProperty("payload").GetProperty("aps").TryGetProperty("category", out _).Should().BeFalse();
     }
+
+    [Fact]
+    public void Child_requests_carry_Evet_Hayir_and_the_answer_replaces_them_on_iOS()
+    {
+        static JsonElement Ask(string kind, bool appDraws) => JsonSerializer.SerializeToElement(FcmPushSender.BuildMessage("tok",
+            new PushMessage("t", "b", new Dictionary<string, string> { ["kind"] = kind, ["familyId"] = "f", ["askId"] = "a1" }, appDraws)));
+
+        var ask = Ask("ChildAsk", appDraws: true);
+        ask.TryGetProperty("notification", out _).Should().BeFalse("the app draws it with Evet/Hayır on Android");
+        ask.GetProperty("data").GetProperty("title").GetString().Should().Be("t");
+        ask.GetProperty("apns").GetProperty("headers").GetProperty("apns-collapse-id").GetString().Should().Be("ask-a1");
+        ask.GetProperty("apns").GetProperty("payload").GetProperty("aps").GetProperty("category").GetString().Should().Be(FcmPushSender.AskCategory);
+
+        var answered = Ask("ChildAskAnswered", appDraws: false).GetProperty("apns");
+        answered.GetProperty("headers").GetProperty("apns-collapse-id").GetString().Should().Be("ask-a1");
+        answered.GetProperty("payload").GetProperty("aps").TryGetProperty("category", out _).Should().BeFalse();
+    }
 }

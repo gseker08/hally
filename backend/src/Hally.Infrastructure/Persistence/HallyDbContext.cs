@@ -58,6 +58,12 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<Hally.Domain.Mood.MoodCheck> MoodChecks => Set<Hally.Domain.Mood.MoodCheck>();
     public DbSet<Hally.Domain.Activities.FamilyActivity> FamilyActivities => Set<Hally.Domain.Activities.FamilyActivity>();
     public DbSet<Hally.Domain.Goals.FamilyGoal> FamilyGoals => Set<Hally.Domain.Goals.FamilyGoal>();
+    public DbSet<Hally.Domain.Bedtime.BedtimeRoutine> BedtimeRoutines => Set<Hally.Domain.Bedtime.BedtimeRoutine>();
+    public DbSet<Hally.Domain.Bedtime.BedtimeRun> BedtimeRuns => Set<Hally.Domain.Bedtime.BedtimeRun>();
+    public DbSet<Hally.Domain.Asks.AskPreset> AskPresets => Set<Hally.Domain.Asks.AskPreset>();
+    public DbSet<Hally.Domain.Asks.ChildAsk> ChildAsks => Set<Hally.Domain.Asks.ChildAsk>();
+    public DbSet<Hally.Domain.Allowance.AllowancePlan> AllowancePlans => Set<Hally.Domain.Allowance.AllowancePlan>();
+    public DbSet<Hally.Domain.Allowance.AllowanceRequest> AllowanceRequests => Set<Hally.Domain.Allowance.AllowanceRequest>();
     public DbSet<Hally.Domain.Care.HandoffReport> HandoffReports => Set<Hally.Domain.Care.HandoffReport>();
     public DbSet<StudySession> StudySessions => Set<StudySession>();
     public DbSet<Chore> Chores => Set<Chore>();
@@ -633,6 +639,71 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasIndex(x => x.WeekStart);
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Hally.Domain.Bedtime.BedtimeRoutine>(e =>
+        {
+            e.Property(x => x.StepsJson).HasColumnType("jsonb");
+            e.Ignore(x => x.Steps);
+            e.HasIndex(x => x.ChildId).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.Bedtime.BedtimeRun>(e =>
+        {
+            e.HasIndex(x => new { x.ChildId, x.Evening }).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.Asks.AskPreset>(e =>
+        {
+            e.Property(x => x.Emoji).HasMaxLength(8);
+            e.Property(x => x.Title).HasMaxLength(40);
+            e.Property(x => x.Question).HasMaxLength(40);
+            e.Property(x => x.OptionsJson).HasColumnType("jsonb");
+            e.Ignore(x => x.Options);
+            e.HasIndex(x => new { x.FamilyId, x.Order }).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.Asks.ChildAsk>(e =>
+        {
+            e.Property(x => x.Emoji).HasMaxLength(8);
+            e.Property(x => x.Title).HasMaxLength(60);
+            e.Property(x => x.Detail).HasMaxLength(40);
+            e.Property(x => x.Note).HasMaxLength(140);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
+            e.HasIndex(x => new { x.ChildId, x.Day });
+            e.HasIndex(x => new { x.FamilyId, x.Day });
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.AnsweredByUserId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<Hally.Domain.Asks.AskPreset>().WithMany().HasForeignKey(x => x.PresetId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Hally.Domain.Allowance.AllowancePlan>(e =>
+        {
+            e.Property(x => x.RateAmount).HasPrecision(10, 2);
+            e.Property(x => x.Currency).HasMaxLength(3);
+            e.Property(x => x.GoalTitle).HasMaxLength(40);
+            e.Property(x => x.GoalEmoji).HasMaxLength(8);
+            e.HasIndex(x => x.ChildId).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.Allowance.AllowanceRequest>(e =>
+        {
+            e.Property(x => x.Amount).HasPrecision(12, 2);
+            e.Property(x => x.Currency).HasMaxLength(3);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10).IsConcurrencyToken();
+            e.HasIndex(x => new { x.ChildId, x.Status });
+            e.HasIndex(x => new { x.FamilyId, x.Status });
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.DecidedByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         // Ids are generated by the domain, so EF must insert (not update) new children of tracked aggregates.

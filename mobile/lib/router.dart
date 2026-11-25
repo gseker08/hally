@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
 import 'features/activities/activity_screens.dart' show FamilyActivitiesScreen;
+import 'features/allowance/allowance_screens.dart' show AllowanceScreen;
+import 'features/asks/ask_screens.dart' show AskPresetsScreen, AsksScreen;
+import 'features/bedtime/bedtime_screens.dart' show BedtimeSettingsScreen;
 import 'features/child_mode/child_mode_repository.dart';
 import 'features/goal/goal_widgets.dart' show FamilyGoalScreen;
 import 'features/child_mode/kid_screens.dart';
@@ -125,7 +128,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/tasks', builder: (_, __) => const TasksScreen()),
       GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen()),
-      GoRoute(path: '/chats/:key', builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?, draft: s.uri.queryParameters['draft'])),
+      GoRoute(
+          path: '/chats/:key',
+          builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?, draft: s.uri.queryParameters['draft'])),
       GoRoute(path: '/sleep', builder: (_, __) => const SleepScreen()),
       GoRoute(path: '/feeding', builder: (_, __) => const FeedingScreen()),
       GoRoute(path: '/study', builder: (_, __) => const StudyScreen()),
@@ -147,6 +152,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/handoffs', builder: (_, s) => HandoffHistoryScreen(childId: s.uri.queryParameters['childId'])),
       GoRoute(path: '/balance', builder: (_, __) => const BalanceScreen()),
       GoRoute(path: '/family-goal', builder: (_, s) => FamilyGoalScreen(familyId: s.uri.queryParameters['familyId'])),
+      GoRoute(
+          path: '/bedtime/:childId',
+          builder: (_, s) => BedtimeSettingsScreen(familyId: s.uri.queryParameters['familyId'] ?? '', childId: s.pathParameters['childId']!)),
+      GoRoute(
+          path: '/allowance/:childId',
+          builder: (_, s) => AllowanceScreen(
+              familyId: s.uri.queryParameters['familyId'] ?? '', childId: s.pathParameters['childId']!, childName: s.uri.queryParameters['name'])),
+      GoRoute(path: '/asks', builder: (_, s) => AsksScreen(familyId: s.uri.queryParameters['familyId'])),
+      GoRoute(path: '/ask-presets', builder: (_, s) => AskPresetsScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
       GoRoute(path: '/activities', builder: (_, s) => FamilyActivitiesScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
       GoRoute(path: '/weekly-card', builder: (_, __) => const WeeklyCardScreen()),
       GoRoute(path: '/share-links', builder: (_, __) => const ShareLinksScreen()),
@@ -158,7 +172,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/plan', builder: (_, __) => const PlanScreen()),
-      GoRoute(path: '/assistant', builder: (_, s) => AssistantScreen(startVoice: s.uri.queryParameters['voice'] == '1')),
+      GoRoute(
+          path: '/assistant',
+          builder: (_, s) => AssistantScreen(startVoice: s.uri.queryParameters['voice'] == '1', startBriefing: s.uri.queryParameters['briefing'] == '1')),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/privacy', builder: (_, __) => const PrivacyScreen()),
       StatefulShellRoute.indexedStack(

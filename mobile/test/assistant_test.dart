@@ -6,9 +6,12 @@ import 'package:hally/core/auth/auth_repository.dart';
 import 'package:hally/core/design/theme.dart';
 import 'package:hally/features/assistant/assistant_repository.dart';
 import 'package:hally/features/assistant/assistant_screen.dart';
+import 'package:hally/features/assistant/briefing.dart';
+import 'package:hally/features/bedtime/bedtime.dart';
 import 'package:hally/features/assistant/voice_input.dart';
 import 'package:hally/features/assistant/voice_launch.dart';
 import 'package:hally/features/capture/capture_models.dart';
+import 'package:hally/features/notifications/push.dart';
 import 'package:hally/features/privacy/ai_consent.dart';
 import 'package:hally/features/privacy/privacy_repository.dart';
 import 'package:hally/l10n/gen/app_localizations.dart';
@@ -33,9 +36,55 @@ class _FakeAssistant implements AssistantRepository {
         : <Proposal>[];
     return AssistantReply(
       conversationId: 'c1',
-      reply: ChatEntry(id: 'm${sent.length}', fromUser: false, text: proposals.isEmpty ? 'Yarın: Okul gezisi (09:00)' : 'Ekledim, onayını bekliyor.', proposals: proposals),
+      reply: ChatEntry(
+          id: 'm${sent.length}', fromUser: false, text: proposals.isEmpty ? 'Yarın: Okul gezisi (09:00)' : 'Ekledim, onayını bekliyor.', proposals: proposals),
     );
   }
+}
+
+class _FakeBriefing implements BriefingRepository {
+  final asked = <(bool, String)>[];
+  String? morning;
+  bool fail = false;
+
+  @override
+  Future<Briefing> get(String familyId, {required bool tomorrow, required String lang}) async {
+    asked.add((tomorrow, lang));
+    if (fail) throw Exception('offline');
+    return Briefing(
+      tomorrow: tomorrow,
+      greeting: tomorrow ? 'İyi günler Ayşe! Yarın perşembe.' : 'Günaydın Ayşe! Bugün çarşamba.',
+      lines: const [
+        BriefingLine(kind: 'Event', emoji: '📅', text: '16:00 Yüzme (Ela)'),
+        BriefingLine(kind: 'Tasks', emoji: '✅', text: '2 iş var'),
+      ],
+      speech: 'Günaydın Ayşe! 16:00 Yüzme (Ela). 2 iş var.',
+      shortSpeech: 'Günaydın Ayşe! 1 etkinlik ve 2 iş var.',
+    );
+  }
+
+  @override
+  Future<String?> time(String familyId) async => morning;
+
+  @override
+  Future<String?> setTime(String familyId, String? time) async => morning = time;
+}
+
+class _FakeSpeaker implements StorySpeaker {
+  final spoken = <String>[];
+  int stops = 0;
+  void Function()? _done;
+
+  void finish() => _done?.call();
+
+  @override
+  Future<void> speak(String text, {required String language, required void Function() onDone}) async {
+    spoken.add(text);
+    _done = onDone;
+  }
+
+  @override
+  Future<void> stop() async => stops++;
 }
 
 class _MemoryConsent implements AiConsentStorage {
@@ -76,14 +125,18 @@ class _FakeVoice implements VoiceInput {
   }
 
   @override
-  Future<void> stop() async => finish('Yarın ne var');
+  Future<void> stop() async => finish('Yarın okul var mı');
 
   @override
   Future<void> cancel() async => _onDone = null;
 }
 
-Widget _app(_FakeAssistant repo, _MemoryConsent consent, {_FakeVoice? voice, bool startVoice = false}) => ProviderScope(
+Widget _app(_FakeAssistant repo, _MemoryConsent consent,
+        {_FakeVoice? voice, bool startVoice = false, _FakeBriefing? briefing, _FakeSpeaker? speaker, bool startBriefing = false}) =>
+    ProviderScope(
       overrides: [
+        briefingRepositoryProvider.overrideWithValue(briefing ?? _FakeBriefing()),
+        briefingSpeakerProvider.overrideWithValue(speaker ?? _FakeSpeaker()),
         voiceInputProvider.overrideWithValue(voice ?? _FakeVoice()),
         meProvider.overrideWith((ref) async => _me),
         assistantRepositoryProvider.overrideWithValue(repo),
@@ -102,7 +155,7 @@ Widget _app(_FakeAssistant repo, _MemoryConsent consent, {_FakeVoice? voice, boo
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: AssistantScreen(startVoice: startVoice),
+        home: AssistantScreen(startVoice: startVoice, startBriefing: startBriefing),
       ),
     );
 
@@ -178,7 +231,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('assistant.voice')));
     await tester.pumpAndSettle();
-    expect(repo.sent.last.$1, 'Yarın ne var');
+    expect(repo.sent.last.$1, 'Yarın okul var mı');
 
     // Silence sends nothing.
     await tester.tap(find.byKey(const Key('assistant.voice')));
@@ -221,6 +274,88 @@ void main() {
     await tester.pumpAndSettle();
     expect(voice.listening, isFalse);
     expect(find.textContaining('Mikrofon kullanılamıyor'), findsOneWidget);
+  });
+
+  testWidgets('"Bugün ne var?" is read aloud without the AI or its consent, with Durdur, Tekrar oku and Daha kısa', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final repo = _FakeAssistant();
+    final consent = _MemoryConsent();
+    final briefing = _FakeBriefing();
+    final speaker = _FakeSpeaker();
+    await tester.pumpWidget(_app(repo, consent, briefing: briefing, speaker: speaker));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('assistant.input')), 'Bugün ne var?');
+    await tester.tap(find.byKey(const Key('assistant.send')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('aiConsent.decline')), findsNothing, reason: 'no AI involved');
+    expect(repo.sent, isEmpty);
+    expect(briefing.asked.single, (false, 'tr'));
+    expect(find.text('Günaydın Ayşe! Bugün çarşamba.'), findsOneWidget);
+    expect(find.text('📅  16:00 Yüzme (Ela)'), findsOneWidget);
+    expect(speaker.spoken.single, 'Günaydın Ayşe! 16:00 Yüzme (Ela). 2 iş var.');
+
+    await tester.tap(find.text('Durdur'));
+    await tester.pumpAndSettle();
+    expect(speaker.stops, greaterThan(0));
+    await tester.tap(find.text('Daha kısa'));
+    await tester.pumpAndSettle();
+    expect(speaker.spoken.last, 'Günaydın Ayşe! 1 etkinlik ve 2 iş var.');
+    speaker.finish();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tekrar oku'));
+    await tester.pumpAndSettle();
+    expect(speaker.spoken.last, 'Günaydın Ayşe! 16:00 Yüzme (Ela). 2 iş var.');
+
+    await tester.enterText(find.byKey(const Key('assistant.input')), 'yarın neler var');
+    await tester.tap(find.byKey(const Key('assistant.send')));
+    await tester.pumpAndSettle();
+    expect(briefing.asked.last, (true, 'tr'));
+    expect(find.text('İyi günler Ayşe! Yarın perşembe.'), findsOneWidget);
+
+    briefing.fail = true;
+    await tester.enterText(find.byKey(const Key('assistant.input')), 'Bugün ne var');
+    await tester.tap(find.byKey(const Key('assistant.send')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Günün özetini şu an alamadım'), findsOneWidget);
+  });
+
+  testWidgets('the morning notification opens the summary playing; the sun icon sets the time', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final briefing = _FakeBriefing();
+    final speaker = _FakeSpeaker();
+    await tester.pumpWidget(_app(_FakeAssistant(), _MemoryConsent(), briefing: briefing, speaker: speaker, startBriefing: true));
+    await tester.pumpAndSettle();
+    expect(speaker.spoken, hasLength(1));
+    expect(find.text('Günaydın Ayşe! Bugün çarşamba.'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('assistant.morning')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('briefing.morning.switch')));
+    await tester.pumpAndSettle();
+    expect(find.text('07:30'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('briefing.morning.save')));
+    await tester.pumpAndSettle();
+    expect(briefing.morning, '07:30');
+    expect(find.text("Her sabah 07:30'da günün özeti gelecek."), findsOneWidget);
+
+    expect(pushRoute({'kind': 'MorningBriefing'}), '/assistant?briefing=1');
+  });
+
+  test('only plain day questions skip the AI', () {
+    expect(briefingDayOf('Bugün ne var?'), BriefingDay.today);
+    expect(briefingDayOf('  yarın  neler var '), BriefingDay.tomorrow);
+    expect(briefingDayOf('Hally, bugün ne var'), BriefingDay.today);
+    expect(briefingDayOf("What's on tomorrow?"), BriefingDay.tomorrow);
+    expect(briefingDayOf('Bu hafta ne var?'), isNull);
+    expect(briefingDayOf('Yarın ne lazım?'), isNull);
+    expect(briefingDayOf('Yarın 17:00 de yüzme ekle'), isNull);
   });
 
   test('speech language follows the app language', () {

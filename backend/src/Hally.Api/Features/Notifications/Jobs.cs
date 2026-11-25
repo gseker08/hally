@@ -155,6 +155,11 @@ public class RetentionJob(HallyDbContext db, IDocumentStore store, IOptions<Stor
         // A child's daily mood answers are kept for 90 days only.
         var moodCutoff = DateOnly.FromDateTime(now.UtcDateTime).AddDays(-Hally.Domain.Mood.MoodCheck.RetentionDays);
         await db.MoodChecks.Where(m => m.Day < moodCutoff).ExecuteDeleteAsync(ct);
+        // Bedtime evenings only matter for tonight and the recent past.
+        await db.BedtimeRuns.Where(r => r.Evening < moodCutoff).ExecuteDeleteAsync(ct);
+        // A child's requests ("Bir şey iste") are kept for 90 days too.
+        var askCutoff = DateOnly.FromDateTime(now.UtcDateTime).AddDays(-Hally.Domain.Asks.ChildAsk.RetentionDays);
+        await db.ChildAsks.Where(a => a.Day < askCutoff).ExecuteDeleteAsync(ct);
         logger.LogInformation("Retention: {Count} original(s) deleted", expired.Count);
         return expired.Count;
     }

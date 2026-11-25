@@ -2275,5 +2275,302 @@
         "type": "int"
       }
     }
-  }
+  },
+  "bedTitle": "Uykuya hazırlık 🌙",
+  "bedTimeLine": "{time} · Uyku vakti",
+  "@bedTimeLine": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "bedHint": "Sırayla işaretle. Hepsi bitince sana bir hikâye anlatacağım ✨",
+  "bedLater": "Sonra",
+  "bedCard": "Uyku vakti",
+  "bedCardBody": "{done}/{total} adım · Devam et",
+  "@bedCardBody": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bedDoneLine": "Rutin bitti · +{cherries} kiraz 🍒",
+  "@bedDoneLine": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      }
+    }
+  },
+  "bedDoneNoCherries": "Rutin bitti 🌙",
+  "bedGoodNight": "İyi geceler {name}",
+  "@bedGoodNight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "bedBreatheIn": "Nefes al…",
+  "bedBreatheOut": "Nefes ver…",
+  "bedStoryLabel": "BU GECENİN HİKÂYESİ",
+  "bedPlay": "Dinle",
+  "bedStop": "Durdur",
+  "bedNightNote": "Hikâye bitince ekran yavaşça kararır.",
+  "bedNightLock": "Sabah 07:00'ye kadar telefon kilitli kalır.",
+  "bedClose": "Kapat",
+  "bedSettingsTitle": "Uyku rutini",
+  "bedSettingsBody": "Akşam saatinde çocuğun telefonunda sırayla adımlar açılır; bitince size haber gelir.",
+  "bedEnabled": "Uyku rutini açık",
+  "bedTime": "Saat",
+  "bedSteps": "Adımlar",
+  "bedAddStep": "Adım ekle",
+  "bedStepHint": "Örn. Su iç",
+  "bedCherries": "Bitince kiraz",
+  "bedLockMorning": "Bitince sabaha kadar telefonu kilitle",
+  "bedSave": "Kaydet",
+  "bedSaved": "Uyku rutini kaydedildi",
+  "bedTonight": "Bu akşam: {done}/{total} adım",
+  "@bedTonight": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bedTonightDone": "Bu akşam bitti · {time}",
+  "@bedTonightDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "bedStepPajamas": "Pijamalarını giy",
+  "bedStepTeeth": "Dişlerini fırçala",
+  "bedStepBag": "Yarın için çantanı hazırla",
+  "bedStepWater": "Su iç, tuvalete git",
+  "bedStepBed": "Yatağına gir",
+  "bedNotOpen": "Rutin açılış saati: {time}",
+  "@bedNotOpen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "askTitle": "Bir şey iste",
+  "askCardHint": "Annene ve babana bir dokunuşla sor",
+  "askIntro": "Birine dokun, annene ve babana gitsin.",
+  "askOwn": "Kendim yazayım…",
+  "askOwnHint": "Ne istiyorsun?",
+  "askWrite": "＋ Yaz",
+  "askSend": "Gönder",
+  "askSent": "Gönderildi! Cevap gelince burada görürsün.",
+  "askAlreadyPending": "Bunu zaten sordun, cevap bekleniyor.",
+  "askTooMany": "Önce gelen cevapları bekle.",
+  "askToday": "Bugün",
+  "askWaiting": "Bekliyor",
+  "askYes": "Evet",
+  "askNo": "Hayır",
+  "askExpired": "Cevapsız kaldı",
+  "askAnsweredBy": "Cevaplayan: {name}",
+  "@askAnsweredBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "askParentTitle": "Çocukların istekleri",
+  "askNoteHint": "Bir not ekle (isteğe bağlı)",
+  "askAnsweredYes": "Evet dedin. {name} hemen görecek.",
+  "@askAnsweredYes": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "askAnsweredNo": "Hayır dedin. {name} hemen görecek.",
+  "@askAnsweredNo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "askAlreadyAnswered": "Diğer ebeveyn bu isteği zaten yanıtladı.",
+  "askExpiredError": "Bu istek dünden kaldı, artık yanıtlanamaz.",
+  "askEmptyTitle": "Bugün istek yok",
+  "askEmptyBody": "Çocuğunuz kendi telefonundan \"Bir şey iste\" dediğinde burada ve bildirimde görünür.",
+  "askPresetsTitle": "Hazır istekler",
+  "askPresetsBody": "Çocuğunuzun \"Bir şey iste\" sayfasında gördüğü istekler. Ek süre içeren bir isteğe Evet derseniz kilit gerçekten ertelenir.",
+  "askPresetsSaved": "Kaydedildi",
+  "askPresetAdd": "İstek ekle",
+  "askPresetEdit": "İsteği düzenle",
+  "askPresetTitleLabel": "İstek",
+  "askPresetQuestionLabel": "Ek soru (isteğe bağlı)",
+  "askPresetQuestionHint": "Kimin evine?",
+  "askPresetOptionsLabel": "Hızlı cevaplar, virgülle",
+  "askPresetOptionsHint": "Zeynep, Can",
+  "askPresetMinutesLabel": "Evet denirse ek ekran süresi",
+  "askPresetNoMinutes": "Yok",
+  "askPresetMinutes": "+{minutes} dk ekran",
+  "@askPresetMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "askSave": "Kaydet",
+  "askDelete": "Sil",
+  "askOk": "Tamam",
+  "askPhoneTile": "Hazır istekler",
+  "askPhoneTileBody": "\"Arkadaşıma gidebilir miyim?\" gibi istekleri düzenleyin",
+  "askNoticeChannel": "Çocukların istekleri",
+  "askNoticeChannelDescription": "Çocuğunuz bir şey istediğinde Evet/Hayır ile cevaplayın",
+  "askNoticeTakenTitle": "İstek zaten yanıtlandı",
+  "askNoticeTakenBody": "Diğer ebeveyn senden önce cevap verdi.",
+  "savingsTitle": "Birikimim",
+  "savingsSetGoal": "Bir hedef seç",
+  "savingsSetGoalBody": "Bisiklet, oyun, kitap… Kirazlarını onun için biriktir.",
+  "savingsProgress": "{have} / {target} kiraz",
+  "@savingsProgress": {
+    "placeholders": {
+      "have": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "savingsEta": "Böyle devam edersen {weeks} hafta sonra 🎉",
+  "@savingsEta": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "savingsEtaUnknown": "Kiraz topladıkça ne zaman biteceğini göstereceğim.",
+  "savingsReached": "Hedefe ulaştın! 🎉 Annene ve babana göster.",
+  "savingsConvert": "Harçlığa çevir",
+  "savingsRate": "{cherries} kiraz = {money} · annen ya da baban onaylar",
+  "@savingsRate": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      },
+      "money": {
+        "type": "String"
+      }
+    }
+  },
+  "savingsConvertWaiting": "{cherries} kiraz = {money} · onay bekliyor",
+  "@savingsConvertWaiting": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      },
+      "money": {
+        "type": "String"
+      }
+    }
+  },
+  "savingsConvertButton": "Çevir",
+  "savingsConvertHint": "Kirazlar, annen ya da baban harçlığı verdiğinde kavanozdan çıkar.",
+  "savingsConvertSend": "Annemle babama sor",
+  "savingsConvertSent": "Sordum! Harçlığı verince kirazlar kavanozdan çıkacak.",
+  "savingsRecent": "Son hareketler",
+  "savingsToday": "Bugün",
+  "savingsYesterday": "Dün",
+  "savingsLineMood": "Bugün nasılsın?",
+  "savingsLineBedtime": "Uyku rutini",
+  "savingsLineBonus": "Seri bonusu",
+  "savingsLineWeekly": "Haftalık harçlık",
+  "savingsLineConverted": "Harçlığa çevrildi",
+  "savingsGoalSheet": "Neye biriktiriyorsun?",
+  "savingsGoalName": "Hedefin adı",
+  "savingsGoalNameHint": "Bisiklet",
+  "savingsGoalCherries": "Kaç kiraz?",
+  "savingsGoalClear": "Hedefi kaldır",
+  "allowanceTitle": "Harçlık",
+  "allowanceRate": "Kiraz değeri",
+  "allowanceRateBody": "Çocuk çevirmek isteyince size sorulur",
+  "allowanceRateValue": "{cherries} = {money}",
+  "@allowanceRateValue": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      },
+      "money": {
+        "type": "String"
+      }
+    }
+  },
+  "allowanceWeekly": "Haftalık harçlık",
+  "allowanceWeeklyBody": "Her pazartesi kavanoza kiraz olarak eklenir",
+  "allowanceWeeklyOff": "Yok",
+  "allowanceExpenses": "Harcamalar'a yaz",
+  "allowanceExpensesBody": "\"Ödedim\" deyince verilen para Harcamalar'a eklenir",
+  "allowancePending": "Onay bekleyen",
+  "allowanceHistory": "Geçmiş",
+  "allowanceAsks": "{name} {cherries} kirazı harçlığa çevirmek istiyor",
+  "@allowanceAsks": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "cherries": {
+        "type": "int"
+      }
+    }
+  },
+  "allowancePaid": "Ödedim",
+  "allowanceLater": "Şimdi değil",
+  "allowancePaidDone": "Kaydedildi · {name}: kirazlar kavanozdan düştü.",
+  "@allowancePaidDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "allowanceAlreadyDecided": "Bu istek zaten yanıtlandı.",
+  "allowanceNotEnough": "Kavanozda artık yeterli kiraz yok.",
+  "allowanceStatusPaid": "Ödendi",
+  "allowanceStatusDeclined": "Şimdi değil",
+  "allowanceDisclaimer": "Hally para tutmaz ve ödeme yapmaz; sadece ne kadar verdiğinizi takip eder.",
+  "allowancePhoneTileBody": "Kiraz değeri, haftalık harçlık ve birikim hedefi",
+  "briefingStarter": "Bugün ne var?",
+  "briefingError": "Günün özetini şu an alamadım. Biraz sonra tekrar dener misin?",
+  "briefingStop": "Durdur",
+  "briefingAgain": "Tekrar oku",
+  "briefingShorter": "Daha kısa",
+  "briefingMorningTitle": "Sabah özeti",
+  "briefingMorningBody": "Seçtiğin saatte bir bildirim gelir; dokununca Hally günü sesli okur. Yapay zekâ kullanılmaz.",
+  "briefingMorningSwitch": "Her sabah bildir",
+  "briefingMorningTime": "Saat",
+  "briefingMorningWindow": "05:00 ile 11:30 arasında bir saat seç.",
+  "briefingMorningSave": "Kaydet",
+  "briefingMorningOnDone": "Her sabah {time}'da günün özeti gelecek.",
+  "@briefingMorningOnDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "briefingMorningOffDone": "Sabah özeti kapalı."
 }

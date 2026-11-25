@@ -230,6 +230,40 @@ class _ConnectPhoneScreenState extends ConsumerState<ConnectPhoneScreen> {
               onTap: () => context.push('/activities?familyId=${widget.familyId}'),
             ),
           ),
+          const SizedBox(height: HallySpace.sm),
+          Card(
+            margin: const EdgeInsets.only(bottom: HallySpace.sm),
+            child: ListTile(
+              key: const Key('phone.allowance'),
+              leading: const Text('💰', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.allowanceTitle),
+              subtitle: Text(l10n.allowancePhoneTileBody),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/allowance/${widget.childId}?familyId=${widget.familyId}'),
+            ),
+          ),
+          Card(
+            margin: const EdgeInsets.only(bottom: HallySpace.sm),
+            child: ListTile(
+              key: const Key('phone.asks'),
+              leading: const Text('🙋', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.askPhoneTile),
+              subtitle: Text(l10n.askPhoneTileBody),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/ask-presets?familyId=${widget.familyId}'),
+            ),
+          ),
+          Card(
+            margin: EdgeInsets.zero,
+            child: ListTile(
+              key: const Key('phone.bedtime'),
+              leading: const Text('🌙', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.bedSettingsTitle),
+              subtitle: Text(l10n.bedSettingsBody),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/bedtime/${widget.childId}?familyId=${widget.familyId}'),
+            ),
+          ),
         ],
       ),
     );

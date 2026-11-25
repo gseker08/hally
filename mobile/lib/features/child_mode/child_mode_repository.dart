@@ -9,6 +9,9 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/token_storage.dart';
 import '../../core/config/app_config.dart';
 import '../activities/activities.dart';
+import '../allowance/allowance.dart';
+import '../asks/asks.dart';
+import '../bedtime/bedtime.dart';
 import '../goal/family_goal.dart';
 import '../messages/chat_realtime.dart';
 import 'child_lock.dart';
@@ -108,7 +111,7 @@ class ChildReward {
 }
 
 class ChildScreen {
-  const ChildScreen({this.goalMinutes, this.bonusMinutes = 0, this.limitMinutes, this.usedSeconds = 0, this.locked = false});
+  const ChildScreen({this.goalMinutes, this.bonusMinutes = 0, this.limitMinutes, this.usedSeconds = 0, this.locked = false, this.bedtime = false});
 
   factory ChildScreen.fromJson(Map<String, dynamic> j) => ChildScreen(
         goalMinutes: j['goalMinutes'] as int?,
@@ -116,6 +119,7 @@ class ChildScreen {
         limitMinutes: j['limitMinutes'] as int?,
         usedSeconds: j['usedSeconds'] as int? ?? 0,
         locked: j['locked'] as bool? ?? false,
+        bedtime: j['bedtime'] as bool? ?? false,
       );
 
   final int? goalMinutes;
@@ -123,6 +127,9 @@ class ChildScreen {
   final int? limitMinutes;
   final int usedSeconds;
   final bool locked;
+
+  /// Locked for the night after the bedtime routine (not because time ran out).
+  final bool bedtime;
 
   /// Minutes left today; null without a limit.
   int? get minutesLeft => limitMinutes == null ? null : ((limitMinutes! * 60 - usedSeconds) / 60).ceil().clamp(0, 24 * 60);
@@ -143,6 +150,7 @@ class ChildHome {
     this.rewards = const [],
     this.screen = const ChildScreen(),
     this.todayMood,
+    this.bedtime,
   });
 
   factory ChildHome.fromJson(Map<String, dynamic> j) {
@@ -161,6 +169,7 @@ class ChildHome {
       rewards: [for (final r in j['rewards'] as List? ?? const []) ChildReward.fromJson(r as Map<String, dynamic>)],
       screen: ChildScreen.fromJson(j['screen'] as Map<String, dynamic>? ?? const {}),
       todayMood: j['todayMood'] as String?,
+      bedtime: j['bedtime'] == null ? null : ChildBedtime.fromJson(j['bedtime'] as Map<String, dynamic>),
     );
   }
 
@@ -179,6 +188,9 @@ class ChildHome {
 
   /// Today's "Bugün nasılsın?" answer (Great, Good, Okay, Sad, Angry, Tired); null until the child answers.
   final String? todayMood;
+
+  /// Tonight's bedtime routine; null without one.
+  final ChildBedtime? bedtime;
 
   /// The cheapest reward still out of reach (the "next reward" bar).
   ChildReward? get nextReward {
@@ -213,6 +225,25 @@ abstract interface class ChildApi {
 
   /// This week's family goal (the jar tab).
   Future<FamilyGoalState> goal();
+
+  /// Checks bedtime step [index] (in order).
+  Future<ChildBedtime> bedtimeDone(int index);
+
+  /// "Bir şey iste": the ready-made requests and today's requests with their answers. [lang] is tr or en.
+  Future<ChildAsks> asks(String lang);
+
+  /// Sends a ready-made request ([presetId], with [detail] for its follow-up question) or the child's own [text].
+  /// 422 `ask.already_pending` / `ask.too_many`.
+  Future<ChildAsks> ask({String? presetId, String? text, String? detail, required String lang});
+
+  /// Birikimim: balance, savings goal, rate and recent lines.
+  Future<ChildSavings> savings();
+
+  /// Sets the savings goal; null clears it.
+  Future<ChildSavings> setSavingsGoal(SavingsGoal? goal);
+
+  /// "Harçlığa çevir": asks a parent; 422 `allowance.pending`, `points.not_enough`, `allowance.cherries_invalid`.
+  Future<ChildSavings> convert(int cherries);
 }
 
 class UnpairedException implements Exception {}
@@ -298,6 +329,32 @@ class DioChildApi implements ChildApi {
 
   @override
   Future<FamilyGoalState> goal() => _call(() async => FamilyGoalState.fromJson((await _dio.get<Map<String, dynamic>>('/api/v1/child/goal')).data!));
+
+  @override
+  Future<ChildBedtime> bedtimeDone(int index) =>
+      _call(() async => ChildBedtime.fromJson((await _dio.post<Map<String, dynamic>>('/api/v1/child/bedtime/steps/$index/done')).data!));
+
+  @override
+  Future<ChildSavings> savings() => _call(() async => ChildSavings.fromJson((await _dio.get<Map<String, dynamic>>('/api/v1/child/savings')).data!));
+
+  @override
+  Future<ChildSavings> setSavingsGoal(SavingsGoal? goal) => _call(() async => ChildSavings.fromJson((goal == null
+          ? await _dio.delete<Map<String, dynamic>>('/api/v1/child/savings/goal')
+          : await _dio.put<Map<String, dynamic>>('/api/v1/child/savings/goal', data: goal.toJson()))
+      .data!));
+
+  @override
+  Future<ChildSavings> convert(int cherries) =>
+      _call(() async => ChildSavings.fromJson((await _dio.post<Map<String, dynamic>>('/api/v1/child/savings/convert', data: {'cherries': cherries})).data!));
+
+  @override
+  Future<ChildAsks> asks(String lang) =>
+      _call(() async => ChildAsks.fromJson((await _dio.get<Map<String, dynamic>>('/api/v1/child/asks', queryParameters: {'lang': lang})).data!));
+
+  @override
+  Future<ChildAsks> ask({String? presetId, String? text, String? detail, required String lang}) => _call(() async => ChildAsks.fromJson((await _dio
+          .post<Map<String, dynamic>>('/api/v1/child/asks', queryParameters: {'lang': lang}, data: {'presetId': presetId, 'text': text, 'detail': detail}))
+      .data!));
 }
 
 final childApiProvider = Provider<ChildApi>((ref) => DioChildApi(ref.watch(childSessionStorageProvider)));

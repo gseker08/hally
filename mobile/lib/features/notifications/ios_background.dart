@@ -12,7 +12,7 @@ const iosAppGroup = 'group.app.hally';
 
 /// Entry point of the iPhone background engine (ios/Runner/BackgroundDart.swift). It runs a button pressed outside
 /// the app, without the UI and also when the app was closed: Durdur on a widget or a timer's Live Activity, and
-/// Verdim on a medication reminder push.
+/// Verdim on a medication reminder push, Evet/Hayır on a child's request.
 @pragma('vm:entry-point')
 Future<void> hallyIosBackgroundMain() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,9 +31,16 @@ Future<Map<String, String>?> hallyIosBackgroundAction(Uri uri) async {
     await hallyWidgetAction(uri);
     return null;
   }
+  final api = ApiClient(KeepSessionTokens(SecureTokenStorage()));
+  final ask = askAnswerTarget(uri);
+  if (ask != null) {
+    final result = await runNotificationAction(api, ask.yes ? askYesAction : askNoAction, ask.target);
+    final notice = actionNotice(result, await backgroundLocalizations());
+    return notice == null ? null : {'title': notice.title, 'body': notice.body};
+  }
   final target = medGivenTarget(uri);
   if (target == null) return null;
-  final result = await runNotificationAction(ApiClient(KeepSessionTokens(SecureTokenStorage())), giveMedicationAction, target);
+  final result = await runNotificationAction(api, giveMedicationAction, target);
   final notice = actionNotice(result, await backgroundLocalizations());
   return notice == null ? null : {'title': notice.title, 'body': notice.body};
 }
@@ -45,4 +52,13 @@ NotificationTarget? medGivenTarget(Uri uri) {
   final med = uri.queryParameters['med'];
   if (family == null || med == null) return null;
   return NotificationTarget(type: 'med', familyId: family, id: med);
+}
+
+/// `hally://ask/answer?family=..&ask=..&yes=1|0`, from Evet/Hayır on a child's request push (AppDelegate.swift).
+({NotificationTarget target, bool yes})? askAnswerTarget(Uri uri) {
+  if (uri.host != 'ask' || uri.path != '/answer') return null;
+  final family = uri.queryParameters['family'];
+  final ask = uri.queryParameters['ask'];
+  if (family == null || ask == null) return null;
+  return (target: NotificationTarget(type: 'ask', familyId: family, id: ask), yes: uri.queryParameters['yes'] == '1');
 }

@@ -21,4 +21,12 @@ void main() {
     expect(failed.title, l10n.noticeActionFailedTitle);
     expect(failed.body, l10n.noticeActionFailedBody);
   });
+
+  test('Evet/Hayır on the iPhone request push becomes an ask target', () {
+    final yes = askAnswerTarget(Uri.parse('hally://ask/answer?family=f1&ask=a1&yes=1'))!;
+    expect((yes.target.type, yes.target.familyId, yes.target.id, yes.yes), ('ask', 'f1', 'a1', true));
+    expect(askAnswerTarget(Uri.parse('hally://ask/answer?family=f1&ask=a1&yes=0'))!.yes, isFalse);
+    expect(askAnswerTarget(Uri.parse('hally://ask/answer?family=f1')), isNull);
+    expect(askAnswerTarget(Uri.parse('hally://med/given?family=f1&med=m1')), isNull);
+  });
 }

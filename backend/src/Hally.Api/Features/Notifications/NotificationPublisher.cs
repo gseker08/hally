@@ -51,10 +51,16 @@ public class NotificationPublisher(HallyDbContext db, IPushSender push, TimeProv
             }
 
             // A medication reminder carries a "Verdim" button, which the app draws on Android.
-            var appDraws = n.Kind == NotificationKind.MedicationDue;
-            if (appDraws && n.TargetId is { } medicationId)
+            var appDraws = n.Kind is NotificationKind.MedicationDue or NotificationKind.ChildAsk;
+            if (n.Kind == NotificationKind.MedicationDue && n.TargetId is { } medicationId)
             {
                 data["medicationId"] = medicationId.ToString();
+            }
+
+            // A child's request carries Evet/Hayır; "answered" clears it on the other parent's phone.
+            if (n.Kind is NotificationKind.ChildAsk or NotificationKind.ChildAskAnswered && n.TargetId is { } askId)
+            {
+                data["askId"] = askId.ToString();
             }
 
             foreach (var token in await push.SendAsync(tokens, new PushMessage(n.Title, n.Body, data, appDraws), ct))

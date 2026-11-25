@@ -138,6 +138,21 @@ public enum NotificationKind
 
     /// <summary>The family reached its weekly cherry goal.</summary>
     FamilyGoalReached,
+
+    /// <summary>A child finished the bedtime routine ("Ela yatağında").</summary>
+    BedtimeDone,
+
+    /// <summary>Child mode: the child asks for something ("Arkadaşıma gidebilir miyim?"); Evet/Hayır on the notification.</summary>
+    ChildAsk,
+
+    /// <summary>The other parent answered a child's request first.</summary>
+    ChildAskAnswered,
+
+    /// <summary>A child asks to turn cherries into pocket money ("Harçlığa çevir").</summary>
+    AllowanceRequest,
+
+    /// <summary>The daily "Sabah özeti" at the time the user chose; opens the spoken summary.</summary>
+    MorningBriefing,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

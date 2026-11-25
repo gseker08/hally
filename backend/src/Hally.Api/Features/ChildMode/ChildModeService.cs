@@ -28,7 +28,8 @@ public record ChildRewardDto(Guid Id, string Title, int Cost, int? ScreenMinutes
 /// <param name="GoalMinutes">The parents' daily limit; null means no limit (never locks).</param>
 /// <param name="LimitMinutes">Goal plus today's extra minutes; null without a goal.</param>
 /// <param name="UsedSeconds">What the child's phone measured today.</param>
-public record ChildScreenDto(DateOnly Day, int? GoalMinutes, int BonusMinutes, int? LimitMinutes, int UsedSeconds, bool Locked);
+/// <param name="Bedtime">Locked because the bedtime routine is done (until the morning), not because time ran out.</param>
+public record ChildScreenDto(DateOnly Day, int? GoalMinutes, int BonusMinutes, int? LimitMinutes, int UsedSeconds, bool Locked, bool Bedtime = false);
 
 /// <param name="NextBonusIn">Days still needed for the next streak bonus.</param>
 public record ChildHomeDto(
@@ -42,7 +43,8 @@ public record ChildHomeDto(
     IReadOnlyList<ChildItemDto> Today,
     IReadOnlyList<ChildRewardDto> Rewards,
     ChildScreenDto Screen,
-    string? TodayMood = null);
+    string? TodayMood = null,
+    Hally.Api.Features.Bedtime.ChildBedtimeDto? Bedtime = null);
 
 public record ClaimDto(Guid Id, Guid ChildId, string ChildName, string Kind, string Title, int Cherries, DateOnly Day, DateTimeOffset At);
 
@@ -56,6 +58,7 @@ public class ChildModeService(
     NotificationPublisher publisher,
     IHubContext<ChatHub, IChatClient> hub,
     TimeProvider clock,
+    Hally.Api.Features.Bedtime.BedtimeService bedtime,
     ILogger<ChildModeService> logger)
 {
     public async Task<ChildHomeDto> HomeAsync(Guid familyId, Guid childId, CancellationToken ct)
@@ -68,7 +71,7 @@ public class ChildModeService(
         var entries = await db.PointEntries.AsNoTracking().Where(p => p.ChildId == childId)
             .Select(p => new { p.Kind, p.Points, p.Day, p.ChoreId, p.HabitId }).ToListAsync(ct);
         var balance = entries.Sum(e => e.Points);
-        var week = entries.Where(e => e.Points > 0 && e.Day >= weekStart).Sum(e => e.Points);
+        var week = entries.Where(e => e.Points > 0 && e.Kind != PointKind.Allowance && e.Day >= weekStart).Sum(e => e.Points);
         var streak = CherryStreak.Length(ActiveDays(entries.Select(e => (e.Kind, e.Points, e.Day))), today);
 
         var pending = await db.ChildClaims.AsNoTracking()
@@ -92,7 +95,8 @@ public class ChildModeService(
             new ChildProfileDto(child.Id, child.FirstName, child.Color, child.PhotoKey is not null),
             family.Name, balance, week, streak, CherryStreak.BonusEvery - streak % CherryStreak.BonusEvery,
             family.RequireChildApproval, items, rewards, await ScreenAsync(child, today, ct),
-            (await db.MoodChecks.AsNoTracking().Where(m => m.ChildId == childId && m.Day == today).Select(m => (Hally.Domain.Mood.Mood?)m.Mood).FirstOrDefaultAsync(ct))?.ToString());
+            (await db.MoodChecks.AsNoTracking().Where(m => m.ChildId == childId && m.Day == today).Select(m => (Hally.Domain.Mood.Mood?)m.Mood).FirstOrDefaultAsync(ct))?.ToString(),
+            await bedtime.ChildAsync(childId, family.TimeZoneId, ct));
     }
 
     /// <summary>The child says "Yaptım!". With approval on it waits for a parent, otherwise the cherries land at once.
@@ -280,15 +284,6 @@ public class ChildModeService(
         return screen;
     }
 
-    public async Task RequestTimeAsync(Guid familyId, Guid childId, int minutes, CancellationToken ct)
-    {
-        // At most one request per ten minutes reaches the parents.
-        var slot = clock.GetUtcNow().ToUnixTimeSeconds() / 600;
-        await NotifyParentsAsync(familyId, NotificationKind.ChildTimeRequest, childId,
-            (tr, name) => tr ? ($"{name} {minutes} dk daha istiyor", "Ek süre vermek için dokun.") : ($"{name} asks for {minutes} more minutes", "Tap to give extra time."),
-            $"ask:{childId:N}:{slot}", ct);
-    }
-
     public async Task<ChildScreenDto> GrantAsync(Guid familyId, Guid childId, int minutes, Guid userId, CancellationToken ct)
     {
         var child = await db.Children.AsNoTracking().FirstOrDefaultAsync(c => c.Id == childId && c.FamilyId == familyId, ct)
@@ -314,7 +309,9 @@ public class ChildModeService(
         var used = await db.ScreenUsages.AsNoTracking().Where(u => u.ChildId == child.Id && u.Day == today).Select(u => u.Seconds).FirstOrDefaultAsync(ct);
         var bonus = await db.ScreenBonuses.AsNoTracking().Where(b => b.ChildId == child.Id && b.Day == today).SumAsync(b => b.Minutes, ct);
         int? limit = child.DailyScreenMinutes is { } goal ? goal + bonus : null;
-        return new ChildScreenDto(today, child.DailyScreenMinutes, bonus, limit, used, limit is { } l && used >= l * 60);
+        var tz = await db.Families.AsNoTracking().Where(f => f.Id == child.FamilyId).Select(f => f.TimeZoneId).FirstAsync(ct);
+        var night = await bedtime.NightLockedAsync(child.Id, tz, ct);
+        return new ChildScreenDto(today, child.DailyScreenMinutes, bonus, limit, used, night || (limit is { } l && used >= l * 60), night);
     }
 
     /// <summary>Adds the claim's cherries (and the habit tick) unless a parent already ticked it, then the streak bonus

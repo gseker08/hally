@@ -16,6 +16,7 @@ import '../../core/locale/app_language.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../router.dart';
 import '../home/live_timers.dart';
+import '../asks/asks.dart' show ApiAsksRepository;
 import '../medications/medications_repository.dart';
 
 /// What a notification belongs to and what its buttons act on. Travels as the notification payload (JSON), so
@@ -28,7 +29,7 @@ class NotificationTarget {
     return NotificationTarget(type: j['type'] as String, familyId: j['familyId'] as String, id: j['id'] as String);
   }
 
-  /// `screen`, `study`, `sleep` (id = child id) or `med` (id = medication id).
+  /// `screen`, `study`, `sleep` (id = child id), `med` (id = medication id) or `ask` (id = a child's request).
   final String type;
   final String familyId;
   final String id;
@@ -41,6 +42,7 @@ class NotificationTarget {
         'study' => '/study',
         'sleep' => '/sleep',
         'med' => '/medications',
+        'ask' => '/asks',
         _ => '/notifications',
       };
 }
@@ -61,19 +63,26 @@ NotificationTarget timerTarget(LiveTimer t) => NotificationTarget(type: t.type, 
 
 /// The timers this user started. The other parent's timers stay in the app and the widget, so a timer stopped on
 /// another phone never leaves a stale notification here while this app is closed.
-List<LiveTimer> myTimers(List<LiveTimer> timers, String userId) => [for (final t in timers) if (t.startedByUserId == userId) t];
+List<LiveTimer> myTimers(List<LiveTimer> timers, String userId) => [
+      for (final t in timers)
+        if (t.startedByUserId == userId) t
+    ];
 
 /// The phone's notification tray. [LocalDeviceNotifications] on Android, a no-op elsewhere and in tests.
 abstract interface class DeviceNotifications {
   /// [onTap] gets the target of a tapped notification, also the one that started the app. [l10n] names the
   /// buttons (iPhone registers them up front).
   Future<void> init(void Function(NotificationTarget target) onTap, AppLocalizations l10n);
+
   /// An ongoing notification with a live clock and a Durdur button; on Android 16 also a chip in the status bar.
   /// On iPhone a Live Activity (lock screen and Dynamic Island).
   Future<void> showTimer(LiveTimer timer, AppLocalizations l10n);
 
   /// A medication reminder from the server (`kind=MedicationDue`, data-only on Android) with a "Verdim" button.
   Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n);
+
+  /// A child's request from the server (`kind=ChildAsk`, data-only on Android) with Evet / Hayır.
+  Future<void> showChildAsk(NotificationTarget target, String title, String body, AppLocalizations l10n);
   Future<void> cancel(NotificationTarget target);
 
   /// Targets of the notifications of [type] this app shows now.
@@ -89,6 +98,8 @@ class NoDeviceNotifications implements DeviceNotifications {
   @override
   Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n) async {}
   @override
+  Future<void> showChildAsk(NotificationTarget target, String title, String body, AppLocalizations l10n) async {}
+  @override
   Future<void> cancel(NotificationTarget target) async {}
   @override
   Future<List<NotificationTarget>> active(String type) async => const [];
@@ -103,6 +114,11 @@ const stopTimerAction = 'timer.stop';
 /// The action id of the first version (screen time only); old notifications may still carry it.
 const stopScreenTimeAction = 'screen.stop';
 const giveMedicationAction = 'med.given';
+const askYesAction = 'ask.yes';
+const askNoAction = 'ask.no';
+
+/// iPhone action category of a child's request (PushSender.AskCategory on the server).
+const askCategory = 'hally.ask';
 
 /// iPhone action category of the medication reminder (the server's push uses it too: PushSender.cs).
 const medicationCategory = 'hally.med';
@@ -209,6 +225,33 @@ class LocalDeviceNotifications implements DeviceNotifications {
   }
 
   @override
+  Future<void> showChildAsk(NotificationTarget target, String title, String body, AppLocalizations l10n) async {
+    await _ready;
+    await _plugin.show(
+      id: notificationIdFor(target.type, target.id),
+      title: title,
+      body: body,
+      payload: target.toPayload(),
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          'asks',
+          l10n.askNoticeChannel,
+          channelDescription: l10n.askNoticeChannelDescription,
+          icon: notificationIcon,
+          color: _cherry,
+          importance: Importance.high,
+          priority: Priority.high,
+          category: AndroidNotificationCategory.message,
+          actions: [
+            AndroidNotificationAction(askYesAction, l10n.askYes, cancelNotification: false),
+            AndroidNotificationAction(askNoAction, l10n.askNo, cancelNotification: false),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
   Future<void> cancel(NotificationTarget target) => _plugin.cancel(id: notificationIdFor(target.type, target.id));
 
   @override
@@ -248,6 +291,10 @@ class IosDeviceNotifications implements DeviceNotifications {
               requestSoundPermission: false,
               notificationCategories: [
                 DarwinNotificationCategory(medicationCategory, actions: [DarwinNotificationAction.plain(giveMedicationAction, l10n.medNoticeGiven)]),
+                DarwinNotificationCategory(askCategory, actions: [
+                  DarwinNotificationAction.plain(askYesAction, l10n.askYes),
+                  DarwinNotificationAction.plain(askNoAction, l10n.askNo),
+                ]),
               ],
             ),
           ),
@@ -277,6 +324,18 @@ class IosDeviceNotifications implements DeviceNotifications {
       body: body,
       payload: target.toPayload(),
       notificationDetails: const NotificationDetails(iOS: DarwinNotificationDetails(categoryIdentifier: medicationCategory)),
+    );
+  }
+
+  @override
+  Future<void> showChildAsk(NotificationTarget target, String title, String body, AppLocalizations l10n) async {
+    await _ready;
+    await _plugin.show(
+      id: notificationIdFor(target.type, target.id),
+      title: title,
+      body: body,
+      payload: target.toPayload(),
+      notificationDetails: const NotificationDetails(iOS: DarwinNotificationDetails(categoryIdentifier: askCategory)),
     );
   }
 
@@ -409,6 +468,11 @@ class ActionFailed extends ActionResult {
   const ActionFailed();
 }
 
+/// Evet/Hayır came second: the other parent already answered the child's request.
+class ActionAskTaken extends ActionResult {
+  const ActionAskTaken();
+}
+
 /// Runs a notification button against the API.
 Future<ActionResult> runNotificationAction(ApiClient api, String actionId, NotificationTarget target) async {
   try {
@@ -426,9 +490,15 @@ Future<ActionResult> runNotificationAction(ApiClient api, String actionId, Notif
       case giveMedicationAction:
         await ApiMedicationsRepository(api).give(target.familyId, target.id);
         return const ActionDone();
+      case askYesAction || askNoAction:
+        await ApiAsksRepository(api).answer(target.familyId, target.id, yes: actionId == askYesAction);
+        return const ActionDone();
     }
   } on DoseWarning catch (w) {
     return ActionDoseRefused(w);
+  } on ApiException catch (e) {
+    if (e.code == 'ask.already_answered' || e.code == 'ask.expired') return const ActionAskTaken();
+    debugPrint('notification action $actionId failed: $e');
   } catch (e) {
     debugPrint('notification action $actionId failed: $e');
   }
@@ -447,6 +517,20 @@ Future<AppLocalizations> backgroundLocalizations() async {
 /// background isolate) and while the app is open. Returns true when it handled the push.
 Future<bool> handleNotificationPush(Map<String, dynamic> data, DeviceNotifications notifications, AppLocalizations l10n) async {
   final familyId = data['familyId'];
+  final askId = data['askId'];
+  if (familyId is String && askId is String) {
+    final target = NotificationTarget(type: 'ask', familyId: familyId, id: askId);
+    switch (data['kind']) {
+      case 'ChildAsk':
+        await notifications.showChildAsk(target, '${data['title'] ?? ''}', '${data['body'] ?? ''}', l10n);
+        return true;
+      case 'ChildAskAnswered':
+        // The other parent answered first: the Evet/Hayır notification on this phone is done.
+        await notifications.cancel(target);
+        return false;
+    }
+    return false;
+  }
   final medicationId = data['medicationId'];
   if (familyId is! String || medicationId is! String) return false;
   final target = NotificationTarget(type: 'med', familyId: familyId, id: medicationId);
@@ -472,8 +556,8 @@ Future<void> hallyNotificationAction(NotificationResponse response) async {
 
   final plugin = FlutterLocalNotificationsPlugin();
   await plugin.initialize(settings: notificationInitSettings);
-  if (result is ActionDone || result is ActionDoseRefused) {
-    // Done, or someone already gave the dose: the reminder is over either way.
+  if (result is ActionDone || result is ActionDoseRefused || result is ActionAskTaken) {
+    // Done, or someone already gave the dose / answered the request: the notification is over either way.
     await plugin.cancel(id: notificationIdFor(target.type, target.id));
   }
   final notice = actionNotice(result, await backgroundLocalizations());
@@ -503,6 +587,8 @@ Future<void> hallyNotificationAction(NotificationResponse response) async {
         body: warning.isDailyLimit ? l10n.medNoticeRefusedDailyLimit : l10n.medNoticeRefusedBody(_clock(last.givenAt), last.givenByName ?? ''),
         channel: l10n.noticeActionChannel,
       );
+    case ActionAskTaken():
+      return (title: l10n.askNoticeTakenTitle, body: l10n.askNoticeTakenBody, channel: l10n.noticeActionChannel);
     case ActionFailed():
       // Leave the original in place and say why nothing happened.
       return (title: l10n.noticeActionFailedTitle, body: l10n.noticeActionFailedBody, channel: l10n.noticeActionChannel);
