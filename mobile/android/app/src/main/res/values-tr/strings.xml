@@ -6,4 +6,5 @@
     <string name="now_widget_description">Çalışan sayaçlar, canlı süreyle</string>
     <string name="now_widget_title">Şu an</string>
     <string name="now_widget_empty">Çalışan sayaç yok</string>
+    <string name="today_widget_voice">Hally\'ye söyle</string>
 </resources>

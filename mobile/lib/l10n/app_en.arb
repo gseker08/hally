@@ -681,5 +681,12 @@
   "todayTileTasks": "Tasks",
   "todayTileEvents": "Events",
   "todayTileWaiting": "Suggestions",
-  "todaySeeAll": "See all"
+  "todaySeeAll": "See all",
+  "voiceSpeak": "Speak to Hally",
+  "voiceStop": "Finish and send",
+  "voiceListening": "Listening… go ahead",
+  "voiceNotHeard": "I didn't catch that. Try again?",
+  "voiceUnavailable": "The microphone isn't available. You can allow Hally to use it in Settings.",
+  "voiceShortcut": "Speak to Hally",
+  "privacyPointVoice": "The microphone listens only while you use the mic button, never in the background. Your phone's speech service (Google on Android, Apple on iPhone) turns your speech into text. Hally never receives or stores the audio, only the text."
 }
