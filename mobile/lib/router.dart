@@ -21,6 +21,7 @@ import 'features/expenses/expenses_screen.dart';
 import 'features/family/caregiver_screen.dart';
 import 'features/family/family_screen.dart';
 import 'features/health/health_screen.dart';
+import 'features/balance/balance_screen.dart';
 import 'features/insights/insights_screen.dart';
 import 'features/feeding/feeding_screen.dart';
 import 'features/family/family_setup_screen.dart';
@@ -119,7 +120,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/tasks', builder: (_, __) => const TasksScreen()),
       GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen()),
-      GoRoute(path: '/chats/:key', builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?)),
+      GoRoute(path: '/chats/:key', builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?, draft: s.uri.queryParameters['draft'])),
       GoRoute(path: '/sleep', builder: (_, __) => const SleepScreen()),
       GoRoute(path: '/feeding', builder: (_, __) => const FeedingScreen()),
       GoRoute(path: '/study', builder: (_, __) => const StudyScreen()),
@@ -136,6 +137,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/shopping', builder: (_, __) => const ShoppingScreen()),
       GoRoute(path: '/medications', builder: (_, __) => const MedicationsScreen()),
       GoRoute(path: '/screen-time', builder: (_, __) => const ScreenTimeScreen()),
+      GoRoute(path: '/balance', builder: (_, __) => const BalanceScreen()),
       GoRoute(path: '/weekly-card', builder: (_, __) => const WeeklyCardScreen()),
       GoRoute(path: '/share-links', builder: (_, __) => const ShareLinksScreen()),
       GoRoute(
