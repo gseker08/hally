@@ -293,6 +293,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.Property(x => x.Source).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.ProductId).HasMaxLength(100);
             e.Property(x => x.StoreReference).HasMaxLength(1000);
+            e.Property(x => x.TrialStoreReference).HasMaxLength(1000);
             e.HasIndex(x => x.FamilyId).IsUnique();
             e.HasIndex(x => new { x.Source, x.StoreReference });
             e.HasIndex(x => x.TrialStartedByUserId);

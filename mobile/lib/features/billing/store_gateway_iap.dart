@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart';
+import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 
 import 'billing_repository.dart';
 
@@ -22,7 +24,9 @@ class InAppPurchaseStoreGateway implements StoreGateway {
   /// The store does not say when a restore is finished; results that arrive within this window count.
   final Duration restoreWindow;
 
+  /// Base plan per product (the price shown) and, on Play, its free-trial offer.
   final _details = <String, ProductDetails>{};
+  final _trialDetails = <String, ProductDetails>{};
   final _background = StreamController<StorePurchaseResult>.broadcast();
   StreamSubscription<List<PurchaseDetails>>? _sub;
   Future<void>? _ready;
@@ -58,19 +62,37 @@ class InAppPurchaseStoreGateway implements StoreGateway {
     await init();
     if (!_available || productIds.isEmpty) return const {};
     final response = await _iap.queryProductDetails(productIds.toSet());
-    // A Play subscription comes back once per base plan/offer; the first one is the base plan.
+    // A Play subscription comes back once per base plan/offer. The base plan (no offer id) carries the real price;
+    // the free-trial offer (a free pricing phase, tagged "free-trial" in Play Console) is kept for withTrial.
     for (final d in response.productDetails) {
-      _details.putIfAbsent(d.id, () => d);
+      final offer = _playOffer(d);
+      if (offer == null) {
+        _details.putIfAbsent(d.id, () => d);
+      } else if (offer.offerTags.contains(trialOfferTag) || offer.pricingPhases.any((p) => p.priceAmountMicros == 0)) {
+        _trialDetails.putIfAbsent(d.id, () => d);
+      } else if (offer.offerId == null) {
+        _details[d.id] = d;
+      }
     }
     return {for (final d in _details.values) d.id: d.price};
   }
 
+  /// Tag on the Play free-trial offer; the server reads the same tag.
+  static const trialOfferTag = 'free-trial';
+
+  static SubscriptionOfferDetailsWrapper? _playOffer(ProductDetails d) {
+    if (d is! GooglePlayProductDetails) return null;
+    final i = d.subscriptionIndex;
+    final offers = d.productDetails.subscriptionOfferDetails;
+    return i == null || offers == null || i >= offers.length ? null : offers[i];
+  }
+
   @override
-  Future<StorePurchaseResult?> buy(String productId) async {
+  Future<StorePurchaseResult?> buy(String productId, {bool withTrial = false}) async {
     await init();
     if (!_available) throw StoreUnavailableException();
     if (!_details.containsKey(productId)) await prices([productId]);
-    final details = _details[productId];
+    final details = (withTrial ? _trialDetails[productId] : null) ?? _details[productId];
     if (details == null) throw StoreUnavailableException(); // product not set up in the store yet
 
     final completer = Completer<StorePurchaseResult?>();

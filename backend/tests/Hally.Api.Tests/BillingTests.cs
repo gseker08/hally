@@ -15,7 +15,8 @@ namespace Hally.Api.Tests;
 public record LimitsBody(int MaxAdults, int ScansPerWeek, int ScansPerMonth, int ActiveShareLinks, int RemindersPerItem);
 public record UsageBody(int Adults, int ScansThisWeek, int ScansThisMonth, int ActiveShareLinks);
 public record EntitlementBody(string Plan, string State, string? Source, string? ProductId, DateTimeOffset? ExpiresAt, bool WillRenew,
-    bool TrialAvailable, bool PurchasedByMe, LimitsBody Limits, UsageBody Usage, bool SellingEnabled);
+    bool TrialAvailable, bool PurchasedByMe, LimitsBody Limits, UsageBody Usage, bool SellingEnabled,
+    string? PurchasedByName = null, bool PurchasedByInFamily = false, bool CanPurchase = false);
 
 [Collection(ApiCollection.Name)]
 public class BillingTests(HallyApiFactory api)
@@ -235,6 +236,110 @@ public class BillingTests(HallyApiFactory api)
             .Should().Be(HttpStatusCode.OK, "unknown purchases are acknowledged and ignored");
     }
 
+    private async Task<HttpClient> Join(HttpClient owner, Guid familyId, string name, string? role = null)
+    {
+        var invite = (await (await owner.PostIdempotentAsync($"/api/v1/families/{familyId}/invitations", role is null ? null : new { role }))
+            .Content.ReadFromJsonAsync<InvitationBody>())!;
+        var member = await api.SignInAsync($"{Guid.NewGuid():N}@example.com", name);
+        (await member.PostIdempotentAsync($"/api/v1/invitations/{invite.Token}/accept", null)).StatusCode.Should().Be(HttpStatusCode.OK);
+        return member;
+    }
+
+    private static Task<HttpResponseMessage> Buy(HttpClient c, Guid familyId, string token, string store = "GooglePlay") =>
+        c.PostIdempotentAsync($"/api/v1/families/{familyId}/subscription/purchases",
+            new { store, productId = token.Split(':')[1], token });
+
+    [Fact]
+    public async Task One_plan_covers_the_whole_family_and_a_second_parent_cannot_pay_again()
+    {
+        var (ayse, familyId) = await Family();
+        var mehmet = await Join(ayse, familyId, "Mehmet");
+        var zeynep = await Join(ayse, familyId, "Zeynep", "caregiver");
+
+        var before = await Entitlement(mehmet, familyId);
+        before.CanPurchase.Should().BeTrue();
+        (await Entitlement(zeynep, familyId)).CanPurchase.Should().BeFalse("caregivers never pay");
+        (await Entitlement(zeynep, familyId)).TrialAvailable.Should().BeFalse();
+        (await Buy(zeynep, familyId, $"sandbox:hally_plus_monthly:{Guid.NewGuid():N}")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+
+        (await Buy(ayse, familyId, $"sandbox:hally_plus_yearly:{Guid.NewGuid():N}")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var seen = await Entitlement(mehmet, familyId);
+        seen.Plan.Should().Be("Plus");
+        seen.PurchasedByMe.Should().BeFalse();
+        seen.PurchasedByName.Should().Be("Ayşe Yılmaz");
+        seen.PurchasedByInFamily.Should().BeTrue();
+        seen.CanPurchase.Should().BeFalse();
+        (await Entitlement(zeynep, familyId)).Plan.Should().Be("Plus", "the caregiver is covered too");
+        (await Entitlement(ayse, familyId)).CanPurchase.Should().BeFalse("the payer manages it in the store");
+
+        (await Buy(mehmet, familyId, $"sandbox:hally_plus_monthly:{Guid.NewGuid():N}")).StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task Payer_leaving_keeps_plus_until_they_move_it_and_then_another_parent_can_buy()
+    {
+        var (ayse, familyId) = await Family();
+        var mehmet = await Join(ayse, familyId, "Mehmet");
+        var token = $"sandbox:hally_plus_monthly:{Guid.NewGuid():N}";
+        (await Buy(ayse, familyId, token)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await ayse.PostIdempotentAsync($"/api/v1/families/{familyId}/leave", null)).IsSuccessStatusCode.Should().BeTrue();
+        var left = await Entitlement(mehmet, familyId);
+        left.Plan.Should().Be("Plus", "the paid period stays with the family");
+        left.PurchasedByInFamily.Should().BeFalse();
+        left.CanPurchase.Should().BeTrue();
+
+        // The payer takes their subscription to their new family; the old one drops to Free.
+        var newFamily = (await (await ayse.PostIdempotentAsync("/api/v1/families", new { name = "Yeni", timeZoneId = "Europe/Istanbul" })).Content.ReadFromJsonAsync<FamilyBody>())!;
+        (await Buy(ayse, newFamily.Id, token)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await Entitlement(ayse, newFamily.Id)).Plan.Should().Be("Plus");
+        (await Entitlement(mehmet, familyId)).Plan.Should().Be("Free");
+
+        // Someone else cannot take a purchase that is not theirs.
+        var (other, otherFamily) = await Family();
+        (await Buy(other, otherFamily, token)).StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        (await Buy(mehmet, familyId, $"sandbox:hally_plus_monthly:{Guid.NewGuid():N}")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await Entitlement(mehmet, familyId)).Plan.Should().Be("Plus");
+    }
+
+    [Fact]
+    public async Task Store_free_week_counts_once_per_family_and_once_per_parent()
+    {
+        var (ayse, familyId) = await Family();
+        var mehmet = await Join(ayse, familyId, "Mehmet");
+        (await Entitlement(mehmet, familyId)).TrialAvailable.Should().BeTrue();
+
+        var res = await Buy(ayse, familyId, $"sandbox-trial:hally_plus_yearly:{Guid.NewGuid():N}");
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        var trial = (await res.Content.ReadFromJsonAsync<EntitlementBody>())!;
+        trial.State.Should().Be("Trialing");
+        trial.Plan.Should().Be("Plus");
+        trial.ExpiresAt.Should().BeCloseTo(api.Clock.GetUtcNow().AddDays(7), TimeSpan.FromMinutes(1));
+        (await Entitlement(mehmet, familyId)).TrialAvailable.Should().BeFalse();
+        (await Entitlement(mehmet, familyId)).CanPurchase.Should().BeFalse("the family is covered during the free week too");
+
+        // Ayşe cancels during the week and leaves; Mehmet's store would give his account its own free week,
+        // but this family already had it: Hally notices and waits for the first paid period.
+        (await ayse.PostIdempotentAsync($"/api/v1/families/{familyId}/leave", null)).IsSuccessStatusCode.Should().BeTrue();
+        var second = await Buy(mehmet, familyId, $"sandbox-trial:hally_plus_monthly:{Guid.NewGuid():N}");
+        second.StatusCode.Should().Be(HttpStatusCode.OK);
+        var denied = (await second.Content.ReadFromJsonAsync<EntitlementBody>())!;
+        denied.State.Should().Be("TrialDenied");
+        denied.Plan.Should().Be("Free");
+
+        // Ayşe in a brand-new family does not get a second free week either.
+        var newFamily = (await (await ayse.PostIdempotentAsync("/api/v1/families", new { name = "Yeni", timeZoneId = "Europe/Istanbul" })).Content.ReadFromJsonAsync<FamilyBody>())!;
+        (await Entitlement(ayse, newFamily.Id)).TrialAvailable.Should().BeFalse();
+        var again = (await (await Buy(ayse, newFamily.Id, $"sandbox-trial:hally_plus_monthly:{Guid.NewGuid():N}")).Content.ReadFromJsonAsync<EntitlementBody>())!;
+        again.State.Should().Be("TrialDenied");
+
+        using var scope = api.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HallyDbContext>();
+        (await db.AnalyticsEvents.CountAsync(e => e.FamilyId == familyId && e.Name == "trial_denied")).Should().Be(1);
+    }
+
     [Fact]
     public async Task Catalog_lists_products_and_limits_and_client_events_are_allow_listed()
     {
@@ -274,6 +379,22 @@ public class SubscriptionDomainTests
         sub.StateAt(Now, Grace).Should().Be(SubscriptionState.GracePeriod);
         sub.PlanAt(Now, Grace).Should().Be(Plan.Plus);
         sub.StateAt(Now.AddDays(3), Grace).Should().Be(SubscriptionState.Expired);
+    }
+
+    [Fact]
+    public void Withheld_store_trial_unlocks_when_the_first_paid_period_starts()
+    {
+        var sub = new Subscription(Guid.NewGuid());
+        sub.StartTrial(Guid.NewGuid(), Now.AddDays(-30));
+        sub.ApplyStore(SubscriptionSource.AppStore, "hally_plus_monthly", "77", Now.AddDays(7), true, Guid.NewGuid(), Now, inTrial: true)
+            .Should().Be(SubscriptionChange.TrialDenied);
+        sub.PlanAt(Now, Grace).Should().Be(Plan.Free);
+        sub.IsRenewingStorePlan(Now, Grace).Should().BeTrue();
+        sub.ApplyStore(SubscriptionSource.AppStore, "hally_plus_monthly", "77", Now.AddDays(7), true, null, Now.AddHours(1), inTrial: true)
+            .Should().Be(SubscriptionChange.None, "the same refusal is not counted twice");
+        sub.ApplyStore(SubscriptionSource.AppStore, "hally_plus_monthly", "77", Now.AddDays(37), true, null, Now.AddDays(7))
+            .Should().Be(SubscriptionChange.Started);
+        sub.StateAt(Now.AddDays(8), Grace).Should().Be(SubscriptionState.Active);
     }
 
     [Fact]

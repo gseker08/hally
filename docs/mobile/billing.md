@@ -1,5 +1,15 @@
 # Billing setup (Family Plus)
 
+**One plan per family, one payment (decided 2026-11-25).** One parent buys Family Plus (monthly or yearly) and the whole
+family is covered: every parent, caregiver and paired child phone. The `subscriptions` table has one row per family.
+
+- Only parents can buy (caregivers and child phones cannot reach the purchase endpoint).
+- While a parent's renewing subscription covers the family, the others see "Family Plus · Aile planı · Ayşe ödüyor" and
+  no buy button (`canPurchase: false`); the server also refuses a second purchase with 409 `billing.family_already_plus`.
+- The payer leaving keeps the paid time with the family (`purchasedByInFamily: false`, the app shows "Ödeyen kişi aileden
+  ayrıldı" and "Planı ben devralayım"). The payer can restore the same purchase into their new family; the old family then
+  drops to Free. Nobody else can move a purchase that unlocks another family (409 `billing.purchase_in_use`).
+
 The server decides who has Family Plus. The app only shows the paywall, asks the store to sell, and sends the
 store's purchase id to `POST /families/{id}/subscription/purchases`, where the server asks the store itself.
 
@@ -16,10 +26,26 @@ Ids are configurable with `Billing:Products` (each `{ Id, Period, FallbackPrices
 the paywall shows the store's localized price. **Türkiye prices (decided 2026-11-24): ₺79,99 a month, ₺599,99 a year.**
 `FallbackPrices` (default TRY values above) is only for display before the store answers.
 
-In Play Console each subscription needs one auto-renewing **base plan** (monthly: `monthly`, yearly: `yearly`); the app buys
-the first base plan the store returns.
+In Play Console each subscription needs one auto-renewing **base plan** (monthly: `monthly`, yearly: `yearly`).
 
-Do not configure a store-side free trial: the 7-day trial is handled by the server so it works without a card.
+## 7-day free trial (once per family)
+
+The trial is the **store's free-trial offer**: the parent enters a card in the store, uses Plus free for 7 days, and on day 8
+the chosen monthly/yearly package starts by itself unless they cancel in the store.
+
+- **Google Play:** on each base plan add an offer: eligibility "New customer acquisition / never had this subscription",
+  one phase **Free trial, 7 days**, offer id `ucretsiz-7-gun`, **tag `free-trial`**. The app buys this offer only when the
+  server says `trialAvailable`; otherwise it buys the plain base plan, so a second parent is never offered a second week.
+- **App Store:** an **Introductory Offer → Free, 1 week** on both products (same subscription group). Apple decides
+  eligibility per Apple ID and the app cannot hide it.
+
+Hally counts the trial per family **and** per parent. When a store purchase arrives in its free-trial phase
+(`offerPhase.freeTrial` / the `free-trial` tag on Play, `offerType 1` on Apple) for a family that already had its trial,
+or from a parent who had one in another family, the server records it but gives **no Plus until the first paid period**:
+state `TrialDenied`, the app shows "Ücretsiz deneme bu ailede kullanıldı", and the analytics event `trial_denied` is
+recorded. When the store reports the first paid period the family gets Plus as usual.
+
+The older card-less server trial (`POST /subscription/trial`) still exists for old app builds but the app no longer calls it.
 
 ## App Store
 
@@ -43,7 +69,8 @@ Do not configure a store-side free trial: the 7-day trial is handled by the serv
 `in_app_purchase` plugin (Play Billing, StoreKit 2). It is used on Android and iPhone; tests and desktop get
 `UnavailableStoreGateway`.
 
-- Prices: `queryProductDetails`. Buy: `buyNonConsumable` (auto-renewing subscriptions use the same call).
+- Prices: `queryProductDetails`; on Play the base plan's price (the free-trial offer is kept apart). Buy: `buyNonConsumable`
+  (auto-renewing subscriptions use the same call) with the trial offer only when `withTrial` is set.
 - Token sent to the server: the Play `purchaseToken` on Android, the StoreKit 2 transaction id on iPhone.
 - Every purchased/restored update is `completePurchase`d (StoreKit re-delivers unfinished ones; Play ones are also
   acknowledged by the server).
@@ -63,4 +90,4 @@ While `Billing:FreeLaunch` is on the paywall never opens, so none of this runs f
 ## Local testing
 
 With `Billing:SandboxPurchases=true` in Development, tokens like `sandbox:hally_plus_monthly:any-ref` are accepted without a store
-(`sandbox-cancelled:` will not renew, `sandbox-expired:` has already expired). This is ignored in Production.
+(`sandbox-cancelled:` will not renew, `sandbox-expired:` has already expired, `sandbox-trial:` is in a 7-day free trial). This is ignored in Production.

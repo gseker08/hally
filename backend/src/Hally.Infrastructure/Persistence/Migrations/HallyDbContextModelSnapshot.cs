@@ -567,6 +567,10 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("family_id");
 
+                    b.Property<bool>("InStoreTrial")
+                        .HasColumnType("boolean")
+                        .HasColumnName("in_store_trial");
+
                     b.Property<DateTimeOffset?>("LastVerifiedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_verified_at");
@@ -602,6 +606,15 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("TrialStartedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("trial_started_by_user_id");
+
+                    b.Property<string>("TrialStoreReference")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("trial_store_reference");
+
+                    b.Property<bool>("TrialWithheld")
+                        .HasColumnType("boolean")
+                        .HasColumnName("trial_withheld");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

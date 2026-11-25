@@ -62,6 +62,9 @@ class Entitlement {
     required this.limits,
     required this.usage,
     this.sellingEnabled = true,
+    this.purchasedByName,
+    this.purchasedByInFamily = false,
+    this.canPurchase = true,
   });
 
   factory Entitlement.fromJson(Map<String, dynamic> j) => Entitlement(
@@ -76,12 +79,15 @@ class Entitlement {
         limits: PlanLimits.fromJson(j['limits'] as Map<String, dynamic>),
         usage: Usage.fromJson(j['usage'] as Map<String, dynamic>),
         sellingEnabled: j['sellingEnabled'] as bool? ?? true,
+        purchasedByName: j['purchasedByName'] as String?,
+        purchasedByInFamily: j['purchasedByInFamily'] as bool? ?? false,
+        canPurchase: j['canPurchase'] as bool? ?? j['plan'] != 'Plus',
       );
 
   /// False during the free launch: nothing is sold, so the app shows no plan card or paywall.
   final bool sellingEnabled;
   final String plan; // Free | Plus
-  final String state; // Free | Trialing | Active | GracePeriod | Expired
+  final String state; // Free | Trialing | Active | GracePeriod | Expired | TrialDenied
   final String? source; // Trial | AppStore | GooglePlay
   final String? productId;
   final DateTime? expiresAt;
@@ -91,7 +97,26 @@ class Entitlement {
   final PlanLimits limits;
   final Usage usage;
 
+  /// One plan per family: the parent who pays (or started the trial). Everyone in the family is covered.
+  final String? purchasedByName;
+
+  /// False once the payer left the family: the paid time stays, but nobody here can manage it.
+  final bool purchasedByInFamily;
+
+  /// Only parents buy, and only when no other parent's renewing plan already covers the family.
+  final bool canPurchase;
+
   bool get isPlus => plan == 'Plus';
+
+  bool get fromStore => source == 'AppStore' || source == 'GooglePlay';
+
+  bool get yearly => productId?.contains('yearly') ?? false;
+
+  /// The store gave a second free week to a family that already had one: no Plus until the first payment.
+  bool get trialDenied => state == 'TrialDenied';
+
+  /// The payer left; their subscription still covers the family until it ends or they take it along.
+  bool get payerLeft => fromStore && !purchasedByInFamily && (isPlus || trialDenied);
 }
 
 class Product {
@@ -217,7 +242,9 @@ abstract interface class StoreGateway {
   Future<Map<String, String>> prices(List<String> productIds);
 
   /// Null when the user cancelled. Throws [StorePendingException] while the payment is still pending.
-  Future<StorePurchaseResult?> buy(String productId);
+  /// [withTrial]: use the 7-day free-trial offer (Play). False picks the plain base plan, so a family that already
+  /// had its free week is not offered another. StoreKit applies Apple's introductory offer by itself.
+  Future<StorePurchaseResult?> buy(String productId, {bool withTrial = false});
 
   Future<List<StorePurchaseResult>> restore();
 
@@ -235,7 +262,7 @@ class UnavailableStoreGateway implements StoreGateway {
   Future<Map<String, String>> prices(List<String> productIds) async => const {};
 
   @override
-  Future<StorePurchaseResult?> buy(String productId) => throw StoreUnavailableException();
+  Future<StorePurchaseResult?> buy(String productId, {bool withTrial = false}) => throw StoreUnavailableException();
 
   @override
   Future<List<StorePurchaseResult>> restore() async => const [];

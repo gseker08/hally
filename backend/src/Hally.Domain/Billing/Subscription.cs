@@ -25,6 +25,10 @@ public enum SubscriptionState
     Active,
     GracePeriod,
     Expired,
+
+    /// <summary>The store gave a free trial, but this family (or this parent in another family) already had one.
+    /// No Plus until the first paid period starts.</summary>
+    TrialDenied,
 }
 
 /// <summary>The family's Family Plus entitlement. One row per family; it is kept after expiry so that the
@@ -56,6 +60,15 @@ public class Subscription : Entity
     public DateTimeOffset? TrialStartedAt { get; private set; }
     public Guid? TrialStartedByUserId { get; private set; }
     public DateTimeOffset? LastVerifiedAt { get; private set; }
+
+    /// <summary>The store's current period is its free-trial offer (7 days free, then the chosen package renews).</summary>
+    public bool InStoreTrial { get; private set; }
+
+    /// <summary>The store trial was refused by Hally because the family already used its trial.</summary>
+    public bool TrialWithheld { get; private set; }
+
+    /// <summary>The store purchase whose free trial counted as this family's trial.</summary>
+    public string? TrialStoreReference { get; private set; }
     public DateTimeOffset UpdatedAt { get; private set; } = DateTimeOffset.UtcNow;
 
     public bool TrialUsed => TrialStartedAt is not null;
@@ -67,9 +80,15 @@ public class Subscription : Entity
             return SubscriptionState.Free;
         }
 
+        if (InStoreTrial && TrialWithheld)
+        {
+            // A second free trial for the same family: the store does not charge yet, so Hally does not unlock yet.
+            return ExpiresAt > now ? SubscriptionState.TrialDenied : SubscriptionState.Expired;
+        }
+
         if (ExpiresAt > now)
         {
-            return Source == SubscriptionSource.Trial ? SubscriptionState.Trialing : SubscriptionState.Active;
+            return Source == SubscriptionSource.Trial || InStoreTrial ? SubscriptionState.Trialing : SubscriptionState.Active;
         }
 
         // Stores retry failed renewals for a few days; keep Plus during that window so a card hiccup
@@ -112,17 +131,48 @@ public class Subscription : Entity
         UpdatedAt = now;
     }
 
-    /// <summary>Applies a store's answer. Returns what changed so the caller can record analytics.</summary>
+    /// <summary>Applies a store's answer. Returns what changed so the caller can record analytics.
+    /// <paramref name="inTrial"/>: the store says this period is its free trial. A family gets one free trial: a
+    /// store trial for a family that already had one (or started by a parent who had one in another family,
+    /// <paramref name="trialAllowed"/> false) is accepted as a purchase but gives no Plus until the first paid period.</summary>
     public SubscriptionChange ApplyStore(SubscriptionSource store, string productId, string storeReference, DateTimeOffset expiresAt,
-        bool willRenew, Guid? purchasedBy, DateTimeOffset now)
+        bool willRenew, Guid? purchasedBy, DateTimeOffset now, bool inTrial = false, bool trialAllowed = true)
     {
         if (store is not (SubscriptionSource.AppStore or SubscriptionSource.GooglePlay))
         {
             throw new ArgumentOutOfRangeException(nameof(store));
         }
 
-        var wasPaid = Source == store && StoreReference == storeReference && ExpiresAt > now;
+        var wasPaid = Source == store && StoreReference == storeReference && ExpiresAt > now && !(InStoreTrial && TrialWithheld);
         var wasRenewing = WillRenew;
+        var trialStarted = false;
+        var trialDenied = false;
+        if (inTrial)
+        {
+            if (TrialStoreReference == storeReference)
+            {
+                TrialWithheld = false; // the trial this family already counted
+            }
+            else if (!TrialUsed && trialAllowed)
+            {
+                TrialStartedAt = now;
+                TrialStartedByUserId = purchasedBy;
+                TrialStoreReference = storeReference;
+                TrialWithheld = false;
+                trialStarted = true;
+            }
+            else
+            {
+                trialDenied = !(StoreReference == storeReference && TrialWithheld);
+                TrialWithheld = true;
+            }
+        }
+        else
+        {
+            TrialWithheld = false;
+        }
+
+        InStoreTrial = inTrial;
 
         Source = store;
         ProductId = productId;
@@ -145,8 +195,51 @@ public class Subscription : Entity
             CancelledAt = null;
         }
 
+        if (trialStarted)
+        {
+            return SubscriptionChange.TrialStarted;
+        }
+
+        if (trialDenied)
+        {
+            return SubscriptionChange.TrialDenied;
+        }
+
+        if (InStoreTrial && TrialWithheld)
+        {
+            return SubscriptionChange.None; // still waiting for the first paid period
+        }
+
         return wasPaid ? SubscriptionChange.Renewed : expiresAt > now ? SubscriptionChange.Started : SubscriptionChange.None;
     }
+
+    /// <summary>The payer moved their store purchase to another family (they left this one). This family drops back to
+    /// Free; the trial history stays so the trial still cannot be started twice.</summary>
+    public void DetachStore(DateTimeOffset now)
+    {
+        if (Source is not (SubscriptionSource.AppStore or SubscriptionSource.GooglePlay))
+        {
+            return;
+        }
+
+        Source = SubscriptionSource.None;
+        ProductId = null;
+        StoreReference = null;
+        PurchasedByUserId = null;
+        StartedAt = null;
+        ExpiresAt = null;
+        WillRenew = false;
+        InStoreTrial = false;
+        TrialWithheld = false;
+        CancelledAt = now;
+        UpdatedAt = now;
+    }
+
+    /// <summary>A store subscription that is paid up and will renew: buying a second one for the same family would only
+    /// charge a second parent for nothing.</summary>
+    public bool IsRenewingStorePlan(DateTimeOffset now, TimeSpan grace) =>
+        Source is SubscriptionSource.AppStore or SubscriptionSource.GooglePlay && WillRenew &&
+        StateAt(now, grace) is SubscriptionState.Active or SubscriptionState.GracePeriod or SubscriptionState.Trialing or SubscriptionState.TrialDenied;
 }
 
 public enum SubscriptionChange
@@ -155,6 +248,8 @@ public enum SubscriptionChange
     Started,
     Renewed,
     Cancelled,
+    TrialStarted,
+    TrialDenied,
 }
 
 /// <summary>What a plan allows. Values come from configuration (Billing:Plans) so they can change without a release.</summary>
