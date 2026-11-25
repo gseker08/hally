@@ -15,7 +15,7 @@ public record ChildItemBody(Guid Id, string Kind, string Title, int Cherries, st
 public record ChildRewardBody(Guid Id, string Title, int Cost, int? ScreenMinutes);
 public record ChildScreenStatusBody(DateOnly Day, int? GoalMinutes, int BonusMinutes, int? LimitMinutes, int UsedSeconds, bool Locked);
 public record ChildHomeBody(ChildProfileBody Child, string FamilyName, int Balance, int WeekCherries, int StreakDays, int NextBonusIn,
-    bool RequireApproval, List<ChildItemBody> Today, List<ChildRewardBody> Rewards, ChildScreenStatusBody Screen);
+    bool RequireApproval, List<ChildItemBody> Today, List<ChildRewardBody> Rewards, ChildScreenStatusBody Screen, string? TodayMood = null);
 public record ClaimBody(Guid Id, Guid ChildId, string ChildName, string Kind, string Title, int Cherries, DateOnly Day);
 public record ChildDeviceBody(Guid Id, string? Name);
 

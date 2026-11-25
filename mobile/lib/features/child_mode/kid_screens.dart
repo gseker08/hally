@@ -12,6 +12,8 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'child_lock.dart';
+import '../mood/mood.dart' show moodSkippedProvider;
+import '../mood/mood_widgets.dart' show KidMoodCard;
 import 'child_mode_repository.dart';
 
 /// "Bu telefon bir çocuğun": the child types the six-digit code from a parent's phone.
@@ -211,6 +213,7 @@ class _KidToday extends ConsumerWidget {
         Text(DateFormat('EEEE', locale).format(DateTime.now()), style: theme.textTheme.bodySmall),
         Text(l10n.kidHello(home.firstName), key: const Key('kid.hello'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: HallySpace.md),
+        if (home.todayMood == null && !ref.watch(moodSkippedProvider)) const KidMoodCard(),
         const _LockSetupCard(),
         Row(
           children: [

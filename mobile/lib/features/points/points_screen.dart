@@ -226,7 +226,7 @@ class PointsHistoryScreen extends ConsumerWidget {
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(e.kind == 'Reward' ? Icons.card_giftcard_rounded : Icons.check_circle_rounded,
                           color: e.kind == 'Reward' ? HallyColors.rose : HallyColors.mintDeep),
-                      title: Text(e.title),
+                      title: Text(e.kind == 'Mood' ? l10n.moodCherryTitle : e.title),
                       subtitle: Text([DateFormat.MMMd(locale).add_Hm().format(e.at), if (e.byName != null) e.byName!].join(' · ')),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,

@@ -140,6 +140,7 @@ class ChildHome {
     this.today = const [],
     this.rewards = const [],
     this.screen = const ChildScreen(),
+    this.todayMood,
   });
 
   factory ChildHome.fromJson(Map<String, dynamic> j) {
@@ -157,6 +158,7 @@ class ChildHome {
       today: [for (final i in j['today'] as List? ?? const []) ChildItem.fromJson(i as Map<String, dynamic>)],
       rewards: [for (final r in j['rewards'] as List? ?? const []) ChildReward.fromJson(r as Map<String, dynamic>)],
       screen: ChildScreen.fromJson(j['screen'] as Map<String, dynamic>? ?? const {}),
+      todayMood: j['todayMood'] as String?,
     );
   }
 
@@ -172,6 +174,9 @@ class ChildHome {
   final List<ChildItem> today;
   final List<ChildReward> rewards;
   final ChildScreen screen;
+
+  /// Today's "Bugün nasılsın?" answer (Great, Good, Okay, Sad, Angry, Tired); null until the child answers.
+  final String? todayMood;
 
   /// The cheapest reward still out of reach (the "next reward" bar).
   ChildReward? get nextReward {
@@ -194,6 +199,9 @@ abstract interface class ChildApi {
   Future<ChildHome> redeem(String rewardId);
   Future<ChildScreen> reportScreen(int usedSeconds);
   Future<void> requestTime(int minutes);
+
+  /// "Bugün nasılsın?". Returns the cherries earned (1 the first time today, else 0).
+  Future<int> answerMood(String mood, List<String> reasons);
 }
 
 class UnpairedException implements Exception {}
@@ -262,6 +270,12 @@ class DioChildApi implements ChildApi {
 
   @override
   Future<void> requestTime(int minutes) => _call(() => _dio.post<dynamic>('/api/v1/child/screen/request', data: {'minutes': minutes}));
+
+  @override
+  Future<int> answerMood(String mood, List<String> reasons) => _call(() async {
+        final res = await _dio.post<Map<String, dynamic>>('/api/v1/child/mood', data: {'mood': mood, 'reasons': reasons});
+        return (res.data!['cherries'] as num?)?.toInt() ?? 0;
+      });
 }
 
 final childApiProvider = Provider<ChildApi>((ref) => DioChildApi(ref.watch(childSessionStorageProvider)));
