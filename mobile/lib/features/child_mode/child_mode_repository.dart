@@ -9,6 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/token_storage.dart';
 import '../../core/config/app_config.dart';
 import '../messages/chat_realtime.dart';
+import 'child_lock.dart';
 
 // ─── Child phone ──────────────────────────────────────────────────────────────
 
@@ -270,6 +271,7 @@ final childHomeProvider = FutureProvider.autoDispose<ChildHome>((ref) async {
   try {
     return await ref.watch(childApiProvider).home();
   } on UnpairedException {
+    await ref.read(childLockProvider).stop();
     ref.invalidate(childSessionProvider);
     rethrow;
   }

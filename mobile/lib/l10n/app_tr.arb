@@ -466,7 +466,7 @@
       }
     }
   },
-  "privacyPointChildren": "Çocukların için senin eklediğin bilgiler tutulur: ad, doğum yılı, isteğe bağlı fotoğraf ve kullandığın takipçilerin kayıtları (uyku, beslenme, ilaç, aşı, boy-kilo, ödev gibi). Bunlar sadece ailende görünür, reklam için kullanılmaz ve hesabınla birlikte silinir.",
+  "privacyPointChildren": "Çocukların için senin eklediğin bilgiler tutulur: ad, doğum yılı, isteğe bağlı fotoğraf ve kullandığın takipçilerin kayıtları (uyku, beslenme, ilaç, aşı, boy-kilo, ödev gibi). Bunlar sadece ailende görünür, reklam için kullanılmaz ve hesabınla birlikte silinir. Çocuk modunda çocuğun telefonu sadece günlük toplam ekran süresini gönderir; hangi uygulamaları kullandığı gönderilmez.",
   "privacyPointLinks": "Yardımcı linkleri sadece paylaştığın işi gösterir, kısa sürede kendiliğinden kapanır ve istediğinde kapatılabilir.",
   "privacyPointAnalytics": "Kullanım ölçümlerinde isim, e-posta ya da yazdığın metinler yer almaz.",
   "privacyPointChat": "Aile sohbetini sadece aile üyeleri görür. Sohbet fotoğrafları şifreli saklanır ve hesabını sildiğinde gönderdiğin fotoğraflar da silinir.",
@@ -1808,7 +1808,7 @@
   },
   "childPhoneFact3": "Ekran süresini telefon kendisi sayar",
   "childPhoneFact4": "Süre dolunca ekran kilitlenir",
-  "childPhonePermissions": "Android'de \"Kullanım erişimi\", \"Diğer uygulamaların üstünde göster\" ve \"Cihaz yöneticisi\" izinleri istenir. Kurulumda adım adım gösterilir.",
+  "childPhonePermissions": "Android'de \"Kullanım erişimi\" ve \"Diğer uygulamaların üstünde göster\" izinleri istenir; çocuğun telefonunda Hally adım adım gösterir. Kilitliyken de telefon ve acil arama açıktır.",
   "childPhoneDevices": "Bağlı telefonlar",
   "childPhoneUnnamed": "{name} telefonu",
   "@childPhoneUnnamed": {
@@ -1890,5 +1890,10 @@
         "type": "int"
       }
     }
-  }
+  },
+  "kidLockSetupTitle": "Ekran kilidini aç",
+  "kidLockSetupBody": "Süre dolunca telefonun kilitlenmesi için iki izin gerekiyor. Bunu annen ya da baban ayarlasın.",
+  "kidLockSetupUsage": "Kullanım erişimi",
+  "kidLockSetupOverlay": "Diğer uygulamaların üstünde göster",
+  "kidLockSetupOpen": "Aç"
 }
