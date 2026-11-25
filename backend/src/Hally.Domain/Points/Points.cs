@@ -32,23 +32,38 @@ public class Reward : Entity
 {
     private Reward() { }
 
-    public Reward(Guid familyId, string title, int cost, DateTimeOffset now)
+    public Reward(Guid familyId, string title, int cost, DateTimeOffset now, int? screenMinutes = null)
     {
         FamilyId = familyId;
         Title = PointRules.CheckTitle(title);
         Cost = cost is >= 1 and <= 1000 ? cost : throw new DomainException("points.cost_invalid", "Cost must be 1-1000 stars.");
+        if (screenMinutes is { } m && (m < 5 || m > 120))
+        {
+            throw new DomainException("points.screen_minutes_invalid", "A screen time reward gives 5-120 minutes.");
+        }
+
+        ScreenMinutes = screenMinutes;
         CreatedAt = now;
     }
 
     public Guid FamilyId { get; private set; }
     public string Title { get; private set; } = default!;
     public int Cost { get; private set; }
+
+    /// <summary>Set for "extra screen time" rewards: redeeming adds this many minutes to today's limit.</summary>
+    public int? ScreenMinutes { get; private set; }
 }
 
 public enum PointKind
 {
     Chore,
     Reward,
+
+    /// <summary>A habit done (one cherry).</summary>
+    Habit,
+
+    /// <summary>The streak bonus every seven days in a row.</summary>
+    Bonus,
 }
 
 /// <summary>
@@ -59,7 +74,7 @@ public class PointEntry : Entity
 {
     private PointEntry() { }
 
-    public static PointEntry ForChore(Chore chore, Guid childId, Guid userId, DateOnly day, DateTimeOffset now)
+    public static PointEntry ForChore(Chore chore, Guid childId, Guid? userId, DateOnly day, DateTimeOffset now)
     {
         if (chore.ChildId is { } only && only != childId)
         {
@@ -80,7 +95,7 @@ public class PointEntry : Entity
         };
     }
 
-    public static PointEntry ForReward(Reward reward, Guid childId, int balance, Guid userId, DateOnly day, DateTimeOffset now)
+    public static PointEntry ForReward(Reward reward, Guid childId, int balance, Guid? userId, DateOnly day, DateTimeOffset now)
     {
         if (balance < reward.Cost)
         {
@@ -101,9 +116,50 @@ public class PointEntry : Entity
         };
     }
 
+    public static PointEntry ForHabit(Guid familyId, Guid childId, Guid? habitId, string title, Guid? userId, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Habit,
+        HabitId = habitId,
+        Title = title,
+        Points = 1,
+        Day = day,
+        ByUserId = userId,
+        CreatedAt = now,
+    };
+
+    /// <summary>An approved chore from child mode whose chore may have been deleted meanwhile.</summary>
+    public static PointEntry ForChoreClaim(Guid familyId, Guid childId, Guid? choreId, string title, int points, Guid? userId, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Chore,
+        ChoreId = choreId,
+        Title = title,
+        Points = points,
+        Day = day,
+        ByUserId = userId,
+        CreatedAt = now,
+    };
+
+    public static PointEntry ForStreakBonus(Guid familyId, Guid childId, int days, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Bonus,
+        Title = $"{days}",
+        Points = ChildMode.CherryStreak.BonusCherries,
+        Day = day,
+        CreatedAt = now,
+    };
+
     public Guid FamilyId { get; private set; }
     public Guid ChildId { get; private set; }
     public PointKind Kind { get; private set; }
+
+    /// <summary>For <see cref="PointKind.Habit"/>: the habit (one cherry per habit per day).</summary>
+    public Guid? HabitId { get; private set; }
     public Guid? ChoreId { get; private set; }
     public Guid? RewardId { get; private set; }
     public string Title { get; private set; } = default!;

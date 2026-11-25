@@ -93,7 +93,7 @@ public class HabitCheck : Entity
 {
     private HabitCheck() { }
 
-    public HabitCheck(Habit habit, DateOnly day, Guid userId, DateTimeOffset now)
+    public HabitCheck(Habit habit, DateOnly day, Guid? userId, DateTimeOffset now)
     {
         FamilyId = habit.FamilyId;
         HabitId = habit.Id;

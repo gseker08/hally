@@ -24,6 +24,11 @@ public class Family : Entity
     public string Name { get; private set; } = default!;
     public string TimeZoneId { get; private set; } = FamilyTimeZone.Default;
     public IReadOnlyCollection<FamilyMember> Members => _members;
+
+    /// <summary>Child mode: a chore or habit the child marks done gives cherries only after a parent approves it.</summary>
+    public bool RequireChildApproval { get; private set; } = true;
+
+    public void SetChildApproval(bool required) => RequireChildApproval = required;
     public IReadOnlyCollection<Child> Children => _children;
 
     public void Rename(string name)

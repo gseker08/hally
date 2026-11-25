@@ -106,9 +106,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         },
     };
 });
+builder.Services.AddAuthentication().AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, ChildDeviceAuthHandler>(ChildDeviceAuth.Scheme, null);
 builder.Services.AddScoped<IAuthorizationHandler, FamilyMemberHandler>();
 builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(Policies.FamilyMember, p => p.RequireAuthenticatedUser().AddRequirements(new FamilyMemberRequirement()));
+    .AddPolicy(Policies.FamilyMember, p => p.RequireAuthenticatedUser().AddRequirements(new FamilyMemberRequirement()))
+    .AddPolicy(ChildDeviceAuth.Policy, p => p.AddAuthenticationSchemes(ChildDeviceAuth.Scheme).RequireClaim(ChildDeviceAuth.ChildIdClaim));
 
 builder.Services.AddControllers().AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddFluentValidationAutoValidation();
@@ -129,6 +131,16 @@ builder.Services.AddRateLimiter(o =>
         {
             PermitLimit = builder.Configuration.GetValue("Demo:ScansPerHour", 5),
             Window = TimeSpan.FromHours(1),
+            QueueLimit = 0,
+        }));
+
+    // Guessing a child pairing code: a few tries per address.
+    o.AddPolicy(Hally.Api.Features.ChildMode.ChildController.PairRateLimit, ctx => RateLimitPartition.GetFixedWindowLimiter(
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = builder.Configuration.GetValue("ChildMode:PairAttemptsPer10Minutes", 10),
+            Window = TimeSpan.FromMinutes(10),
             QueueLimit = 0,
         }));
 

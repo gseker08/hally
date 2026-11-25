@@ -120,6 +120,15 @@ public enum NotificationKind
     ScreenTimeGoal,
     MedicationDue,
     StudyGoal,
+
+    /// <summary>Child mode: the child marked something done and it waits for a parent.</summary>
+    ChildClaim,
+
+    /// <summary>Child mode: the child asks for more screen time.</summary>
+    ChildTimeRequest,
+
+    /// <summary>Child mode: the child spent cherries on a reward.</summary>
+    ChildReward,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

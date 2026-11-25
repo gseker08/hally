@@ -14,7 +14,8 @@ namespace Hally.Api.Features.Points;
 
 public record ChoreDto(Guid Id, string Title, int Points, Guid? ChildId);
 
-public record RewardDto(Guid Id, string Title, int Cost);
+/// <param name="ScreenMinutes">Set for an "extra screen time" reward.</param>
+public record RewardDto(Guid Id, string Title, int Cost, int? ScreenMinutes = null);
 
 /// <param name="DoneToday">Chore id → the ledger entry that counted it today (to undo).</param>
 public record ChildPointsDto(Guid ChildId, int Balance, int WeekPoints, IReadOnlyDictionary<Guid, Guid> DoneToday);
@@ -25,7 +26,7 @@ public record PointEntryDto(Guid Id, string Kind, string Title, int Points, Date
 
 public record ChoreRequest(string Title, int Points, Guid? ChildId = null);
 
-public record RewardRequest(string Title, int Cost);
+public record RewardRequest(string Title, int Cost, int? ScreenMinutes = null);
 
 /// <summary>Live note that chores, rewards or stars changed; apps reload the board.</summary>
 public record PointsEvent(Guid FamilyId);
@@ -45,6 +46,7 @@ public class RewardRequestValidator : AbstractValidator<RewardRequest>
     {
         RuleFor(x => x.Title).NotEmpty().MaximumLength(60);
         RuleFor(x => x.Cost).InclusiveBetween(1, 1000);
+        RuleFor(x => x.ScreenMinutes).InclusiveBetween(5, 120).When(x => x.ScreenMinutes is not null);
     }
 }
 
@@ -68,7 +70,7 @@ public class PointsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
         var chores = await db.Chores.AsNoTracking().Where(c => c.FamilyId == familyId).OrderBy(c => c.CreatedAt)
             .Select(c => new ChoreDto(c.Id, c.Title, c.Points, c.ChildId)).ToListAsync(ct);
         var rewards = await db.Rewards.AsNoTracking().Where(r => r.FamilyId == familyId).OrderBy(r => r.Cost)
-            .Select(r => new RewardDto(r.Id, r.Title, r.Cost)).ToListAsync(ct);
+            .Select(r => new RewardDto(r.Id, r.Title, r.Cost, r.ScreenMinutes)).ToListAsync(ct);
         var childIds = await db.Children.AsNoTracking().Where(c => c.FamilyId == familyId).OrderBy(c => c.CreatedAt).Select(c => c.Id).ToListAsync(ct);
         var balances = await db.PointEntries.AsNoTracking().Where(p => p.FamilyId == familyId).GroupBy(p => p.ChildId)
             .Select(g => new { ChildId = g.Key, Balance = g.Sum(p => p.Points), Week = g.Where(p => p.Points > 0 && p.Day >= weekStart).Sum(p => p.Points) })
@@ -143,11 +145,11 @@ public class PointsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
     [ProducesResponseType<RewardDto>(201)]
     public async Task<IActionResult> AddReward(Guid familyId, RewardRequest request, CancellationToken ct)
     {
-        var reward = new Reward(familyId, request.Title, request.Cost, clock.GetUtcNow());
+        var reward = new Reward(familyId, request.Title, request.Cost, clock.GetUtcNow(), request.ScreenMinutes);
         db.Rewards.Add(reward);
         await db.SaveChangesAsync(ct);
         await Announce(familyId, ct);
-        return StatusCode(201, new RewardDto(reward.Id, reward.Title, reward.Cost));
+        return StatusCode(201, new RewardDto(reward.Id, reward.Title, reward.Cost, reward.ScreenMinutes));
     }
 
     [HttpDelete("rewards/{rewardId:guid}")]
