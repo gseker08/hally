@@ -9,6 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/token_storage.dart';
 import '../../core/config/app_config.dart';
 import '../activities/activities.dart';
+import '../allowance/allowance.dart';
 import '../asks/asks.dart';
 import '../bedtime/bedtime.dart';
 import '../goal/family_goal.dart';
@@ -234,6 +235,15 @@ abstract interface class ChildApi {
   /// Sends a ready-made request ([presetId], with [detail] for its follow-up question) or the child's own [text].
   /// 422 `ask.already_pending` / `ask.too_many`.
   Future<ChildAsks> ask({String? presetId, String? text, String? detail, required String lang});
+
+  /// Birikimim: balance, savings goal, rate and recent lines.
+  Future<ChildSavings> savings();
+
+  /// Sets the savings goal; null clears it.
+  Future<ChildSavings> setSavingsGoal(SavingsGoal? goal);
+
+  /// "Harçlığa çevir": asks a parent; 422 `allowance.pending`, `points.not_enough`, `allowance.cherries_invalid`.
+  Future<ChildSavings> convert(int cherries);
 }
 
 class UnpairedException implements Exception {}
@@ -323,6 +333,19 @@ class DioChildApi implements ChildApi {
   @override
   Future<ChildBedtime> bedtimeDone(int index) =>
       _call(() async => ChildBedtime.fromJson((await _dio.post<Map<String, dynamic>>('/api/v1/child/bedtime/steps/$index/done')).data!));
+
+  @override
+  Future<ChildSavings> savings() => _call(() async => ChildSavings.fromJson((await _dio.get<Map<String, dynamic>>('/api/v1/child/savings')).data!));
+
+  @override
+  Future<ChildSavings> setSavingsGoal(SavingsGoal? goal) => _call(() async => ChildSavings.fromJson((goal == null
+          ? await _dio.delete<Map<String, dynamic>>('/api/v1/child/savings/goal')
+          : await _dio.put<Map<String, dynamic>>('/api/v1/child/savings/goal', data: goal.toJson()))
+      .data!));
+
+  @override
+  Future<ChildSavings> convert(int cherries) =>
+      _call(() async => ChildSavings.fromJson((await _dio.post<Map<String, dynamic>>('/api/v1/child/savings/convert', data: {'cherries': cherries})).data!));
 
   @override
   Future<ChildAsks> asks(String lang) =>

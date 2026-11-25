@@ -12,6 +12,7 @@ import '../family/family_repository.dart';
 import '../capture/capture_repository.dart';
 import '../child_mode/parent_child_mode.dart';
 import '../family/children.dart';
+import '../allowance/allowance_screens.dart' show ParentAllowanceCard;
 import '../asks/ask_screens.dart' show ParentAsksCard;
 import '../goal/goal_widgets.dart' show FamilyGoalCard;
 import '../messages/chats_screen.dart';
@@ -85,6 +86,7 @@ class TodayScreen extends ConsumerWidget {
       ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
       if (!ref.watch(isCaregiverProvider)) ParentAsksCard(familyId: familyId),
       if (!ref.watch(isCaregiverProvider)) ChildClaimsCard(familyId: familyId),
+      if (!ref.watch(isCaregiverProvider)) ParentAllowanceCard(familyId: familyId),
       if (ref.watch(isCaregiverProvider)) CaregiverHandoffCard(familyId: familyId) else ParentHandoffCards(familyId: familyId),
       if (!ref.watch(isCaregiverProvider)) FamilyGoalCard(familyId: familyId),
       if (d.waiting.isNotEmpty)

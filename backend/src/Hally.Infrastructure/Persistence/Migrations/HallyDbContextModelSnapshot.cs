@@ -75,6 +75,145 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("family_activities", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Allowance.AllowancePlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AddToExpenses")
+                        .HasColumnType("boolean")
+                        .HasColumnName("add_to_expenses");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<int?>("GoalCherries")
+                        .HasColumnType("integer")
+                        .HasColumnName("goal_cherries");
+
+                    b.Property<string>("GoalEmoji")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("goal_emoji");
+
+                    b.Property<string>("GoalTitle")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("goal_title");
+
+                    b.Property<decimal>("RateAmount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("rate_amount");
+
+                    b.Property<int>("RateCherries")
+                        .HasColumnType("integer")
+                        .HasColumnName("rate_cherries");
+
+                    b.Property<int>("WeeklyCherries")
+                        .HasColumnType("integer")
+                        .HasColumnName("weekly_cherries");
+
+                    b.Property<DateOnly?>("WeeklyPaidFor")
+                        .HasColumnType("date")
+                        .HasColumnName("weekly_paid_for");
+
+                    b.HasKey("Id")
+                        .HasName("pk_allowance_plans");
+
+                    b.HasIndex("ChildId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_allowance_plans_child_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_allowance_plans_family_id");
+
+                    b.ToTable("allowance_plans", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Allowance.AllowanceRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<int>("Cherries")
+                        .HasColumnType("integer")
+                        .HasColumnName("cherries");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTimeOffset?>("DecidedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("decided_at");
+
+                    b.Property<Guid?>("DecidedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("decided_by_user_id");
+
+                    b.Property<Guid?>("ExpenseId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("expense_id");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Status")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id")
+                        .HasName("pk_allowance_requests");
+
+                    b.HasIndex("DecidedByUserId")
+                        .HasDatabaseName("ix_allowance_requests_decided_by_user_id");
+
+                    b.HasIndex("ChildId", "Status")
+                        .HasDatabaseName("ix_allowance_requests_child_id_status");
+
+                    b.HasIndex("FamilyId", "Status")
+                        .HasDatabaseName("ix_allowance_requests_family_id_status");
+
+                    b.ToTable("allowance_requests", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Asks.AskPreset", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3299,6 +3438,46 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_family_activities_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Allowance.AllowancePlan", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_allowance_plans_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_allowance_plans_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Allowance.AllowanceRequest", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_allowance_requests_children_child_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_allowance_requests_users_decided_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_allowance_requests_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Asks.AskPreset", b =>

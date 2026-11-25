@@ -73,6 +73,10 @@ public enum PointKind
 
     /// <summary>A screen-free idea done ("Şimdi ne yapsam?"); counts for the streak like chores and habits.</summary>
     Activity,
+
+    /// <summary>Harçlık: plus for the weekly allowance in cherries, minus for cherries turned into pocket money.
+    /// Neither counts as "earned" (streak, week total, family goal).</summary>
+    Allowance,
 }
 
 /// <summary>
@@ -185,6 +189,37 @@ public class PointEntry : Entity
         Day = day,
         CreatedAt = now,
     };
+
+    public static PointEntry ForWeeklyAllowance(Guid familyId, Guid childId, int points, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Allowance,
+        Title = "weekly",
+        Points = points,
+        Day = day,
+        CreatedAt = now,
+    };
+
+    public static PointEntry ForConversion(Guid familyId, Guid childId, int cherries, int balance, Guid userId, DateOnly day, DateTimeOffset now)
+    {
+        if (balance < cherries)
+        {
+            throw new DomainException("points.not_enough", $"Needs {cherries} cherries; there are {balance}.");
+        }
+
+        return new PointEntry
+        {
+            FamilyId = familyId,
+            ChildId = childId,
+            Kind = PointKind.Allowance,
+            Title = "converted",
+            Points = -cherries,
+            Day = day,
+            ByUserId = userId,
+            CreatedAt = now,
+        };
+    }
 
     public static PointEntry ForMood(Guid familyId, Guid childId, DateOnly day, DateTimeOffset now) => new()
     {

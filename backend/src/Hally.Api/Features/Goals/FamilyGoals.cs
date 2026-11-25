@@ -5,6 +5,7 @@ using Hally.Domain.Common;
 using Hally.Domain.Families;
 using Hally.Domain.Goals;
 using Hally.Domain.Notifications;
+using Hally.Domain.Points;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -160,7 +161,7 @@ public class FamilyGoalService(HallyDbContext db, NotificationPublisher publishe
 
         var children = await db.Children.AsNoTracking().Where(c => c.FamilyId == familyId).OrderBy(c => c.CreatedAt)
             .Select(c => new { c.Id, c.FirstName, c.Color }).ToListAsync(ct);
-        var cherries = await db.PointEntries.AsNoTracking().Where(p => p.FamilyId == familyId && p.Points > 0 && p.Day >= week && p.Day < end)
+        var cherries = await db.PointEntries.AsNoTracking().Where(p => p.FamilyId == familyId && p.Points > 0 && p.Kind != PointKind.Allowance && p.Day >= week && p.Day < end)
             .GroupBy(p => p.ChildId).Select(g => new { g.Key, Sum = g.Sum(p => p.Points) }).ToDictionaryAsync(g => g.Key, g => g.Sum, ct);
 
         var parents = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver).OrderBy(m => m.CreatedAt)

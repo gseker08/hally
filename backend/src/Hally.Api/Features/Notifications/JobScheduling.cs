@@ -18,6 +18,7 @@ public static class JobScheduling
         services.AddScoped<ScreenTime.ScreenTimeService>();
         services.AddScoped<Bedtime.BedtimeService>();
         services.AddScoped<Asks.AskService>();
+        services.AddScoped<Allowance.AllowanceService>();
         services.AddScoped<ChildMode.ChildModeService>();
         services.AddScoped<ScreenTime.ScreenTimeGoalJob>();
         services.AddScoped<Medications.MedicationService>();
@@ -51,6 +52,7 @@ public static class JobScheduling
         jobs.AddOrUpdate<ScreenTime.ScreenTimeGoalJob>("screen-time-goals", j => j.RunAsync(CancellationToken.None), Cron.Minutely());
         jobs.AddOrUpdate<Medications.MedicationDueJob>("medication-due", j => j.RunAsync(CancellationToken.None), Cron.Minutely());
         jobs.AddOrUpdate<Goals.FamilyGoalService>("family-goals", j => j.CheckAllAsync(CancellationToken.None), "*/10 * * * *");
+        jobs.AddOrUpdate<Allowance.AllowanceService>("weekly-allowance", j => j.WeeklyAsync(CancellationToken.None), "5 * * * *");
         jobs.AddOrUpdate<Privacy.CaregiverExpiryJob>("caregiver-expiry", j => j.RunAsync(CancellationToken.None), Cron.Hourly());
         jobs.AddOrUpdate<Billing.SubscriptionRefreshJob>("subscription-refresh", j => j.RunAsync(CancellationToken.None), Cron.Hourly());
     }

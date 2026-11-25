@@ -2440,5 +2440,117 @@
   "askNoticeChannel": "Çocukların istekleri",
   "askNoticeChannelDescription": "Çocuğunuz bir şey istediğinde Evet/Hayır ile cevaplayın",
   "askNoticeTakenTitle": "İstek zaten yanıtlandı",
-  "askNoticeTakenBody": "Diğer ebeveyn senden önce cevap verdi."
+  "askNoticeTakenBody": "Diğer ebeveyn senden önce cevap verdi.",
+  "savingsTitle": "Birikimim",
+  "savingsSetGoal": "Bir hedef seç",
+  "savingsSetGoalBody": "Bisiklet, oyun, kitap… Kirazlarını onun için biriktir.",
+  "savingsProgress": "{have} / {target} kiraz",
+  "@savingsProgress": {
+    "placeholders": {
+      "have": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "savingsEta": "Böyle devam edersen {weeks} hafta sonra 🎉",
+  "@savingsEta": {
+    "placeholders": {
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "savingsEtaUnknown": "Kiraz topladıkça ne zaman biteceğini göstereceğim.",
+  "savingsReached": "Hedefe ulaştın! 🎉 Annene ve babana göster.",
+  "savingsConvert": "Harçlığa çevir",
+  "savingsRate": "{cherries} kiraz = {money} · annen ya da baban onaylar",
+  "@savingsRate": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      },
+      "money": {
+        "type": "String"
+      }
+    }
+  },
+  "savingsConvertWaiting": "{cherries} kiraz = {money} · onay bekliyor",
+  "@savingsConvertWaiting": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      },
+      "money": {
+        "type": "String"
+      }
+    }
+  },
+  "savingsConvertButton": "Çevir",
+  "savingsConvertHint": "Kirazlar, annen ya da baban harçlığı verdiğinde kavanozdan çıkar.",
+  "savingsConvertSend": "Annemle babama sor",
+  "savingsConvertSent": "Sordum! Harçlığı verince kirazlar kavanozdan çıkacak.",
+  "savingsRecent": "Son hareketler",
+  "savingsToday": "Bugün",
+  "savingsYesterday": "Dün",
+  "savingsLineMood": "Bugün nasılsın?",
+  "savingsLineBedtime": "Uyku rutini",
+  "savingsLineBonus": "Seri bonusu",
+  "savingsLineWeekly": "Haftalık harçlık",
+  "savingsLineConverted": "Harçlığa çevrildi",
+  "savingsGoalSheet": "Neye biriktiriyorsun?",
+  "savingsGoalName": "Hedefin adı",
+  "savingsGoalNameHint": "Bisiklet",
+  "savingsGoalCherries": "Kaç kiraz?",
+  "savingsGoalClear": "Hedefi kaldır",
+  "allowanceTitle": "Harçlık",
+  "allowanceRate": "Kiraz değeri",
+  "allowanceRateBody": "Çocuk çevirmek isteyince size sorulur",
+  "allowanceRateValue": "{cherries} = {money}",
+  "@allowanceRateValue": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      },
+      "money": {
+        "type": "String"
+      }
+    }
+  },
+  "allowanceWeekly": "Haftalık harçlık",
+  "allowanceWeeklyBody": "Her pazartesi kavanoza kiraz olarak eklenir",
+  "allowanceWeeklyOff": "Yok",
+  "allowanceExpenses": "Harcamalar'a yaz",
+  "allowanceExpensesBody": "\"Ödedim\" deyince verilen para Harcamalar'a eklenir",
+  "allowancePending": "Onay bekleyen",
+  "allowanceHistory": "Geçmiş",
+  "allowanceAsks": "{name} {cherries} kirazı harçlığa çevirmek istiyor",
+  "@allowanceAsks": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "cherries": {
+        "type": "int"
+      }
+    }
+  },
+  "allowancePaid": "Ödedim",
+  "allowanceLater": "Şimdi değil",
+  "allowancePaidDone": "Kaydedildi · {name}: kirazlar kavanozdan düştü.",
+  "@allowancePaidDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "allowanceAlreadyDecided": "Bu istek zaten yanıtlandı.",
+  "allowanceNotEnough": "Kavanozda artık yeterli kiraz yok.",
+  "allowanceStatusPaid": "Ödendi",
+  "allowanceStatusDeclined": "Şimdi değil",
+  "allowanceDisclaimer": "Hally para tutmaz ve ödeme yapmaz; sadece ne kadar verdiğinizi takip eder.",
+  "allowancePhoneTileBody": "Kiraz değeri, haftalık harçlık ve birikim hedefi"
 }

@@ -39,6 +39,9 @@ String pushRoute(Map<String, dynamic> data) {
   if (data['kind'] == 'DutyDone') return '/school-run';
   if (data['kind'] == 'FamilyGoalReached') return '/family-goal';
   if (data['kind'] == 'ChildAsk' || data['kind'] == 'ChildAskAnswered') return '/asks';
+  final familyId = data['familyId'];
+  final childId = data['targetId'];
+  if (data['kind'] == 'AllowanceRequest' && childId is String && familyId is String) return '/allowance/$childId?familyId=$familyId';
   if (data['kind'] == 'HandoffReport' || data['kind'] == 'HandoffThanks') return '/handoffs';
   if (data['kind'] == 'MedicationGiven' || data['kind'] == 'MedicationDue') return '/medications';
   return switch (data['targetKind']) {

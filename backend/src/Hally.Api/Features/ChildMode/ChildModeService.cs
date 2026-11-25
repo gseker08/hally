@@ -71,7 +71,7 @@ public class ChildModeService(
         var entries = await db.PointEntries.AsNoTracking().Where(p => p.ChildId == childId)
             .Select(p => new { p.Kind, p.Points, p.Day, p.ChoreId, p.HabitId }).ToListAsync(ct);
         var balance = entries.Sum(e => e.Points);
-        var week = entries.Where(e => e.Points > 0 && e.Day >= weekStart).Sum(e => e.Points);
+        var week = entries.Where(e => e.Points > 0 && e.Kind != PointKind.Allowance && e.Day >= weekStart).Sum(e => e.Points);
         var streak = CherryStreak.Length(ActiveDays(entries.Select(e => (e.Kind, e.Points, e.Day))), today);
 
         var pending = await db.ChildClaims.AsNoTracking()

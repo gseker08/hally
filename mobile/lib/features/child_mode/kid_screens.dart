@@ -14,6 +14,7 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'child_lock.dart';
 import '../activities/activity_screens.dart' show KidIdeasCard;
+import '../allowance/allowance_screens.dart' show KidSavingsSection;
 import '../asks/ask_screens.dart' show KidAskCard;
 import '../bedtime/bedtime.dart' show bedtimeLaterProvider;
 import '../bedtime/bedtime_screens.dart' show KidBedtimeCard, KidBedtimeScreen, KidNightView;
@@ -410,6 +411,7 @@ class _KidJar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: HallySpace.md),
+        const KidSavingsSection(),
         const _KidGoal(),
         _Panel(
           color: HallyColors.softOf(HallyColors.butter, b),

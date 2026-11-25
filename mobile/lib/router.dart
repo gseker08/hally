@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
 import 'features/activities/activity_screens.dart' show FamilyActivitiesScreen;
+import 'features/allowance/allowance_screens.dart' show AllowanceScreen;
 import 'features/asks/ask_screens.dart' show AskPresetsScreen, AsksScreen;
 import 'features/bedtime/bedtime_screens.dart' show BedtimeSettingsScreen;
 import 'features/child_mode/child_mode_repository.dart';
@@ -154,6 +155,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/bedtime/:childId',
           builder: (_, s) => BedtimeSettingsScreen(familyId: s.uri.queryParameters['familyId'] ?? '', childId: s.pathParameters['childId']!)),
+      GoRoute(
+          path: '/allowance/:childId',
+          builder: (_, s) => AllowanceScreen(
+              familyId: s.uri.queryParameters['familyId'] ?? '', childId: s.pathParameters['childId']!, childName: s.uri.queryParameters['name'])),
       GoRoute(path: '/asks', builder: (_, s) => AsksScreen(familyId: s.uri.queryParameters['familyId'])),
       GoRoute(path: '/ask-presets', builder: (_, s) => AskPresetsScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
       GoRoute(path: '/activities', builder: (_, s) => FamilyActivitiesScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
