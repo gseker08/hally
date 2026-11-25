@@ -58,7 +58,7 @@ public class FeedingController(HallyDbContext db, IHubContext<ChatHub, IChatClie
         var tz = await TimeZone(familyId, ct);
         var children = await db.Children.AsNoTracking().Where(c => c.FamilyId == familyId).OrderBy(c => c.CreatedAt).Select(c => c.Id).ToListAsync(ct);
         var result = new List<ChildFeedingStatusDto>();
-        foreach (var childId in children)
+        foreach (var childId in children.Where(HttpContext.Access().SeesChild))
         {
             result.Add(await StatusAsync(childId, tz, ct));
         }

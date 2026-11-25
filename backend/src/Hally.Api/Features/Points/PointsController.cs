@@ -77,7 +77,9 @@ public class PointsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
             .Select(p => new { p.ChildId, ChoreId = p.ChoreId!.Value, p.Id }).ToListAsync(ct);
         var children = childIds.Select(id => new ChildPointsDto(id, balances.GetValueOrDefault(id)?.Balance ?? 0, balances.GetValueOrDefault(id)?.Week ?? 0,
             doneToday.Where(d => d.ChildId == id).ToDictionary(d => d.ChoreId, d => d.Id))).ToList();
-        return new PointsBoardDto(chores, rewards, children);
+        var access = HttpContext.Access();
+        return new PointsBoardDto(chores.Where(c => c.ChildId is not { } id || access.SeesChild(id)).ToList(), rewards,
+            children.Where(c => access.SeesChild(c.ChildId)).ToList());
     }
 
     /// <summary>The child's latest 50 ledger lines, newest first.</summary>

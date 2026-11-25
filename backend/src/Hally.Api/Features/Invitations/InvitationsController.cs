@@ -14,7 +14,10 @@ using Microsoft.Extensions.Options;
 namespace Hally.Api.Features.Invitations;
 
 /// <param name="Role">"parent" (default) or "caregiver".</param>
-public record CreateInvitationRequest(string? Role = null);
+/// <param name="AccessUntil">Caregivers: when access ends (null = until removed).</param>
+/// <param name="ChildIds">Caregivers: the children they look after (empty or null = all).</param>
+/// <param name="CanSeeHealth">Caregivers: may read the health card. Off by default.</param>
+public record CreateInvitationRequest(string? Role = null, DateTimeOffset? AccessUntil = null, IReadOnlyList<Guid>? ChildIds = null, bool CanSeeHealth = false);
 /// <param name="Role">"parent" or "caregiver": what the invited person becomes.</param>
 public record InvitationCreatedDto(Guid Id, string Token, string Url, string ShareText, string WhatsAppUrl, DateTimeOffset ExpiresAt, string Role = "parent");
 public record InvitationPreviewDto(string FamilyName, string InvitedBy, string Status, DateTimeOffset ExpiresAt, string Role = "parent");
@@ -56,6 +59,14 @@ public class InvitationsController(
         var inviter = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
         var token = Crypto.NewToken();
         var invitation = new Invitation(familyId, userId, Crypto.Sha256(token), clock.GetUtcNow(), role: role);
+        if (role == FamilyRole.Caregiver)
+        {
+            var family = await db.Families.AsNoTracking().Include(f => f.Children).FirstAsync(f => f.Id == familyId, ct);
+            var access = new CaregiverAccess(request?.AccessUntil, request?.ChildIds ?? [], request?.CanSeeHealth ?? false);
+            access.Validate(family, clock.GetUtcNow());
+            invitation.LimitCaregiver(access);
+        }
+
         db.Invitations.Add(invitation);
         analytics.Track(AnalyticsEvents.InvitationCreated, userId, familyId);
         await db.SaveChangesAsync(ct);
@@ -85,7 +96,7 @@ public class InvitationsController(
     {
         var userId = User.UserId();
         var invitation = await Find(token, ct, track: true);
-        var family = await db.Families.Include(f => f.Members).FirstAsync(f => f.Id == invitation.FamilyId, ct);
+        var family = await db.Families.Include(f => f.Members).Include(f => f.Children).FirstAsync(f => f.Id == invitation.FamilyId, ct);
         var wasMember = family.IsMember(userId);
         if (!wasMember && invitation.Role != FamilyRole.Caregiver && invitation.StatusAt(clock.GetUtcNow()) == InvitationStatus.Pending)
         {

@@ -53,6 +53,7 @@ public class HealthCardController(HallyDbContext db, IHubContext<ChatHub, IChatC
 {
     public const int ReminderHour = 19;
 
+    [CaregiverAllowed(Health = true)]
     [HttpGet]
     public async Task<HealthCardDto> Card(Guid familyId, Guid childId, CancellationToken ct)
     {

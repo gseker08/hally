@@ -65,7 +65,7 @@ public class SleepController(HallyDbContext db, IHubContext<ChatHub, IChatClient
     {
         var children = await db.Children.AsNoTracking().Where(c => c.FamilyId == familyId).OrderBy(c => c.CreatedAt).Select(c => c.Id).ToListAsync(ct);
         var result = new List<ChildSleepStatusDto>();
-        foreach (var childId in children)
+        foreach (var childId in children.Where(HttpContext.Access().SeesChild))
         {
             result.Add(await StatusAsync(childId, ct));
         }

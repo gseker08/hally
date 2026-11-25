@@ -31,6 +31,26 @@ public class Invitation : Entity
 
     /// <summary>The role the invited person gets: <see cref="FamilyRole.Adult"/> (parent) or <see cref="FamilyRole.Caregiver"/>.</summary>
     public FamilyRole Role { get; private set; } = FamilyRole.Adult;
+
+    /// <summary>Caregiver invitations: the access the caregiver gets on joining.</summary>
+    public DateTimeOffset? AccessUntil { get; private set; }
+
+    public List<Guid> ChildIds { get; private set; } = [];
+    public bool CanSeeHealth { get; private set; }
+
+    public CaregiverAccess Access => new(AccessUntil, ChildIds, CanSeeHealth);
+
+    public void LimitCaregiver(CaregiverAccess access)
+    {
+        if (Role != FamilyRole.Caregiver)
+        {
+            throw new DomainException("invitation.not_caregiver", "Only a caregiver invitation carries access limits.");
+        }
+
+        AccessUntil = access.Until;
+        ChildIds = access.ChildIds.Distinct().ToList();
+        CanSeeHealth = access.CanSeeHealth;
+    }
     public string TokenHash { get; private set; } = default!;
     public DateTimeOffset ExpiresAt { get; private set; }
     public Guid? AcceptedByUserId { get; private set; }
@@ -63,7 +83,13 @@ public class Invitation : Entity
             throw new DomainException($"invitation.{status.ToString().ToLowerInvariant()}", $"Invitation is {status}.");
         }
 
-        family.AddMember(userId, Role);
+        var member = family.AddMember(userId, Role);
+        if (Role == FamilyRole.Caregiver)
+        {
+            // Children removed since the invitation was sent are dropped; an end date that already passed still applies.
+            member.SetCaregiverAccess(Access with { ChildIds = ChildIds.Where(id => family.Children.Any(c => c.Id == id)).ToList() });
+        }
+
         AcceptedByUserId = userId;
         AcceptedAt = now;
     }

@@ -55,7 +55,9 @@ public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvi
             return Problem(statusCode: 400, title: "Range must be positive and at most 400 days.", type: "https://hally.app/problems/events.range_invalid");
         }
 
-        return (await InRange(familyId, start, end, ct)).Where(e => child is not { } c || e.ChildIds.Contains(c)).Select(ToDto).ToList();
+        var access = HttpContext.Access();
+        return (await InRange(familyId, start, end, ct)).Where(e => (child is not { } c || e.ChildIds.Contains(c)) && access.SeesTagged(e.ChildIds))
+            .Select(ToDto).ToList();
     }
 
     [HttpPost]

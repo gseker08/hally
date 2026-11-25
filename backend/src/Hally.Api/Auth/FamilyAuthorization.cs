@@ -18,24 +18,40 @@ public class FamilyMemberRequirement : IAuthorizationRequirement;
 /// <summary>Lets caregivers use this endpoint (or every endpoint of this controller). Everything else in a family is
 /// for parents only, so a new feature is closed to caregivers until someone decides otherwise.</summary>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-public sealed class CaregiverAllowedAttribute : Attribute;
+public sealed class CaregiverAllowedAttribute : Attribute
+{
+    /// <summary>Only caregivers a parent allowed to see health data (<see cref="FamilyMember.CanSeeHealth"/>).</summary>
+    public bool Health { get; init; }
+}
+
+/// <summary>What the caller may see in the route's family, set once membership was checked.</summary>
+public record FamilyAccessInfo(FamilyRole Role, IReadOnlySet<Guid>? ChildScope, bool CanSeeHealth)
+{
+    public bool IsParent => Role is FamilyRole.Owner or FamilyRole.Adult;
+
+    /// <summary>A caregiver with a child list sees only those children; everyone else sees all.</summary>
+    public bool SeesChild(Guid childId) => ChildScope is null || ChildScope.Contains(childId);
+
+    /// <summary>Items tagged with children (tasks, events). Untagged items belong to the whole family and stay visible.</summary>
+    public bool SeesTagged(IReadOnlyCollection<Guid> childIds) => ChildScope is null || childIds.Count == 0 || childIds.Any(ChildScope.Contains);
+}
 
 public static class FamilyAccess
 {
-    private const string RoleKey = "hally.family-role";
+    private const string Key = "hally.family-access";
+    private static readonly FamilyAccessInfo None = new(Domain.Families.FamilyRole.Caregiver, new HashSet<Guid>(), false);
 
-    /// <summary>The caller's role in the route's family, set once membership was checked.</summary>
-    public static FamilyRole FamilyRole(this HttpContext ctx) =>
-        ctx.Items.TryGetValue(RoleKey, out var role) && role is FamilyRole r ? r : Domain.Families.FamilyRole.Caregiver;
+    public static FamilyAccessInfo Access(this HttpContext ctx) =>
+        ctx.Items.TryGetValue(Key, out var a) && a is FamilyAccessInfo info ? info : None;
 
-    public static bool IsParent(this HttpContext ctx) => ctx.FamilyRole() is Domain.Families.FamilyRole.Owner or Domain.Families.FamilyRole.Adult;
+    public static bool IsParent(this HttpContext ctx) => ctx.Access().IsParent;
 
-    internal static void SetFamilyRole(this HttpContext ctx, FamilyRole role) => ctx.Items[RoleKey] = role;
+    internal static void SetAccess(this HttpContext ctx, FamilyAccessInfo access) => ctx.Items[Key] = access;
 }
 
 /// <summary>Enforces family isolation (every family-scoped route is checked against membership) and keeps
-/// caregivers to the endpoints opened for them.</summary>
-public class FamilyMemberHandler(HallyDbContext db, IHttpContextAccessor http) : AuthorizationHandler<FamilyMemberRequirement>
+/// caregivers to the endpoints, children and time window a parent gave them.</summary>
+public class FamilyMemberHandler(HallyDbContext db, IHttpContextAccessor http, TimeProvider clock) : AuthorizationHandler<FamilyMemberRequirement>
 {
     protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, FamilyMemberRequirement requirement)
     {
@@ -50,20 +66,30 @@ public class FamilyMemberHandler(HallyDbContext db, IHttpContextAccessor http) :
         }
 
         var userId = context.User.UserId();
-        var role = await db.FamilyMembers.Where(m => m.FamilyId == familyId && m.UserId == userId)
-            .Select(m => (FamilyRole?)m.Role).FirstOrDefaultAsync(ctx.RequestAborted);
-        if (role is not { } r)
+        var member = await db.FamilyMembers.AsNoTracking().FirstOrDefaultAsync(m => m.FamilyId == familyId && m.UserId == userId, ctx.RequestAborted);
+        if (member is null)
         {
             return;
         }
 
-        if (r == FamilyRole.Caregiver && ctx.GetEndpoint()?.Metadata.GetMetadata<CaregiverAllowedAttribute>() is null)
+        if (member.Role == FamilyRole.Caregiver)
         {
-            context.Fail(new AuthorizationFailureReason(this, "Parents only."));
-            return;
+            var allowed = ctx.GetEndpoint()?.Metadata.GetMetadata<CaregiverAllowedAttribute>();
+            var childScope = member.ChildIds.Count == 0 ? null : member.ChildIds.ToHashSet();
+            var outOfScope = childScope is not null && Guid.TryParse(ctx.GetRouteValue("childId")?.ToString(), out var childId) && !childScope.Contains(childId);
+            if (allowed is null || !member.HasAccess(clock.GetUtcNow()) || (allowed.Health && !member.CanSeeHealth) || outOfScope)
+            {
+                context.Fail(new AuthorizationFailureReason(this, "Not available to this caregiver."));
+                return;
+            }
+
+            ctx.SetAccess(new FamilyAccessInfo(member.Role, childScope, member.CanSeeHealth));
+        }
+        else
+        {
+            ctx.SetAccess(new FamilyAccessInfo(member.Role, null, true));
         }
 
-        ctx.SetFamilyRole(r);
         context.Succeed(requirement);
     }
 }

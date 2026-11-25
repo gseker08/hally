@@ -154,7 +154,51 @@ public class FamilyMember : Entity
 
     public bool IsParent => Role is FamilyRole.Owner or FamilyRole.Adult;
 
+    /// <summary>Caregivers only: when their access ends (null = until a parent removes them).</summary>
+    public DateTimeOffset? AccessUntil { get; private set; }
+
+    /// <summary>Caregivers only: the children they look after. Empty means every child in the family.</summary>
+    public List<Guid> ChildIds { get; private set; } = [];
+
+    /// <summary>Caregivers only: may read the health card (allergies, vaccines, growth). Health data is special-category
+    /// personal data under KVKK, so this is off unless a parent turns it on.</summary>
+    public bool CanSeeHealth { get; private set; }
+
+    public bool HasAccess(DateTimeOffset now) => AccessUntil is not { } until || until > now;
+
+    /// <summary>Sets what a caregiver can reach. Parents always see everything.</summary>
+    public void SetCaregiverAccess(CaregiverAccess access)
+    {
+        if (Role != FamilyRole.Caregiver)
+        {
+            throw new DomainException("member.not_caregiver", "Only a caregiver's access can be limited.");
+        }
+
+        AccessUntil = access.Until;
+        ChildIds = access.ChildIds.Distinct().ToList();
+        CanSeeHealth = access.CanSeeHealth;
+    }
+
     internal void Promote() => Role = FamilyRole.Owner;
+}
+
+/// <summary>What a caregiver can reach: until when, which children (empty = all), and whether the health card.</summary>
+public record CaregiverAccess(DateTimeOffset? Until, IReadOnlyList<Guid> ChildIds, bool CanSeeHealth)
+{
+    public static readonly CaregiverAccess Default = new(null, [], false);
+
+    public void Validate(Family family, DateTimeOffset now)
+    {
+        if (Until is { } until && until <= now)
+        {
+            throw new DomainException("caregiver.until_invalid", "Access must end in the future.");
+        }
+
+        if (ChildIds.Any(id => family.Children.All(c => c.Id != id)))
+        {
+            throw new DomainException("child.not_found", "Child not found.");
+        }
+    }
 }
 
 /// <summary>A child profile. Only a first name is kept (no surname) to minimise PII.</summary>

@@ -23,7 +23,7 @@ public class UpdateProfileRequestValidator : AbstractValidator<UpdateProfileRequ
 [ApiController]
 [Authorize]
 [Route("api/v1/me")]
-public class MeController(HallyDbContext db) : ControllerBase
+public class MeController(HallyDbContext db, TimeProvider clock) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<MeResponse>> Get(CancellationToken ct) => await Load(User.UserId(), ct);
@@ -42,8 +42,9 @@ public class MeController(HallyDbContext db) : ControllerBase
     {
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId, ct)
                    ?? throw new AuthRequiredException();
+        var now = clock.GetUtcNow(); // a caregiver whose access ended no longer sees the family
         var families = await db.FamilyMembers.AsNoTracking()
-            .Where(m => m.UserId == userId)
+            .Where(m => m.UserId == userId && (m.AccessUntil == null || m.AccessUntil > now))
             .Join(db.Families, m => m.FamilyId, f => f.Id, (m, f) => new { f.Id, f.Name, m.Role })
             .ToListAsync(ct);
         return new MeResponse(user.Id, user.Email, user.DisplayName, user.Locale,
