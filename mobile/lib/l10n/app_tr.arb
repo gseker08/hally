@@ -2366,5 +2366,79 @@
         "type": "String"
       }
     }
-  }
+  },
+  "askTitle": "Bir şey iste",
+  "askCardHint": "Annene ve babana bir dokunuşla sor",
+  "askIntro": "Birine dokun, annene ve babana gitsin.",
+  "askOwn": "Kendim yazayım…",
+  "askOwnHint": "Ne istiyorsun?",
+  "askWrite": "＋ Yaz",
+  "askSend": "Gönder",
+  "askSent": "Gönderildi! Cevap gelince burada görürsün.",
+  "askAlreadyPending": "Bunu zaten sordun, cevap bekleniyor.",
+  "askTooMany": "Önce gelen cevapları bekle.",
+  "askToday": "Bugün",
+  "askWaiting": "Bekliyor",
+  "askYes": "Evet",
+  "askNo": "Hayır",
+  "askExpired": "Cevapsız kaldı",
+  "askAnsweredBy": "Cevaplayan: {name}",
+  "@askAnsweredBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "askParentTitle": "Çocukların istekleri",
+  "askNoteHint": "Bir not ekle (isteğe bağlı)",
+  "askAnsweredYes": "Evet dedin. {name} hemen görecek.",
+  "@askAnsweredYes": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "askAnsweredNo": "Hayır dedin. {name} hemen görecek.",
+  "@askAnsweredNo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "askAlreadyAnswered": "Diğer ebeveyn bu isteği zaten yanıtladı.",
+  "askExpiredError": "Bu istek dünden kaldı, artık yanıtlanamaz.",
+  "askEmptyTitle": "Bugün istek yok",
+  "askEmptyBody": "Çocuğunuz kendi telefonundan \"Bir şey iste\" dediğinde burada ve bildirimde görünür.",
+  "askPresetsTitle": "Hazır istekler",
+  "askPresetsBody": "Çocuğunuzun \"Bir şey iste\" sayfasında gördüğü istekler. Ek süre içeren bir isteğe Evet derseniz kilit gerçekten ertelenir.",
+  "askPresetsSaved": "Kaydedildi",
+  "askPresetAdd": "İstek ekle",
+  "askPresetEdit": "İsteği düzenle",
+  "askPresetTitleLabel": "İstek",
+  "askPresetQuestionLabel": "Ek soru (isteğe bağlı)",
+  "askPresetQuestionHint": "Kimin evine?",
+  "askPresetOptionsLabel": "Hızlı cevaplar, virgülle",
+  "askPresetOptionsHint": "Zeynep, Can",
+  "askPresetMinutesLabel": "Evet denirse ek ekran süresi",
+  "askPresetNoMinutes": "Yok",
+  "askPresetMinutes": "+{minutes} dk ekran",
+  "@askPresetMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "askSave": "Kaydet",
+  "askDelete": "Sil",
+  "askOk": "Tamam",
+  "askPhoneTile": "Hazır istekler",
+  "askPhoneTileBody": "\"Arkadaşıma gidebilir miyim?\" gibi istekleri düzenleyin",
+  "askNoticeChannel": "Çocukların istekleri",
+  "askNoticeChannelDescription": "Çocuğunuz bir şey istediğinde Evet/Hayır ile cevaplayın",
+  "askNoticeTakenTitle": "İstek zaten yanıtlandı",
+  "askNoticeTakenBody": "Diğer ebeveyn senden önce cevap verdi."
 }

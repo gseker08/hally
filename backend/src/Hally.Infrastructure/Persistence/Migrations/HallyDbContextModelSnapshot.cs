@@ -75,6 +75,144 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("family_activities", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Asks.AskPreset", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("emoji");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("OptionsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("options_json");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer")
+                        .HasColumnName("order");
+
+                    b.Property<string>("Question")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("question");
+
+                    b.Property<int?>("ScreenMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("screen_minutes");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_ask_presets");
+
+                    b.HasIndex("FamilyId", "Order")
+                        .IsUnique()
+                        .HasDatabaseName("ix_ask_presets_family_id_order");
+
+                    b.ToTable("ask_presets", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Asks.ChildAsk", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("AnsweredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("answered_at");
+
+                    b.Property<Guid?>("AnsweredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("answered_by_user_id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<string>("Detail")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("detail");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("emoji");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(140)
+                        .HasColumnType("character varying(140)")
+                        .HasColumnName("note");
+
+                    b.Property<Guid?>("PresetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preset_id");
+
+                    b.Property<int?>("ScreenMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("screen_minutes");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_child_asks");
+
+                    b.HasIndex("AnsweredByUserId")
+                        .HasDatabaseName("ix_child_asks_answered_by_user_id");
+
+                    b.HasIndex("PresetId")
+                        .HasDatabaseName("ix_child_asks_preset_id");
+
+                    b.HasIndex("ChildId", "Day")
+                        .HasDatabaseName("ix_child_asks_child_id_day");
+
+                    b.HasIndex("FamilyId", "Day")
+                        .HasDatabaseName("ix_child_asks_family_id_day");
+
+                    b.ToTable("child_asks", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Assistant.ChatMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1172,6 +1310,10 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<bool>("AskPresetsEdited")
+                        .HasColumnType("boolean")
+                        .HasColumnName("ask_presets_edited");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -3157,6 +3299,45 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_family_activities_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Asks.AskPreset", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_ask_presets_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Asks.ChildAsk", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("AnsweredByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_child_asks_users_answered_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_child_asks_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_child_asks_families_family_id");
+
+                    b.HasOne("Hally.Domain.Asks.AskPreset", null)
+                        .WithMany()
+                        .HasForeignKey("PresetId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_child_asks_ask_presets_preset_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Assistant.ChatMessage", b =>

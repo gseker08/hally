@@ -30,6 +30,11 @@ public class Family : Entity
 
     public void SetChildApproval(bool required) => RequireChildApproval = required;
 
+    /// <summary>The parents changed the "Bir şey iste" list, so an empty list stays empty (no defaults again).</summary>
+    public bool AskPresetsEdited { get; private set; }
+
+    public void MarkAskPresetsEdited() => AskPresetsEdited = true;
+
     /// <summary>The city whose weather picks screen-free ideas (indoors when it rains). Optional; only the city is
     /// stored, rounded to about 10 km, never a home address.</summary>
     public string? WeatherPlace { get; private set; }

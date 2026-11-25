@@ -284,15 +284,6 @@ public class ChildModeService(
         return screen;
     }
 
-    public async Task RequestTimeAsync(Guid familyId, Guid childId, int minutes, CancellationToken ct)
-    {
-        // At most one request per ten minutes reaches the parents.
-        var slot = clock.GetUtcNow().ToUnixTimeSeconds() / 600;
-        await NotifyParentsAsync(familyId, NotificationKind.ChildTimeRequest, childId,
-            (tr, name) => tr ? ($"{name} {minutes} dk daha istiyor", "Ek süre vermek için dokun.") : ($"{name} asks for {minutes} more minutes", "Tap to give extra time."),
-            $"ask:{childId:N}:{slot}", ct);
-    }
-
     public async Task<ChildScreenDto> GrantAsync(Guid familyId, Guid childId, int minutes, Guid userId, CancellationToken ct)
     {
         var child = await db.Children.AsNoTracking().FirstOrDefaultAsync(c => c.Id == childId && c.FamilyId == familyId, ct)

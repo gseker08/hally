@@ -232,6 +232,17 @@ class _ConnectPhoneScreenState extends ConsumerState<ConnectPhoneScreen> {
           ),
           const SizedBox(height: HallySpace.sm),
           Card(
+            margin: const EdgeInsets.only(bottom: HallySpace.sm),
+            child: ListTile(
+              key: const Key('phone.asks'),
+              leading: const Text('🙋', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.askPhoneTile),
+              subtitle: Text(l10n.askPhoneTileBody),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/ask-presets?familyId=${widget.familyId}'),
+            ),
+          ),
+          Card(
             margin: EdgeInsets.zero,
             child: ListTile(
               key: const Key('phone.bedtime'),

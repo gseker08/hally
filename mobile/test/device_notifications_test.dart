@@ -67,18 +67,27 @@ void main() {
         'c3': status('c3'),
       },
       study: {
-        'c2': ChildStudyStatus(childId: 'c2', todaySeconds: 600, runningKind: 'Reading', runningSince: DateTime.utc(2026, 11, 23, 14, 55),
-            dailyGoalMinutes: 30, startedByUserId: 'me', receivedAt: now),
+        'c2': ChildStudyStatus(
+            childId: 'c2',
+            todaySeconds: 600,
+            runningKind: 'Reading',
+            runningSince: DateTime.utc(2026, 11, 23, 14, 55),
+            dailyGoalMinutes: 30,
+            startedByUserId: 'me',
+            receivedAt: now),
       },
       sleep: {
-        'c3': ChildSleepStatus(childId: 'c3', asleep: SleepEntry(id: 's1', childId: 'c3', kind: 'Nap', startedAt: DateTime(2026, 11, 23, 16, 55), startedByUserId: 'partner')),
+        'c3': ChildSleepStatus(
+            childId: 'c3', asleep: SleepEntry(id: 's1', childId: 'c3', kind: 'Nap', startedAt: DateTime(2026, 11, 23, 16, 55), startedByUserId: 'partner')),
       },
       childNames: {'c1': 'Ada', 'c2': 'Can', 'c3': 'Ela'},
       l10n: tr,
       now: now,
     );
 
-    expect([for (final t in timers) '${t.emoji} ${t.title} · ${t.body}'], [
+    expect([
+      for (final t in timers) '${t.emoji} ${t.title} · ${t.body}'
+    ], [
       '📱 Ada · ekran süresi · Günlük hedef: 60 dk',
       '📱 Can · ekran süresi · Sayaç çalışıyor',
       '📖 Can · kitap okuma · Günlük hedef: 30 dk',
@@ -162,14 +171,48 @@ void main() {
     expect(await handleNotificationPush({'kind': 'Message', 'familyId': 'f1'}, tray, tr), isFalse);
     expect(tray.log, hasLength(2));
   });
+
+  test("a child request becomes Evet/Hayır in the tray; the other parent's answer clears it", () async {
+    final tray = _Tray();
+    final ask = {'kind': 'ChildAsk', 'familyId': 'f1', 'askId': 'a1', 'title': 'Ela bir şey istiyor', 'body': '🏠 Arkadaşıma gidebilir miyim? · Zeynep'};
+
+    expect(await handleNotificationPush(ask, tray, tr), isTrue);
+    expect(tray.log, ['ask ask:a1 Ela bir şey istiyor / 🏠 Arkadaşıma gidebilir miyim? · Zeynep']);
+
+    expect(await handleNotificationPush({'kind': 'ChildAskAnswered', 'familyId': 'f1', 'askId': 'a1'}, tray, tr), isFalse,
+        reason: 'the system shows "Ayşe onayladı"');
+    expect(tray.log.last, 'cancel ask:a1');
+    expect(const NotificationTarget(type: 'ask', familyId: 'f1', id: 'a1').route, '/asks');
+  });
+
+  test('Evet from the lock screen answers; second to answer gets a notice', () async {
+    const ask = NotificationTarget(type: 'ask', familyId: 'f1', id: 'a1');
+    final ok = _Api(200, '{"id":"a1","childId":"c1","childName":"Ela","emoji":"🏠","title":"x","status":"Yes","createdAt":"2026-11-25T12:00:00Z"}');
+    final client = ApiClient(_Tokens(), dio: Dio(BaseOptions(baseUrl: 'http://x'))..httpClientAdapter = ok);
+    expect(await runNotificationAction(client, askYesAction, ask), isA<ActionDone>());
+    expect(ok.calls.single, 'POST /api/v1/families/f1/asks/a1/answer {"yes":true,"note":null}');
+
+    final late = _Api(409, '{"code":"ask.already_answered","detail":"Ayşe already answered."}');
+    final second = ApiClient(_Tokens(), dio: Dio(BaseOptions(baseUrl: 'http://x'))..httpClientAdapter = late);
+    final result = await runNotificationAction(second, askNoAction, ask);
+    expect(result, isA<ActionAskTaken>());
+    expect(actionNotice(result, tr)!.title, 'İstek zaten yanıtlandı');
+  });
 }
 
 void nowWidgetTests() {
   final tr = lookupAppLocalizations(const Locale('tr'));
 
   test('the Şu an widget gets every timer, texts, and its Durdur link is understood', () {
-    final t = LiveTimer(type: 'study', familyId: 'f1', childId: 'c2', title: 'Can · kitap okuma', body: 'x', emoji: '📖',
-        countingSince: DateTime(2026, 11, 23, 17, 47), until: DateTime(2026, 11, 23, 21));
+    final t = LiveTimer(
+        type: 'study',
+        familyId: 'f1',
+        childId: 'c2',
+        title: 'Can · kitap okuma',
+        body: 'x',
+        emoji: '📖',
+        countingSince: DateTime(2026, 11, 23, 17, 47),
+        until: DateTime(2026, 11, 23, 21));
     final data = nowWidgetData([t], tr);
 
     expect(data['now.title'], 'Şu an');
@@ -191,6 +234,10 @@ class _Tray extends NoDeviceNotifications {
   @override
   Future<void> showMedicationDue(NotificationTarget target, String title, String body, AppLocalizations l10n) async =>
       log.add('show ${target.type}:${target.id} $title / $body');
+
+  @override
+  Future<void> showChildAsk(NotificationTarget target, String title, String body, AppLocalizations l10n) async =>
+      log.add('ask ${target.type}:${target.id} $title / $body');
 
   @override
   Future<void> cancel(NotificationTarget target) async => log.add('cancel ${target.type}:${target.id}');

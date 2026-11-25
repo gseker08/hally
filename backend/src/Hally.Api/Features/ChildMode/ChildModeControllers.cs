@@ -151,7 +151,7 @@ public class ChildModeController(HallyDbContext db, ChildModeService childMode, 
 [ApiController]
 [Authorize(Policy = ChildDeviceAuth.Policy)]
 [Route("api/v1/child")]
-public class ChildController(HallyDbContext db, ChildModeService childMode, TimeProvider clock) : ControllerBase
+public class ChildController(HallyDbContext db, ChildModeService childMode, Asks.AskService asks, TimeProvider clock) : ControllerBase
 {
     public const string PairRateLimit = "child-pair";
 
@@ -206,11 +206,12 @@ public class ChildController(HallyDbContext db, ChildModeService childMode, Time
     [HttpGet("screen")]
     public Task<ChildScreenDto> Screen(CancellationToken ct) => childMode.ScreenAsync(User.ChildFamilyId(), User.ChildId(), ct);
 
-    /// <summary>"Biraz daha süre isteyebilir miyim?": a note to the parents, at most one per ten minutes.</summary>
+    /// <summary>"Biraz daha süre isteyebilir miyim?": a request the parents answer with Evet/Hayır; a yes adds the
+    /// minutes. Asking again while it waits does nothing.</summary>
     [HttpPost("screen/request")]
     public async Task<IActionResult> RequestTime(MinutesRequest request, CancellationToken ct)
     {
-        await childMode.RequestTimeAsync(User.ChildFamilyId(), User.ChildId(), request.Minutes, ct);
+        await asks.TimeAsync(User.ChildFamilyId(), User.ChildId(), request.Minutes, ct);
         return NoContent();
     }
 }

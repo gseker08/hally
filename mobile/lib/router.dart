@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
 import 'features/activities/activity_screens.dart' show FamilyActivitiesScreen;
+import 'features/asks/ask_screens.dart' show AskPresetsScreen, AsksScreen;
 import 'features/bedtime/bedtime_screens.dart' show BedtimeSettingsScreen;
 import 'features/child_mode/child_mode_repository.dart';
 import 'features/goal/goal_widgets.dart' show FamilyGoalScreen;
@@ -126,7 +127,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/tasks', builder: (_, __) => const TasksScreen()),
       GoRoute(path: '/chats', builder: (_, __) => const ChatsScreen()),
-      GoRoute(path: '/chats/:key', builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?, draft: s.uri.queryParameters['draft'])),
+      GoRoute(
+          path: '/chats/:key',
+          builder: (_, s) => ChatScreen(chatKey: s.pathParameters['key']!, title: s.extra as String?, draft: s.uri.queryParameters['draft'])),
       GoRoute(path: '/sleep', builder: (_, __) => const SleepScreen()),
       GoRoute(path: '/feeding', builder: (_, __) => const FeedingScreen()),
       GoRoute(path: '/study', builder: (_, __) => const StudyScreen()),
@@ -151,6 +154,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: '/bedtime/:childId',
           builder: (_, s) => BedtimeSettingsScreen(familyId: s.uri.queryParameters['familyId'] ?? '', childId: s.pathParameters['childId']!)),
+      GoRoute(path: '/asks', builder: (_, s) => AsksScreen(familyId: s.uri.queryParameters['familyId'])),
+      GoRoute(path: '/ask-presets', builder: (_, s) => AskPresetsScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
       GoRoute(path: '/activities', builder: (_, s) => FamilyActivitiesScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
       GoRoute(path: '/weekly-card', builder: (_, __) => const WeeklyCardScreen()),
       GoRoute(path: '/share-links', builder: (_, __) => const ShareLinksScreen()),

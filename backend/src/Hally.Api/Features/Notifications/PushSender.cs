@@ -73,6 +73,9 @@ public class FcmPushSender(HttpClient http, IOptions<PushOptions> options, ILogg
     /// <summary>iOS action category of the medication reminder: the app registers it with a "Verdim" button.</summary>
     public const string MedicationCategory = "hally.med";
 
+    /// <summary>iOS action category of a child's request: Evet/Hayır buttons.</summary>
+    public const string AskCategory = "hally.ask";
+
     /// <summary>The FCM HTTP v1 <c>message</c> object for one device.</summary>
     public static object BuildMessage(string token, PushMessage message)
     {
@@ -112,6 +115,17 @@ public class FcmPushSender(HttpClient http, IOptions<PushOptions> options, ILogg
     /// reminder on the lock screen (same collapse id), so a dose the other parent gave does not stay open.</summary>
     private static object? Apns(PushMessage message)
     {
+        if (message.Data.TryGetValue("askId", out var askId))
+        {
+            // The answer replaces the request on the other parent's lock screen.
+            var askKind = message.Data.GetValueOrDefault("kind");
+            return new
+            {
+                headers = new Dictionary<string, string> { ["apns-collapse-id"] = $"ask-{askId}" },
+                payload = new { aps = Aps(message, askKind == "ChildAsk" ? AskCategory : null) },
+            };
+        }
+
         if (!message.Data.TryGetValue("medicationId", out var medicationId))
         {
             return null;

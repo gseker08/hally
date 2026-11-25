@@ -9,6 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/token_storage.dart';
 import '../../core/config/app_config.dart';
 import '../activities/activities.dart';
+import '../asks/asks.dart';
 import '../bedtime/bedtime.dart';
 import '../goal/family_goal.dart';
 import '../messages/chat_realtime.dart';
@@ -226,6 +227,13 @@ abstract interface class ChildApi {
 
   /// Checks bedtime step [index] (in order).
   Future<ChildBedtime> bedtimeDone(int index);
+
+  /// "Bir şey iste": the ready-made requests and today's requests with their answers. [lang] is tr or en.
+  Future<ChildAsks> asks(String lang);
+
+  /// Sends a ready-made request ([presetId], with [detail] for its follow-up question) or the child's own [text].
+  /// 422 `ask.already_pending` / `ask.too_many`.
+  Future<ChildAsks> ask({String? presetId, String? text, String? detail, required String lang});
 }
 
 class UnpairedException implements Exception {}
@@ -315,6 +323,15 @@ class DioChildApi implements ChildApi {
   @override
   Future<ChildBedtime> bedtimeDone(int index) =>
       _call(() async => ChildBedtime.fromJson((await _dio.post<Map<String, dynamic>>('/api/v1/child/bedtime/steps/$index/done')).data!));
+
+  @override
+  Future<ChildAsks> asks(String lang) =>
+      _call(() async => ChildAsks.fromJson((await _dio.get<Map<String, dynamic>>('/api/v1/child/asks', queryParameters: {'lang': lang})).data!));
+
+  @override
+  Future<ChildAsks> ask({String? presetId, String? text, String? detail, required String lang}) => _call(() async => ChildAsks.fromJson((await _dio
+          .post<Map<String, dynamic>>('/api/v1/child/asks', queryParameters: {'lang': lang}, data: {'presetId': presetId, 'text': text, 'detail': detail}))
+      .data!));
 }
 
 final childApiProvider = Provider<ChildApi>((ref) => DioChildApi(ref.watch(childSessionStorageProvider)));

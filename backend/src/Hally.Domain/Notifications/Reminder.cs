@@ -141,6 +141,12 @@ public enum NotificationKind
 
     /// <summary>A child finished the bedtime routine ("Ela yatağında").</summary>
     BedtimeDone,
+
+    /// <summary>Child mode: the child asks for something ("Arkadaşıma gidebilir miyim?"); Evet/Hayır on the notification.</summary>
+    ChildAsk,
+
+    /// <summary>The other parent answered a child's request first.</summary>
+    ChildAskAnswered,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

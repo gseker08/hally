@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'child_lock.dart';
 import '../activities/activity_screens.dart' show KidIdeasCard;
+import '../asks/ask_screens.dart' show KidAskCard;
 import '../bedtime/bedtime.dart' show bedtimeLaterProvider;
 import '../bedtime/bedtime_screens.dart' show KidBedtimeCard, KidBedtimeScreen, KidNightView;
 import '../goal/goal_widgets.dart' show GoalBody, GoalMiniCard;
@@ -230,6 +232,7 @@ class _KidToday extends ConsumerWidget {
         const SizedBox(height: HallySpace.md),
         if (home.bedtime case final bed? when bed.due) KidBedtimeCard(bedtime: bed),
         if (home.todayMood == null && !ref.watch(moodSkippedProvider)) const KidMoodCard(),
+        const KidAskCard(),
         const _LockSetupCard(),
         Row(
           children: [
@@ -609,6 +612,13 @@ class KidLockView extends ConsumerStatefulWidget {
 
 class _KidLockViewState extends ConsumerState<KidLockView> {
   bool _asked = false;
+  Timer? _poll;
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -662,6 +672,8 @@ class _KidLockViewState extends ConsumerState<KidLockView> {
                               try {
                                 await ref.read(childApiProvider).requestTime(15);
                                 setState(() => _asked = true);
+                                // A parent's "Evet" adds the minutes; look for it now and then so the lock opens by itself.
+                                _poll ??= Timer.periodic(const Duration(seconds: 15), (_) => ref.invalidate(childHomeProvider));
                                 messenger.showSnackBar(SnackBar(content: Text(l10n.kidLockAsked)));
                               } catch (_) {
                                 messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
