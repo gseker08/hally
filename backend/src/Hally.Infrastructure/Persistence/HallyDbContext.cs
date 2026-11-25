@@ -119,6 +119,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.Property(x => x.Name).HasMaxLength(80).IsRequired();
             e.Property(x => x.TimeZoneId).HasMaxLength(64).IsRequired();
             e.Property(x => x.WeatherPlace).HasMaxLength(80);
+            e.Property(x => x.ChildExitPinHash).HasMaxLength(120);
             e.HasMany(x => x.Members).WithOne().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.Children).WithOne().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
             e.Navigation(x => x.Members).UsePropertyAccessMode(PropertyAccessMode.Field);

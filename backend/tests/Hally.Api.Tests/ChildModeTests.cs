@@ -68,6 +68,68 @@ public class ChildModeTests(HallyApiFactory api)
     }
 
     [Fact]
+    public async Task A_parent_pin_takes_the_phone_out_of_child_mode()
+    {
+        var (parent, familyId, childId, kid, _) = await PairedAsync();
+        var f = $"/api/v1/families/{familyId}";
+
+        // Without a PIN the phone cannot leave on its own.
+        var res = await kid.PostAsJsonAsync("/api/v1/child/exit", new { pin = "1234" });
+        res.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await res.Content.ReadAsStringAsync()).Should().Contain("child.exit_no_pin");
+
+        (await parent.GetFromJsonAsync<Dictionary<string, object>>($"{f}/child-mode"))!["hasExitPin"].ToString().Should().Be("False");
+        (await parent.PutAsJsonAsync($"{f}/child-mode/exit-pin", new { pin = "12a4" })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await parent.PutAsJsonAsync($"{f}/child-mode/exit-pin", new { pin = "2580" })).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await parent.GetFromJsonAsync<Dictionary<string, object>>($"{f}/child-mode"))!["hasExitPin"].ToString().Should().Be("True");
+        // The approval switch keeps the PIN.
+        (await parent.PutAsJsonAsync($"{f}/child-mode", new { requireApproval = false })).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await using (var scope = api.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HallyDbContext>();
+            var hash = await db.Families.Where(x => x.Id == familyId).Select(x => x.ChildExitPinHash).SingleAsync();
+            hash.Should().StartWith("v1.").And.NotContain("2580");
+        }
+
+        res = await kid.PostAsJsonAsync("/api/v1/child/exit", new { pin = "1111" });
+        res.StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        var body = await res.Content.ReadAsStringAsync();
+        body.Should().Contain("child.exit_pin_wrong").And.Contain("\"triesLeft\":4");
+        (await kid.GetAsync("/api/v1/child/home")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        (await kid.PostAsJsonAsync("/api/v1/child/exit", new { pin = "2580" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await kid.GetAsync("/api/v1/child/home")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await parent.GetFromJsonAsync<List<ChildDeviceBody>>($"{f}/children/{childId}/devices")).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Five_wrong_pins_make_the_phone_wait()
+    {
+        var (parent, familyId, _, kid, _) = await PairedAsync();
+        await parent.PutAsJsonAsync($"/api/v1/families/{familyId}/child-mode/exit-pin", new { pin = "2580" });
+
+        for (var i = 0; i < 4; i++)
+        {
+            (await (await kid.PostAsJsonAsync("/api/v1/child/exit", new { pin = "0000" })).Content.ReadAsStringAsync()).Should().Contain("child.exit_pin_wrong");
+        }
+
+        (await (await kid.PostAsJsonAsync("/api/v1/child/exit", new { pin = "0000" })).Content.ReadAsStringAsync()).Should().Contain("child.exit_blocked");
+        // Even the right PIN waits now.
+        (await (await kid.PostAsJsonAsync("/api/v1/child/exit", new { pin = "2580" })).Content.ReadAsStringAsync()).Should().Contain("child.exit_blocked");
+
+        api.Clock.Advance(TimeSpan.FromMinutes(16));
+        try
+        {
+            (await kid.PostAsJsonAsync("/api/v1/child/exit", new { pin = "2580" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        }
+        finally
+        {
+            api.Clock.Advance(TimeSpan.FromMinutes(-16));
+        }
+    }
+
+    [Fact]
     public async Task Cherries_land_after_a_parent_approves()
     {
         var (parent, familyId, childId, kid, _) = await PairedAsync();

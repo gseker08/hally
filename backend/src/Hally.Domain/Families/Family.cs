@@ -30,6 +30,12 @@ public class Family : Entity
 
     public void SetChildApproval(bool required) => RequireChildApproval = required;
 
+    /// <summary>Child mode: the parents' four-digit PIN that takes a child's phone out of child mode (salted PBKDF2;
+    /// null = not set, then only a parent's phone can unpair it).</summary>
+    public string? ChildExitPinHash { get; private set; }
+
+    public void SetChildExitPin(string? hash) => ChildExitPinHash = hash;
+
     /// <summary>The parents changed the "Bir şey iste" list, so an empty list stays empty (no defaults again).</summary>
     public bool AskPresetsEdited { get; private set; }
 

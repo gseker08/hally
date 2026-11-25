@@ -21,7 +21,13 @@ public record PairResultDto(string Token, Guid FamilyId, ChildProfileDto Child);
 
 public record ChildDeviceDto(Guid Id, string? Name, DateTimeOffset PairedAt, DateTimeOffset LastSeenAt);
 
-public record ChildModeSettingsDto(bool RequireApproval);
+/// <param name="HasExitPin">Read only: whether the parents set the PIN that takes a child's phone out of child mode.</param>
+public record ChildModeSettingsDto(bool RequireApproval, bool HasExitPin = false);
+
+/// <param name="Pin">Four digits; null removes it.</param>
+public record ExitPinRequest(string? Pin);
+
+public record ChildExitRequest(string Pin);
 
 public record ScreenReportRequest(int UsedSeconds);
 
@@ -34,6 +40,22 @@ public class PairRequestValidator : AbstractValidator<PairRequest>
         RuleFor(x => x.Code).NotEmpty().Matches("^[0-9]{6}$");
         RuleFor(x => x.DeviceName).MaximumLength(60);
     }
+}
+
+/// <summary>422 <c>child.exit_pin_wrong</c>; the answer carries <c>triesLeft</c>.</summary>
+public class ExitPinWrongException(int triesLeft) : DomainException("child.exit_pin_wrong", "Wrong PIN.")
+{
+    public int TriesLeft { get; } = triesLeft;
+}
+
+public class ExitPinRequestValidator : AbstractValidator<ExitPinRequest>
+{
+    public ExitPinRequestValidator() => RuleFor(x => x.Pin).Matches("^[0-9]{4}$").When(x => x.Pin is not null);
+}
+
+public class ChildExitRequestValidator : AbstractValidator<ChildExitRequest>
+{
+    public ChildExitRequestValidator() => RuleFor(x => x.Pin).NotEmpty().Matches("^[0-9]{4}$");
 }
 
 public class ScreenReportRequestValidator : AbstractValidator<ScreenReportRequest>
@@ -96,7 +118,8 @@ public class ChildModeController(HallyDbContext db, ChildModeService childMode, 
 
     [HttpGet("child-mode")]
     public async Task<ChildModeSettingsDto> Settings(Guid familyId, CancellationToken ct) =>
-        new(await db.Families.AsNoTracking().Where(f => f.Id == familyId).Select(f => f.RequireChildApproval).FirstAsync(ct));
+        await db.Families.AsNoTracking().Where(f => f.Id == familyId)
+            .Select(f => new ChildModeSettingsDto(f.RequireChildApproval, f.ChildExitPinHash != null)).FirstAsync(ct);
 
     [HttpPut("child-mode")]
     public async Task<ChildModeSettingsDto> UpdateSettings(Guid familyId, ChildModeSettingsDto request, CancellationToken ct)
@@ -104,7 +127,18 @@ public class ChildModeController(HallyDbContext db, ChildModeService childMode, 
         var family = await db.Families.FirstAsync(f => f.Id == familyId, ct);
         family.SetChildApproval(request.RequireApproval);
         await db.SaveChangesAsync(ct);
-        return new ChildModeSettingsDto(family.RequireChildApproval);
+        return new ChildModeSettingsDto(family.RequireChildApproval, family.ChildExitPinHash is not null);
+    }
+
+    /// <summary>Sets (or with a null PIN removes) the parents' PIN that takes a child's phone out of child mode. It
+    /// counts for every child phone in the family. Only a salted hash is stored.</summary>
+    [HttpPut("child-mode/exit-pin")]
+    public async Task<ChildModeSettingsDto> SetExitPin(Guid familyId, ExitPinRequest request, CancellationToken ct)
+    {
+        var family = await db.Families.FirstAsync(f => f.Id == familyId, ct);
+        family.SetChildExitPin(request.Pin is null ? null : Crypto.HashPin(request.Pin));
+        await db.SaveChangesAsync(ct);
+        return new ChildModeSettingsDto(family.RequireChildApproval, family.ChildExitPinHash is not null);
     }
 
     /// <summary>What the children marked done and waits for a parent, oldest first.</summary>
@@ -171,6 +205,42 @@ public class ChildController(HallyDbContext db, ChildModeService childMode, Asks
         db.ChildDevices.Add(new ChildDevice(code.FamilyId, code.ChildId, Crypto.Sha256(token), request.DeviceName, now));
         await db.SaveChangesAsync(ct);
         return new PairResultDto(token, code.FamilyId, new ChildProfileDto(child.Id, child.FirstName, child.Color, child.PhotoKey is not null));
+    }
+
+    /// <summary>
+    /// "Ebeveyn çıkışı": a parent types the family's exit PIN on the child's phone, and the phone leaves child mode (it is
+    /// unpaired as if a parent had removed it). 422 <c>child.exit_no_pin</c> when no PIN is set,
+    /// <c>child.exit_pin_wrong</c> (with <c>triesLeft</c>), or <c>child.exit_blocked</c> after five wrong tries in a row
+    /// (15 minutes).
+    /// </summary>
+    [HttpPost("exit")]
+    public async Task<IActionResult> Exit(ChildExitRequest request, CancellationToken ct)
+    {
+        var now = clock.GetUtcNow();
+        var device = await db.ChildDevices.FirstAsync(d => d.Id == User.ChildDeviceId(), ct);
+        if (device.ExitBlocked(now))
+        {
+            throw new DomainException("child.exit_blocked", "Too many wrong PINs. Try again in 15 minutes.");
+        }
+
+        var pinHash = await db.Families.AsNoTracking().Where(f => f.Id == device.FamilyId).Select(f => f.ChildExitPinHash).FirstAsync(ct)
+                      ?? throw new DomainException("child.exit_no_pin", "No exit PIN is set. A parent can unpair this phone from their own phone.");
+        if (!Crypto.VerifyPin(request.Pin, pinHash))
+        {
+            var left = device.ExitFailed(now);
+            await db.SaveChangesAsync(ct);
+            if (left == 0)
+            {
+                throw new DomainException("child.exit_blocked", "Too many wrong PINs. Try again in 15 minutes.");
+            }
+
+            throw new ExitPinWrongException(left);
+        }
+
+        device.Revoke(now);
+        await db.SaveChangesAsync(ct);
+        await childMode.DeviceExitedAsync(device, ct);
+        return NoContent();
     }
 
     [HttpGet("home")]

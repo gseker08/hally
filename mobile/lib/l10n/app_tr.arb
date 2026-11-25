@@ -2572,5 +2572,26 @@
       }
     }
   },
-  "briefingMorningOffDone": "Sabah özeti kapalı."
+  "briefingMorningOffDone": "Sabah özeti kapalı.",
+  "kidExitTitle": "Ebeveyn çıkışı",
+  "kidExitBody": "Bu telefon çocuk modundan çıkar, ekran kilidi durur. Tekrar bağlamak için yeni kod gerekir.",
+  "kidExitHelp": "PIN yok mu? Ebeveyn kendi telefonundan Aile → çocuk → Telefon ekranında bağlantıyı kaldırabilir.",
+  "kidExitWrong": "PIN yanlış · {left} deneme kaldı",
+  "@kidExitWrong": {"placeholders": {"left": {"type": "int"}}},
+  "kidExitBlocked": "Çok fazla yanlış deneme. 15 dakika sonra tekrar dene.",
+  "kidExitNoPin": "Henüz ebeveyn PIN'i yok. Ebeveyn telefonundan Aile → çocuk → Telefon ekranında belirleyin.",
+  "exitPinSection": "Çıkış PIN'i",
+  "exitPinTitle": "Ebeveyn PIN'i",
+  "exitPinBody": "Çocuğun telefonunda çocuk modundan çıkmak için 4 haneli PIN. {name} bilmemeli.",
+  "@exitPinBody": {"placeholders": {"name": {"type": "String"}}},
+  "exitPinSet": "PIN ayarlı",
+  "exitPinNotSet": "PIN yok",
+  "exitPinChange": "PIN'i değiştir",
+  "exitPinCreate": "PIN belirle",
+  "exitPinNote": "PIN tüm çocuk telefonlarında geçerlidir. Çıkmak için çocuğun telefonunda \"Merhaba\" yazısını 3 saniye basılı tutun. Unutursanız buradan yenisini koyar ya da telefonun bağlantısını yukarıdan kaldırırsınız.",
+  "exitPinNew": "Yeni PIN belirle",
+  "exitPinNewHint": "Onaylamak için bir kez daha girilecek",
+  "exitPinRepeat": "PIN'i tekrar gir",
+  "exitPinMismatch": "PIN'ler aynı değil, baştan girin.",
+  "exitPinSaved": "Çıkış PIN'i kaydedildi."
 }

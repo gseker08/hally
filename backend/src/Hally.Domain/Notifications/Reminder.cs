@@ -130,6 +130,9 @@ public enum NotificationKind
     /// <summary>Child mode: the child spent cherries on a reward.</summary>
     ChildReward,
 
+    /// <summary>Child mode: a phone left child mode with the parents' PIN.</summary>
+    ChildDeviceExited,
+
     /// <summary>A caregiver ended the day with a handoff report.</summary>
     HandoffReport,
 

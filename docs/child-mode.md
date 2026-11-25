@@ -8,6 +8,14 @@ A child's own phone runs Hally in child mode. There is no child account: a paren
 2. The child's phone: `POST /api/v1/child/pair { code, deviceName }` (anonymous, rate limited per address: `ChildMode:PairAttemptsPer10Minutes`, default 10) → a device token, shown once; only its SHA-256 is stored (`child_devices`).
 3. The phone sends the token in the `X-Hally-Child` header. This is its own authentication scheme (`ChildDeviceAuth`). The default JWT scheme never reads it, so a child phone cannot reach any parent endpoint, and a parent token cannot reach `/api/v1/child`. Each request checks the database, so unpairing (`DELETE .../children/{c}/devices/{id}`) works at once.
 
+## Leaving child mode on the phone ("Ebeveyn çıkışı")
+
+There is no exit button a child could find. Holding the greeting ("Merhaba Ela!", on the lock and night pages the cherry or "İyi geceler") for three seconds opens a PIN pad.
+
+- A parent sets a four-digit family PIN on their own phone: `PUT /api/v1/families/{f}/child-mode/exit-pin { pin }` (null removes it). `GET .../child-mode` returns `hasExitPin`. Only a salted PBKDF2 hash is stored (`families.child_exit_pin_hash`).
+- The child's phone sends it: `POST /api/v1/child/exit { pin }` → 204, the device is unpaired (same as a parent's "Bağlantıyı kaldır"), the screen lock stops and the app returns to the start screen. Parents get a notification (`ChildDeviceExited`).
+- 422 `child.exit_pin_wrong` with `triesLeft`; after five wrong PINs in a row `child.exit_blocked` for 15 minutes (per device); `child.exit_no_pin` when no PIN is set (then a parent unpairs from their own phone).
+
 ## Cherries
 
 Cherries are the existing chore-points ledger (`point_entries`), shown as cherries in the app.

@@ -30,6 +30,35 @@ public class ChildDevice : Entity
     public void Seen(DateTimeOffset now) => LastSeenAt = now;
 
     public void Revoke(DateTimeOffset now) => RevokedAt ??= now;
+
+    /// <summary>Wrong exit PINs in a row before the phone has to wait.</summary>
+    public const int MaxExitTries = 5;
+
+    public static readonly TimeSpan ExitWait = TimeSpan.FromMinutes(15);
+
+    public int ExitFailures { get; private set; }
+    public DateTimeOffset? ExitBlockedUntil { get; private set; }
+
+    public bool ExitBlocked(DateTimeOffset now) => ExitBlockedUntil > now;
+
+    /// <summary>Counts a wrong PIN; the fifth in a row blocks tries for <see cref="ExitWait"/>. Returns the tries left.</summary>
+    public int ExitFailed(DateTimeOffset now)
+    {
+        if (ExitBlockedUntil is { } until && until <= now)
+        {
+            ExitFailures = 0;
+            ExitBlockedUntil = null;
+        }
+
+        ExitFailures++;
+        if (ExitFailures < MaxExitTries)
+        {
+            return MaxExitTries - ExitFailures;
+        }
+
+        ExitBlockedUntil = now + ExitWait;
+        return 0;
+    }
 }
 
 /// <summary>A short-lived six-digit code a parent shows to pair a child's phone. Only the hash is kept; it works once.</summary>

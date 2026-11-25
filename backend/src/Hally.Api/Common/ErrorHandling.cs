@@ -29,6 +29,11 @@ public class ProblemExceptionHandler(IProblemDetailsService problems, ILogger<Pr
         ctx.Response.StatusCode = status;
         var details = new ProblemDetails { Status = status, Title = title, Type = $"https://hally.app/problems/{code}" };
         details.Extensions["code"] = code;
+        if (ex is Features.ChildMode.ExitPinWrongException wrong)
+        {
+            details.Extensions["triesLeft"] = wrong.TriesLeft;
+        }
+
         if (ex is Features.Billing.PlanLimitException limit)
         {
             // The app opens the paywall with this trigger; the limit is shown in the copy.

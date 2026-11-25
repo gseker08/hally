@@ -941,6 +941,14 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTimeOffset?>("ExitBlockedUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("exit_blocked_until");
+
+                    b.Property<int>("ExitFailures")
+                        .HasColumnType("integer")
+                        .HasColumnName("exit_failures");
+
                     b.Property<Guid>("FamilyId")
                         .HasColumnType("uuid")
                         .HasColumnName("family_id");
@@ -1453,6 +1461,11 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.Property<bool>("AskPresetsEdited")
                         .HasColumnType("boolean")
                         .HasColumnName("ask_presets_edited");
+
+                    b.Property<string>("ChildExitPinHash")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("child_exit_pin_hash");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
