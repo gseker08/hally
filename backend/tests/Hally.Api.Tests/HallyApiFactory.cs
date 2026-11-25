@@ -63,6 +63,8 @@ public sealed class HallyApiFactory : WebApplicationFactory<Program>, IAsyncLife
         builder.UseSetting("Jobs:Enabled", "false");
         builder.UseSetting("Billing:SandboxPurchases", "true");
         builder.UseSetting("Admin:ApiKey", HallyApiFactory.AdminKey);
+        // Every test pairs child phones from the same address; the limit itself is not what they test.
+        builder.UseSetting("ChildMode:PairAttemptsPer10Minutes", "1000");
         builder.UseSetting("Storage:EncryptionKey", Convert.ToBase64String(new byte[32].Select((_, i) => (byte)i).ToArray()));
         builder.ConfigureServices(s =>
         {
