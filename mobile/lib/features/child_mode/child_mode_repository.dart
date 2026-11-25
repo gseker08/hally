@@ -9,6 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/token_storage.dart';
 import '../../core/config/app_config.dart';
 import '../activities/activities.dart';
+import '../goal/family_goal.dart';
 import '../messages/chat_realtime.dart';
 import 'child_lock.dart';
 
@@ -209,6 +210,9 @@ abstract interface class ChildApi {
 
   /// "Yaptım" for an idea; 422 activity.daily_limit after three a day.
   Future<ChildActivities> activityDone(String id, String lang);
+
+  /// This week's family goal (the jar tab).
+  Future<FamilyGoalState> goal();
 }
 
 class UnpairedException implements Exception {}
@@ -291,11 +295,17 @@ class DioChildApi implements ChildApi {
   @override
   Future<ChildActivities> activityDone(String id, String lang) => _call(() async =>
       ChildActivities.fromJson((await _dio.post<Map<String, dynamic>>('/api/v1/child/activities/$id/done', queryParameters: {'lang': lang})).data!));
+
+  @override
+  Future<FamilyGoalState> goal() => _call(() async => FamilyGoalState.fromJson((await _dio.get<Map<String, dynamic>>('/api/v1/child/goal')).data!));
 }
 
 final childApiProvider = Provider<ChildApi>((ref) => DioChildApi(ref.watch(childSessionStorageProvider)));
 
 /// The child's home; on an unpaired phone it drops the session so the app returns to the start.
+/// The family goal on the child's phone; quietly nothing when it fails.
+final kidGoalProvider = FutureProvider.autoDispose<FamilyGoalState>((ref) => ref.watch(childApiProvider).goal());
+
 final childHomeProvider = FutureProvider.autoDispose<ChildHome>((ref) async {
   try {
     return await ref.watch(childApiProvider).home();

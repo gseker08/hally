@@ -28,7 +28,7 @@ class PushEvent {
 /// Where tapping a push should take the user. Pure so it can be unit tested.
 ///
 /// The server sends `kind=Message` + `chatKey` for chat messages, and `targetKind` (Task/Event) for reminders and
-/// the evening summary, `kind=ScreenTimeGoal` when a child's daily screen time goal is reached, `MedicationGiven`/`MedicationDue` for medications, `ShoppingHeadingOut` for the shopping list, `StudyGoal` for homework/reading, `DutyDone` for the school run, `HandoffReport`/`HandoffThanks` for caregiver reports. Anything else opens the inbox.
+/// the evening summary, `kind=ScreenTimeGoal` when a child's daily screen time goal is reached, `MedicationGiven`/`MedicationDue` for medications, `ShoppingHeadingOut` for the shopping list, `StudyGoal` for homework/reading, `DutyDone` for the school run, `HandoffReport`/`HandoffThanks` for caregiver reports, `FamilyGoalReached` for the weekly family goal. Anything else opens the inbox.
 String pushRoute(Map<String, dynamic> data) {
   final chatKey = data['chatKey'];
   if (data['kind'] == 'Message' && chatKey is String && chatKey.isNotEmpty) return '/chats/$chatKey';
@@ -36,6 +36,7 @@ String pushRoute(Map<String, dynamic> data) {
   if (data['kind'] == 'ShoppingHeadingOut') return '/shopping';
   if (data['kind'] == 'StudyGoal') return '/study';
   if (data['kind'] == 'DutyDone') return '/school-run';
+  if (data['kind'] == 'FamilyGoalReached') return '/family-goal';
   if (data['kind'] == 'HandoffReport' || data['kind'] == 'HandoffThanks') return '/handoffs';
   if (data['kind'] == 'MedicationGiven' || data['kind'] == 'MedicationDue') return '/medications';
   return switch (data['targetKind']) {

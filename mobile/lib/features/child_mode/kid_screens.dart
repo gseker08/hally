@@ -13,6 +13,7 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import 'child_lock.dart';
 import '../activities/activity_screens.dart' show KidIdeasCard;
+import '../goal/goal_widgets.dart' show GoalBody, GoalMiniCard;
 import '../mood/mood.dart' show moodSkippedProvider;
 import '../mood/mood_widgets.dart' show KidMoodCard;
 import 'child_mode_repository.dart';
@@ -392,6 +393,7 @@ class _KidJar extends StatelessWidget {
           ],
         ),
         const SizedBox(height: HallySpace.md),
+        const _KidGoal(),
         _Panel(
           color: HallyColors.softOf(HallyColors.butter, b),
           child: Column(children: [
@@ -425,6 +427,32 @@ class _KidJar extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The family goal in the jar tab; nothing when none runs (or it fails to load).
+class _KidGoal extends ConsumerWidget {
+  const _KidGoal();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final goal = ref.watch(kidGoalProvider).valueOrNull?.goal;
+    if (goal == null) return const SizedBox.shrink();
+    return GoalMiniCard(
+      goal: goal,
+      onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: Text(AppLocalizations.of(context).goalTitle),
+            actions: [
+              Center(child: Text(AppLocalizations.of(context).goalDaysLeft(goal.daysLeft))),
+              const SizedBox(width: HallySpace.md),
+            ],
+          ),
+          body: GoalBody(goal: goal),
+        ),
+      )),
     );
   }
 }

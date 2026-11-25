@@ -2217,5 +2217,63 @@
   "actAddEmoji": "Simge",
   "actAddCherries": "Kiraz",
   "actAddPlace": "Nerede?",
-  "actDelete": "Fikri sil"
+  "actDelete": "Fikri sil",
+  "goalTitle": "Aile görevi",
+  "goalTileBody": "Haftalık ortak kiraz hedefi ve ödül",
+  "goalThisWeek": "BU HAFTANIN HEDEFİ",
+  "goalDaysLeft": "{days, plural, =0{Bugün son gün} other{{days} gün kaldı}}",
+  "@goalDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "goalMore": "{count} kiraz daha. Birlikte yaparız! 💪",
+  "@goalMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalReached": "🎉 Hedef tamam! Ödülün tadını çıkarın.",
+  "goalWho": "Kim ne kattı",
+  "goalNote": "Kirazlar kendi kavanozundan eksilmez; aile görevine ayrıca sayılır.",
+  "goalAdultNote": "Ebeveynlerin bitirdiği her görev 2 kiraz sayılır.",
+  "goalEmptyTitle": "Bu hafta hedef yok",
+  "goalEmptyBody": "Birlikte kiraz toplayıp ortak bir ödüle ulaşın. Sıralama yok, sadece katkı.",
+  "goalStart": "Hedef kur",
+  "goalSheetTitle": "Bu haftanın hedefi",
+  "goalReward": "Ödül",
+  "goalPicnic": "Cumartesi piknik",
+  "goalMovie": "Aile sinema gecesi",
+  "goalPizza": "Pizza akşamı",
+  "goalOwnReward": "Kendi ödülünü yaz",
+  "goalHowMany": "Kaç kiraz?",
+  "goalLastWeek": "Geçen hafta {count} toplandı",
+  "@goalLastWeek": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goalRepeat": "Her pazartesi yeniden başlat",
+  "goalLaunch": "Hedefi başlat",
+  "goalSave": "Kaydet",
+  "goalEdit": "Hedefi değiştir",
+  "goalEnd": "Hedefi bitir",
+  "goalEndConfirm": "Bu haftanın hedefi kaldırılsın mı? Kirazlar kavanozlarda kalır.",
+  "goalProgress": "{total} / {target}",
+  "@goalProgress": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  }
 }

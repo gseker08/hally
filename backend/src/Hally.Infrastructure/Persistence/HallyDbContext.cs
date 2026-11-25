@@ -57,6 +57,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<FeedingEntry> FeedingEntries => Set<FeedingEntry>();
     public DbSet<Hally.Domain.Mood.MoodCheck> MoodChecks => Set<Hally.Domain.Mood.MoodCheck>();
     public DbSet<Hally.Domain.Activities.FamilyActivity> FamilyActivities => Set<Hally.Domain.Activities.FamilyActivity>();
+    public DbSet<Hally.Domain.Goals.FamilyGoal> FamilyGoals => Set<Hally.Domain.Goals.FamilyGoal>();
     public DbSet<Hally.Domain.Care.HandoffReport> HandoffReports => Set<Hally.Domain.Care.HandoffReport>();
     public DbSet<StudySession> StudySessions => Set<StudySession>();
     public DbSet<Chore> Chores => Set<Chore>();
@@ -619,6 +620,17 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.Property(x => x.Emoji).HasMaxLength(8);
             e.Property(x => x.Place).HasConversion<string>().HasMaxLength(10);
             e.HasIndex(x => x.FamilyId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Hally.Domain.Goals.FamilyGoal>(e =>
+        {
+            e.Property(x => x.RewardTitle).HasMaxLength(60);
+            e.Property(x => x.RewardEmoji).HasMaxLength(8);
+            e.Ignore(x => x.WeekEnd);
+            e.HasIndex(x => new { x.FamilyId, x.WeekStart }).IsUnique();
+            e.HasIndex(x => x.WeekStart);
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.SetNull);
         });
