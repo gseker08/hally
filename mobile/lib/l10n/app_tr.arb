@@ -2593,5 +2593,12 @@
   "exitPinNewHint": "Onaylamak için bir kez daha girilecek",
   "exitPinRepeat": "PIN'i tekrar gir",
   "exitPinMismatch": "PIN'ler aynı değil, baştan girin.",
-  "exitPinSaved": "Çıkış PIN'i kaydedildi."
+  "exitPinSaved": "Çıkış PIN'i kaydedildi.",
+  "familyTodayTitle": "Ailem bugün",
+  "familyTodayAll": "Aile",
+  "familyTodayFree": "Bugün boş",
+  "familyTodayTasks": "{n} görev",
+  "@familyTodayTasks": {"placeholders": {"n": {"type": "int"}}},
+  "familyTodayEvents": "{n} etkinlik",
+  "@familyTodayEvents": {"placeholders": {"n": {"type": "int"}}}
 }

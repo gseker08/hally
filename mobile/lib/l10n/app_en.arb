@@ -1148,5 +1148,12 @@
   "exitPinNewHint": "You'll type it once more to confirm",
   "exitPinRepeat": "Type the PIN again",
   "exitPinMismatch": "The PINs don't match. Start again.",
-  "exitPinSaved": "Exit PIN saved."
+  "exitPinSaved": "Exit PIN saved.",
+  "familyTodayTitle": "My family today",
+  "familyTodayAll": "Family",
+  "familyTodayFree": "Nothing today",
+  "familyTodayTasks": "{n, plural, =1{1 task} other{{n} tasks}}",
+  "@familyTodayTasks": {"placeholders": {"n": {"type": "int"}}},
+  "familyTodayEvents": "{n, plural, =1{1 event} other{{n} events}}",
+  "@familyTodayEvents": {"placeholders": {"n": {"type": "int"}}}
 }
