@@ -11,6 +11,7 @@ import '../../core/design/brand.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import 'child_lock.dart';
 import 'child_mode_repository.dart';
 
 /// "Bu telefon bir çocuğun": the child types the six-digit code from a parent's phone.
@@ -119,13 +120,27 @@ class _KidShellState extends ConsumerState<KidShell> with WidgetsBindingObserver
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Approvals and extra minutes arrive while the app is in the background.
-    if (state == AppLifecycleState.resumed) ref.invalidate(childHomeProvider);
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(childHomeProvider);
+      // Coming back from the Android settings pages after granting a permission.
+      ref.invalidate(childLockStatusProvider);
+    }
+  }
+
+  /// Starts the Android lock as soon as both permissions are there (and again after an update or a crash).
+  Future<void> _startLock(ChildLockStatus? status) async {
+    if (status == null || !status.ready || status.running) return;
+    final session = await ref.read(childSessionProvider.future);
+    if (session == null) return;
+    await ref.read(childLockProvider).start(session.token);
+    ref.invalidate(childLockStatusProvider);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final home = ref.watch(childHomeProvider);
+    ref.listen(childLockStatusProvider, (_, next) => _startLock(next.valueOrNull));
     return home.when(
       loading: () => const Scaffold(body: HallyLoading()),
       error: (e, _) => Scaffold(body: HallyErrorState(onRetry: () => ref.invalidate(childHomeProvider))),
@@ -196,6 +211,7 @@ class _KidToday extends ConsumerWidget {
         Text(DateFormat('EEEE', locale).format(DateTime.now()), style: theme.textTheme.bodySmall),
         Text(l10n.kidHello(home.firstName), key: const Key('kid.hello'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: HallySpace.md),
+        const _LockSetupCard(),
         Row(
           children: [
             Expanded(
@@ -625,4 +641,43 @@ class _KidLockViewState extends ConsumerState<KidLockView> {
   }
 
   static String _duration(AppLocalizations l10n, int minutes) => minutes >= 60 ? l10n.kidHoursMinutes(minutes ~/ 60, minutes % 60) : l10n.kidMinutes(minutes);
+}
+
+/// Android: the two permissions the screen lock needs, set up once by a parent on the child's phone.
+class _LockSetupCard extends ConsumerWidget {
+  const _LockSetupCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(childLockStatusProvider).valueOrNull;
+    if (status == null || !status.supported || status.ready) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final lock = ref.read(childLockProvider);
+    Widget step(Key key, String title, bool done, Future<void> Function() open) => ListTile(
+          key: key,
+          contentPadding: EdgeInsets.zero,
+          leading: Icon(done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+              color: done ? HallyColors.accent(HallyColors.sage, theme.brightness) : null),
+          title: Text(title),
+          trailing: done ? null : TextButton(onPressed: open, child: Text(l10n.kidLockSetupOpen)),
+        );
+    return Card(
+      key: const Key('kid.lockSetup'),
+      margin: const EdgeInsets.only(bottom: HallySpace.md),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.md, HallySpace.sm, HallySpace.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.kidLockSetupTitle, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+            const SizedBox(height: 4),
+            Text(l10n.kidLockSetupBody, style: theme.textTheme.bodySmall),
+            step(const Key('kid.lockSetup.usage'), l10n.kidLockSetupUsage, status.usageAccess, lock.openUsageAccess),
+            step(const Key('kid.lockSetup.overlay'), l10n.kidLockSetupOverlay, status.overlay, lock.openOverlay),
+          ],
+        ),
+      ),
+    );
+  }
 }

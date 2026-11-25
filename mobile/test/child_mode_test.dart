@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hally/core/auth/auth_repository.dart';
 import 'package:hally/core/design/theme.dart';
+import 'package:hally/features/child_mode/child_lock.dart';
 import 'package:hally/features/child_mode/child_mode_repository.dart';
 import 'package:hally/features/child_mode/kid_screens.dart';
 import 'package:hally/features/child_mode/parent_child_mode.dart';
@@ -115,8 +116,9 @@ const _family = FamilyDetails(
   children: [ChildProfile(id: 'c1', firstName: 'Ela')],
 );
 
-Widget _app(Widget home, {ChildApi? kid, ChildModeRepository? parent}) => ProviderScope(
+Widget _app(Widget home, {ChildApi? kid, ChildModeRepository? parent, ChildLockStatus? lock}) => ProviderScope(
       overrides: [
+        if (lock != null) childLockStatusProvider.overrideWith((ref) async => lock),
         if (kid != null) childApiProvider.overrideWithValue(kid),
         if (parent != null) ...[
           childModeRepositoryProvider.overrideWithValue(parent),
@@ -237,5 +239,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.calls, ['approve cl1']);
     expect(find.text('Ela: Odasını topladı'), findsNothing);
+  });
+
+  testWidgets('on Android the child home asks for the lock permissions until both are granted', (tester) async {
+    _phone(tester);
+    await tester.pumpWidget(_app(const KidShell(), kid: _KidApi(_home()), lock: const ChildLockStatus(supported: true, usageAccess: true)));
+    await tester.pumpAndSettle();
+    expect(find.text('Ekran kilidini aç'), findsOneWidget);
+    expect(find.descendant(of: find.byKey(const Key('kid.lockSetup.usage')), matching: find.text('Aç')), findsNothing);
+    expect(find.descendant(of: find.byKey(const Key('kid.lockSetup.overlay')), matching: find.text('Aç')), findsOneWidget);
   });
 }

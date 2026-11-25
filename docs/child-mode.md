@@ -21,7 +21,7 @@ Cherries are the existing chore-points ledger (`point_entries`), shown as cherri
 ## Screen time on the child's phone
 
 - The phone measures its own use and reports today's running total: `POST /api/v1/child/screen { usedSeconds }`. The stored value only grows.
-- The answer has `GoalMinutes` (the child's daily limit, null = no limit), `BonusMinutes`, `LimitMinutes`, `UsedSeconds`, `Locked`. The phone locks when `Locked` is true (Android lock comes in its own PR).
+- The answer has `GoalMinutes` (the child's daily limit, null = no limit), `BonusMinutes`, `LimitMinutes`, `UsedSeconds`, `Locked`. The phone locks when `Locked` is true (see Android screen lock below).
 - The first report over the limit notifies the parents. The child can ask for more: `POST /api/v1/child/screen/request { minutes }` (one note per 10 minutes).
 - Parents give extra minutes for today: `POST /families/{f}/children/{c}/screen-bonus { minutes }` and see the phone's numbers at `GET .../device-screen`.
 
@@ -32,3 +32,13 @@ Cherries are the existing chore-points ledger (`point_entries`), shown as cherri
 ## Privacy
 
 The child's phone stores only the device token. The server keeps the device name the parent sees and the last time it was seen. Unpairing or deleting the child removes access.
+
+## Android screen lock (app)
+
+`ChildLock.kt` on the child's phone, started from child mode once two permissions are granted (the child home shows a setup card):
+
+- **Usage access** (`PACKAGE_USAGE_STATS`): adds up today's foreground time since local midnight from usage events. Hally itself, the system bars and the home screen don't count. Only the total goes to the server.
+- **Display over other apps** (`SYSTEM_ALERT_WINDOW`): when the limit is used up, a full-screen lock page covers every app except Hally, the phone app and emergency calls. Its buttons open Hally (buy minutes with cherries, ask a parent) or the dialer.
+- A foreground service (`specialUse`, parental control) checks every 15 seconds and reports to `POST /api/v1/child/screen` every minute with the device token. Offline it keeps enforcing the last limit it heard. A 401 (parent unpaired the phone) stops it. It starts again after a restart or an app update.
+
+Not done: Device admin (to make uninstalling harder) and iPhone (needs Apple's Screen Time / FamilyControls entitlement and a Mac). Play Console needs the Usage access and special-use foreground service declarations (parental control).
