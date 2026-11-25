@@ -1,0 +1,381 @@
+using Hally.Api.Common;
+using Hally.Api.Features.Messages;
+using Hally.Api.Features.Notifications;
+using Hally.Api.Features.Points;
+using Hally.Api.Features.ScreenTime;
+using Hally.Domain.ChildMode;
+using Hally.Domain.Common;
+using Hally.Domain.Families;
+using Hally.Domain.Habits;
+using Hally.Domain.Notifications;
+using Hally.Domain.Points;
+using Hally.Infrastructure.Persistence;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
+
+namespace Hally.Api.Features.ChildMode;
+
+public record ChildProfileDto(Guid Id, string FirstName, string Color, bool HasPhoto);
+
+/// <param name="Kind">Chore or Habit.</param>
+/// <param name="State">Todo, Pending (waits for a parent) or Done.</param>
+public record ChildItemDto(Guid Id, string Kind, string Title, int Cherries, string State);
+
+public record ChildRewardDto(Guid Id, string Title, int Cost, int? ScreenMinutes);
+
+/// <summary>Today's screen time on the child's phone.</summary>
+/// <param name="GoalMinutes">The parents' daily limit; null means no limit (never locks).</param>
+/// <param name="LimitMinutes">Goal plus today's extra minutes; null without a goal.</param>
+/// <param name="UsedSeconds">What the child's phone measured today.</param>
+public record ChildScreenDto(DateOnly Day, int? GoalMinutes, int BonusMinutes, int? LimitMinutes, int UsedSeconds, bool Locked);
+
+/// <param name="NextBonusIn">Days still needed for the next streak bonus.</param>
+public record ChildHomeDto(
+    ChildProfileDto Child,
+    string FamilyName,
+    int Balance,
+    int WeekCherries,
+    int StreakDays,
+    int NextBonusIn,
+    bool RequireApproval,
+    IReadOnlyList<ChildItemDto> Today,
+    IReadOnlyList<ChildRewardDto> Rewards,
+    ChildScreenDto Screen);
+
+public record ClaimDto(Guid Id, Guid ChildId, string ChildName, string Kind, string Title, int Cherries, DateOnly Day, DateTimeOffset At);
+
+/// <summary>
+/// Child mode: what a paired child phone sees and does (today's chores and habits, the cherry jar, rewards, screen
+/// time) and the parent side of it (approvals, extra minutes). Cherries are the same ledger as the parents' chore
+/// board (<see cref="PointEntry"/>).
+/// </summary>
+public class ChildModeService(
+    HallyDbContext db,
+    NotificationPublisher publisher,
+    IHubContext<ChatHub, IChatClient> hub,
+    TimeProvider clock,
+    ILogger<ChildModeService> logger)
+{
+    public async Task<ChildHomeDto> HomeAsync(Guid familyId, Guid childId, CancellationToken ct)
+    {
+        var family = await db.Families.AsNoTracking().FirstAsync(f => f.Id == familyId, ct);
+        var child = await db.Children.AsNoTracking().FirstAsync(c => c.Id == childId && c.FamilyId == familyId, ct);
+        var today = FamilyTimeZone.LocalDate(clock.GetUtcNow(), family.TimeZoneId);
+        var weekStart = today.AddDays(-(((int)today.DayOfWeek + 6) % 7));
+
+        var entries = await db.PointEntries.AsNoTracking().Where(p => p.ChildId == childId)
+            .Select(p => new { p.Kind, p.Points, p.Day, p.ChoreId, p.HabitId }).ToListAsync(ct);
+        var balance = entries.Sum(e => e.Points);
+        var week = entries.Where(e => e.Points > 0 && e.Day >= weekStart).Sum(e => e.Points);
+        var streak = CherryStreak.Length(ActiveDays(entries.Select(e => (e.Kind, e.Points, e.Day))), today);
+
+        var pending = await db.ChildClaims.AsNoTracking()
+            .Where(c => c.ChildId == childId && c.Day == today && c.Status == ClaimStatus.Pending).Select(c => c.ItemId).ToListAsync(ct);
+        var choresDone = entries.Where(e => e.Day == today && e.ChoreId != null).Select(e => e.ChoreId!.Value).ToHashSet();
+        var habitsDone = await db.HabitChecks.AsNoTracking().Where(h => h.FamilyId == familyId && h.Day == today).Select(h => h.HabitId).ToListAsync(ct);
+
+        string State(Guid id, bool done) => done ? "Done" : pending.Contains(id) ? "Pending" : "Todo";
+
+        var chores = await db.Chores.AsNoTracking().Where(c => c.FamilyId == familyId && (c.ChildId == null || c.ChildId == childId))
+            .OrderBy(c => c.CreatedAt).ToListAsync(ct);
+        var habits = (await db.Habits.AsNoTracking().Where(h => h.ChildId == childId).OrderBy(h => h.CreatedAt).ToListAsync(ct))
+            .Where(h => h.IsScheduled(today));
+        var items = chores.Select(c => new ChildItemDto(c.Id, "Chore", c.Title, c.Points, State(c.Id, choresDone.Contains(c.Id))))
+            .Concat(habits.Select(h => new ChildItemDto(h.Id, "Habit", h.Title, 1, State(h.Id, habitsDone.Contains(h.Id)))))
+            .ToList();
+        var rewards = await db.Rewards.AsNoTracking().Where(r => r.FamilyId == familyId).OrderBy(r => r.Cost)
+            .Select(r => new ChildRewardDto(r.Id, r.Title, r.Cost, r.ScreenMinutes)).ToListAsync(ct);
+
+        return new ChildHomeDto(
+            new ChildProfileDto(child.Id, child.FirstName, child.Color, child.PhotoKey is not null),
+            family.Name, balance, week, streak, CherryStreak.BonusEvery - streak % CherryStreak.BonusEvery,
+            family.RequireChildApproval, items, rewards, await ScreenAsync(child, today, ct));
+    }
+
+    /// <summary>The child says "Yaptım!". With approval on it waits for a parent, otherwise the cherries land at once.
+    /// Doing it twice, or something already ticked by a parent, changes nothing.</summary>
+    public async Task MarkDoneAsync(Guid familyId, Guid childId, ClaimKind kind, Guid itemId, CancellationToken ct)
+    {
+        var family = await db.Families.AsNoTracking().FirstAsync(f => f.Id == familyId, ct);
+        var now = clock.GetUtcNow();
+        var today = FamilyTimeZone.LocalDate(now, family.TimeZoneId);
+        string title;
+        int points;
+        if (kind == ClaimKind.Chore)
+        {
+            var chore = await db.Chores.AsNoTracking().FirstOrDefaultAsync(c => c.Id == itemId && c.FamilyId == familyId && (c.ChildId == null || c.ChildId == childId), ct)
+                        ?? throw new NotFoundException("chore.not_found", "Chore not found.");
+            if (await db.PointEntries.AnyAsync(p => p.ChoreId == itemId && p.ChildId == childId && p.Day == today, ct))
+            {
+                return;
+            }
+
+            (title, points) = (chore.Title, chore.Points);
+        }
+        else
+        {
+            var habit = await db.Habits.AsNoTracking().FirstOrDefaultAsync(h => h.Id == itemId && h.ChildId == childId, ct)
+                        ?? throw new NotFoundException("habit.not_found", "Habit not found.");
+            if (!habit.IsScheduled(today))
+            {
+                throw new DomainException("habit.not_today", "This habit is not for today.");
+            }
+
+            if (await db.HabitChecks.AnyAsync(h => h.HabitId == itemId && h.Day == today, ct))
+            {
+                return;
+            }
+
+            (title, points) = (habit.Title, 1);
+        }
+
+        if (await db.ChildClaims.AnyAsync(c => c.ChildId == childId && c.ItemId == itemId && c.Day == today && c.Status != ClaimStatus.Rejected, ct))
+        {
+            return;
+        }
+
+        var claim = new ChildClaim(familyId, childId, kind, itemId, title, points, today, now);
+        db.ChildClaims.Add(claim);
+        if (!family.RequireChildApproval)
+        {
+            claim.Decide(true, null, now);
+            await CreditAsync(claim, null, today, now, ct);
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // A double tap or a parent ticking it at the same moment: the unique indexes kept one.
+            db.ChangeTracker.Clear();
+            return;
+        }
+
+        if (family.RequireChildApproval)
+        {
+            await NotifyParentsAsync(familyId, NotificationKind.ChildClaim, childId,
+                (tr, name) => tr ? ($"{name}: {title} ✓", $"Onaylarsan {points} kiraz kazanacak.") : ($"{name}: {title} ✓", $"Approve it to give {points} cherries."),
+                $"claim:{claim.Id:N}", ct);
+        }
+
+        await AnnounceAsync(familyId, ct);
+    }
+
+    public async Task<IReadOnlyList<ClaimDto>> PendingAsync(Guid familyId, CancellationToken ct)
+    {
+        return await db.ChildClaims.AsNoTracking().Where(c => c.FamilyId == familyId && c.Status == ClaimStatus.Pending)
+            .OrderBy(c => c.CreatedAt)
+            .Join(db.Children.AsNoTracking(), c => c.ChildId, ch => ch.Id,
+                (c, ch) => new ClaimDto(c.Id, c.ChildId, ch.FirstName, c.Kind.ToString(), c.Title, c.Points, c.Day, c.CreatedAt))
+            .ToListAsync(ct);
+    }
+
+    public async Task DecideAsync(Guid familyId, Guid claimId, bool approve, Guid userId, CancellationToken ct)
+    {
+        var claim = await db.ChildClaims.FirstOrDefaultAsync(c => c.Id == claimId && c.FamilyId == familyId, ct)
+                    ?? throw new NotFoundException("claim.not_found", "Not found.");
+        var now = clock.GetUtcNow();
+        claim.Decide(approve, userId, now);
+        if (approve)
+        {
+            var tz = await db.Families.AsNoTracking().Where(f => f.Id == familyId).Select(f => f.TimeZoneId).FirstAsync(ct);
+            await CreditAsync(claim, userId, FamilyTimeZone.LocalDate(now, tz), now, ct);
+        }
+
+        await db.SaveChangesAsync(ct);
+        await AnnounceAsync(familyId, ct);
+    }
+
+    /// <summary>Spends cherries. An extra-screen-time reward adds its minutes to today's limit at once; parents get a
+    /// note either way (an outing or pocket money is theirs to hand over).</summary>
+    public async Task RedeemAsync(Guid familyId, Guid childId, Guid rewardId, CancellationToken ct)
+    {
+        var reward = await db.Rewards.FirstOrDefaultAsync(r => r.Id == rewardId && r.FamilyId == familyId, ct)
+                     ?? throw new NotFoundException("reward.not_found", "Reward not found.");
+        var tz = await db.Families.AsNoTracking().Where(f => f.Id == familyId).Select(f => f.TimeZoneId).FirstAsync(ct);
+        var now = clock.GetUtcNow();
+        var today = FamilyTimeZone.LocalDate(now, tz);
+        await using (var tx = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable, ct))
+        {
+            var balance = await db.PointEntries.Where(p => p.ChildId == childId).SumAsync(p => p.Points, ct);
+            db.PointEntries.Add(PointEntry.ForReward(reward, childId, balance, null, today, now));
+            if (reward.ScreenMinutes is { } minutes)
+            {
+                db.ScreenBonuses.Add(new ScreenBonus(familyId, childId, today, minutes, BonusSource.Reward, null, now));
+            }
+
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+        }
+
+        await NotifyParentsAsync(familyId, NotificationKind.ChildReward, childId,
+            (tr, name) => reward.ScreenMinutes is { } m
+                ? tr ? ($"{name}: +{m} dk ekran", $"{reward.Cost} kirazla \"{reward.Title}\" aldı.") : ($"{name}: +{m} min screen time", $"Spent {reward.Cost} cherries on \"{reward.Title}\".")
+                : tr ? ($"{name}: {reward.Title}", $"{reward.Cost} kiraz harcadı. Ödülünü vermeyi unutma.") : ($"{name}: {reward.Title}", $"Spent {reward.Cost} cherries. Don't forget to hand it over."),
+            $"redeem:{Guid.NewGuid():N}", ct);
+        await AnnounceAsync(familyId, ct);
+    }
+
+    /// <summary>The child's phone reports today's measured screen time. The first report at or over the limit tells
+    /// the parents that the phone locked.</summary>
+    public async Task<ChildScreenDto> ReportUsageAsync(Guid familyId, Guid childId, int seconds, CancellationToken ct)
+    {
+        var child = await db.Children.AsNoTracking().FirstAsync(c => c.Id == childId && c.FamilyId == familyId, ct);
+        var tz = await db.Families.AsNoTracking().Where(f => f.Id == familyId).Select(f => f.TimeZoneId).FirstAsync(ct);
+        var now = clock.GetUtcNow();
+        var today = FamilyTimeZone.LocalDate(now, tz);
+        var usage = await db.ScreenUsages.FirstOrDefaultAsync(u => u.ChildId == childId && u.Day == today, ct);
+        if (usage is null)
+        {
+            usage = new ScreenUsage(familyId, childId, today, now);
+            db.ScreenUsages.Add(usage);
+        }
+
+        usage.Report(seconds, now);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException)
+        {
+            // Two reports raced to create today's row; the next report updates it.
+            db.ChangeTracker.Clear();
+        }
+
+        var screen = await ScreenAsync(child, today, ct);
+        if (screen.Locked)
+        {
+            await NotifyParentsAsync(familyId, NotificationKind.ScreenTimeGoal, childId,
+                (tr, name) => tr ? ($"{name}: ekran süresi doldu", "Telefonu kilitlendi. Ek süre vermek istersen Hally'den verebilirsin.")
+                    : ($"{name}: screen time is up", "Their phone is locked. You can give extra time in Hally."),
+                $"lock:{childId:N}:{today:yyyyMMdd}:{screen.LimitMinutes}", ct);
+        }
+
+        return screen;
+    }
+
+    public async Task RequestTimeAsync(Guid familyId, Guid childId, int minutes, CancellationToken ct)
+    {
+        // At most one request per ten minutes reaches the parents.
+        var slot = clock.GetUtcNow().ToUnixTimeSeconds() / 600;
+        await NotifyParentsAsync(familyId, NotificationKind.ChildTimeRequest, childId,
+            (tr, name) => tr ? ($"{name} {minutes} dk daha istiyor", "Ek süre vermek için dokun.") : ($"{name} asks for {minutes} more minutes", "Tap to give extra time."),
+            $"ask:{childId:N}:{slot}", ct);
+    }
+
+    public async Task<ChildScreenDto> GrantAsync(Guid familyId, Guid childId, int minutes, Guid userId, CancellationToken ct)
+    {
+        var child = await db.Children.AsNoTracking().FirstOrDefaultAsync(c => c.Id == childId && c.FamilyId == familyId, ct)
+                    ?? throw new NotFoundException("child.not_found", "Child not found.");
+        var tz = await db.Families.AsNoTracking().Where(f => f.Id == familyId).Select(f => f.TimeZoneId).FirstAsync(ct);
+        var now = clock.GetUtcNow();
+        var today = FamilyTimeZone.LocalDate(now, tz);
+        db.ScreenBonuses.Add(new ScreenBonus(familyId, childId, today, minutes, BonusSource.Parent, userId, now));
+        await db.SaveChangesAsync(ct);
+        return await ScreenAsync(child, today, ct);
+    }
+
+    public async Task<ChildScreenDto> ScreenAsync(Guid familyId, Guid childId, CancellationToken ct)
+    {
+        var child = await db.Children.AsNoTracking().FirstOrDefaultAsync(c => c.Id == childId && c.FamilyId == familyId, ct)
+                    ?? throw new NotFoundException("child.not_found", "Child not found.");
+        var tz = await db.Families.AsNoTracking().Where(f => f.Id == familyId).Select(f => f.TimeZoneId).FirstAsync(ct);
+        return await ScreenAsync(child, FamilyTimeZone.LocalDate(clock.GetUtcNow(), tz), ct);
+    }
+
+    private async Task<ChildScreenDto> ScreenAsync(Child child, DateOnly today, CancellationToken ct)
+    {
+        var used = await db.ScreenUsages.AsNoTracking().Where(u => u.ChildId == child.Id && u.Day == today).Select(u => u.Seconds).FirstOrDefaultAsync(ct);
+        var bonus = await db.ScreenBonuses.AsNoTracking().Where(b => b.ChildId == child.Id && b.Day == today).SumAsync(b => b.Minutes, ct);
+        int? limit = child.DailyScreenMinutes is { } goal ? goal + bonus : null;
+        return new ChildScreenDto(today, child.DailyScreenMinutes, bonus, limit, used, limit is { } l && used >= l * 60);
+    }
+
+    /// <summary>Adds the claim's cherries (and the habit tick) unless a parent already ticked it, then the streak bonus
+    /// when today completes seven days in a row. Caller saves.</summary>
+    private async Task CreditAsync(ChildClaim claim, Guid? userId, DateOnly today, DateTimeOffset now, CancellationToken ct)
+    {
+        if (claim.Kind == ClaimKind.Chore)
+        {
+            if (!await db.PointEntries.AnyAsync(p => p.ChoreId == claim.ItemId && p.ChildId == claim.ChildId && p.Day == claim.Day, ct))
+            {
+                var exists = await db.Chores.AnyAsync(c => c.Id == claim.ItemId, ct);
+                db.PointEntries.Add(PointEntry.ForChoreClaim(claim.FamilyId, claim.ChildId, exists ? claim.ItemId : null, claim.Title, claim.Points, userId, claim.Day, now));
+            }
+        }
+        else
+        {
+            var habit = await db.Habits.FirstOrDefaultAsync(h => h.Id == claim.ItemId, ct);
+            if (habit is not null && !await db.HabitChecks.AnyAsync(h => h.HabitId == habit.Id && h.Day == claim.Day, ct))
+            {
+                db.HabitChecks.Add(new HabitCheck(habit, claim.Day, userId, now));
+            }
+
+            if (habit is null || !await db.PointEntries.AnyAsync(p => p.HabitId == habit.Id && p.Day == claim.Day, ct))
+            {
+                db.PointEntries.Add(PointEntry.ForHabit(claim.FamilyId, claim.ChildId, habit?.Id, claim.Title, userId, claim.Day, now));
+            }
+        }
+
+        // The streak counts days with cherries earned, including the one being added now.
+        var since = today.AddDays(-400);
+        var earned = await db.PointEntries.AsNoTracking()
+            .Where(p => p.ChildId == claim.ChildId && p.Day >= since && (p.Kind == PointKind.Chore || p.Kind == PointKind.Habit) && p.Points > 0)
+            .Select(p => p.Day).Distinct().ToListAsync(ct);
+        var days = earned.ToHashSet();
+        days.Add(claim.Day);
+        var streak = CherryStreak.Length(days, today);
+        if (streak > 0 && streak % CherryStreak.BonusEvery == 0
+            && !await db.PointEntries.AnyAsync(p => p.ChildId == claim.ChildId && p.Kind == PointKind.Bonus && p.Day == today, ct)
+            && !db.ChangeTracker.Entries<PointEntry>().Any(x => x.Entity.ChildId == claim.ChildId && x.Entity.Kind == PointKind.Bonus))
+        {
+            db.PointEntries.Add(PointEntry.ForStreakBonus(claim.FamilyId, claim.ChildId, streak, today, now));
+        }
+    }
+
+    private static HashSet<DateOnly> ActiveDays(IEnumerable<(PointKind Kind, int Points, DateOnly Day)> entries) =>
+        entries.Where(e => e.Points > 0 && e.Kind is PointKind.Chore or PointKind.Habit).Select(e => e.Day).ToHashSet();
+
+    /// <summary>One inbox entry (and push) per parent; caregivers are not asked. Best effort.</summary>
+    private async Task NotifyParentsAsync(Guid familyId, NotificationKind kind, Guid childId,
+        Func<bool, string, (string Title, string Body)> text, string dedup, CancellationToken ct)
+    {
+        try
+        {
+            var name = await db.Children.AsNoTracking().Where(c => c.Id == childId).Select(c => c.FirstName).FirstAsync(ct);
+            var parents = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver)
+                .Join(db.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => new { u.Id, u.Locale }).ToListAsync(ct);
+            var added = false;
+            foreach (var p in parents)
+            {
+                var (title, body) = text(p.Locale != "en", name);
+                added |= await publisher.AddAsync(p.Id, familyId, kind, title, body, null, childId, $"{dedup}:{p.Id:N}", ct);
+            }
+
+            if (added)
+            {
+                await db.SaveChangesAsync(ct);
+                await publisher.FlushPushAsync(ct);
+            }
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Child mode notification failed");
+        }
+    }
+
+    private async Task AnnounceAsync(Guid familyId, CancellationToken ct)
+    {
+        try
+        {
+            var members = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId).Select(m => m.UserId).ToListAsync(ct);
+            await hub.Clients.Groups(members.Select(ChatHub.UserGroup).ToList()).PointsChanged(new PointsEvent(familyId));
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            logger.LogWarning(ex, "Realtime points event failed");
+        }
+    }
+}

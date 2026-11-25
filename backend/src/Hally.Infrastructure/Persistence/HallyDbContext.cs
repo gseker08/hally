@@ -59,6 +59,11 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<Chore> Chores => Set<Chore>();
     public DbSet<Reward> Rewards => Set<Reward>();
     public DbSet<PointEntry> PointEntries => Set<PointEntry>();
+    public DbSet<Hally.Domain.ChildMode.ChildDevice> ChildDevices => Set<Hally.Domain.ChildMode.ChildDevice>();
+    public DbSet<Hally.Domain.ChildMode.PairingCode> PairingCodes => Set<Hally.Domain.ChildMode.PairingCode>();
+    public DbSet<Hally.Domain.ChildMode.ChildClaim> ChildClaims => Set<Hally.Domain.ChildMode.ChildClaim>();
+    public DbSet<Hally.Domain.ChildMode.ScreenUsage> ScreenUsages => Set<Hally.Domain.ChildMode.ScreenUsage>();
+    public DbSet<Hally.Domain.ChildMode.ScreenBonus> ScreenBonuses => Set<Hally.Domain.ChildMode.ScreenBonus>();
     public DbSet<Habit> Habits => Set<Habit>();
     public DbSet<HabitCheck> HabitChecks => Set<HabitCheck>();
     public DbSet<DutyRule> DutyRules => Set<DutyRule>();
@@ -501,6 +506,58 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<Chore>().WithMany().HasForeignKey(x => x.ChoreId).OnDelete(DeleteBehavior.SetNull);
             e.HasOne<Reward>().WithMany().HasForeignKey(x => x.RewardId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.SetNull);
+            // A habit gives one cherry per day; the streak bonus comes once a day.
+            e.HasIndex(x => new { x.HabitId, x.Day }).IsUnique().HasFilter("habit_id IS NOT NULL").HasDatabaseName("ix_point_entries_habit_day");
+            e.HasIndex(x => new { x.ChildId, x.Day }).IsUnique().HasFilter("kind = 'Bonus'").HasDatabaseName("ix_point_entries_bonus_day");
+            e.HasOne<Habit>().WithMany().HasForeignKey(x => x.HabitId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Hally.Domain.ChildMode.ChildDevice>(e =>
+        {
+            e.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
+            e.Property(x => x.Name).HasMaxLength(60);
+            e.HasIndex(x => x.TokenHash).IsUnique();
+            e.HasIndex(x => x.ChildId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.ChildMode.PairingCode>(e =>
+        {
+            e.Property(x => x.CodeHash).HasMaxLength(64).IsRequired();
+            e.HasIndex(x => x.CodeHash);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.ChildMode.ChildClaim>(e =>
+        {
+            e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Status).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.Title).HasMaxLength(60);
+            e.HasIndex(x => new { x.FamilyId, x.Status });
+            // One open or approved claim per item per child per day (a rejected one can be tried again).
+            e.HasIndex(x => new { x.ChildId, x.ItemId, x.Day }).IsUnique().HasFilter("status <> 'Rejected'").HasDatabaseName("ix_child_claims_item_day");
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.DecidedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Hally.Domain.ChildMode.ScreenUsage>(e =>
+        {
+            e.HasIndex(x => new { x.ChildId, x.Day }).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.ChildMode.ScreenBonus>(e =>
+        {
+            e.Property(x => x.Source).HasConversion<string>().HasMaxLength(10);
+            e.HasIndex(x => new { x.ChildId, x.Day });
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 

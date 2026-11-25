@@ -16,6 +16,7 @@ public static class JobScheduling
         services.AddScoped<Privacy.CaregiverExpiryJob>();
         services.AddScoped<Billing.SubscriptionRefreshJob>();
         services.AddScoped<ScreenTime.ScreenTimeService>();
+        services.AddScoped<ChildMode.ChildModeService>();
         services.AddScoped<ScreenTime.ScreenTimeGoalJob>();
         services.AddScoped<Medications.MedicationService>();
         services.AddScoped<Medications.MedicationDueJob>();
