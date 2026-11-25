@@ -135,6 +135,9 @@ public enum NotificationKind
 
     /// <summary>A parent thanked the caregiver for a handoff report.</summary>
     HandoffThanks,
+
+    /// <summary>The family reached its weekly cherry goal.</summary>
+    FamilyGoalReached,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

@@ -1313,6 +1313,68 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("feeding_entries", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Goals.FamilyGoal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("by_user_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<DateTimeOffset?>("ReachedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reached_at");
+
+                    b.Property<bool>("Repeat")
+                        .HasColumnType("boolean")
+                        .HasColumnName("repeat");
+
+                    b.Property<string>("RewardEmoji")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("reward_emoji");
+
+                    b.Property<string>("RewardTitle")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("reward_title");
+
+                    b.Property<int>("Target")
+                        .HasColumnType("integer")
+                        .HasColumnName("target");
+
+                    b.Property<DateOnly>("WeekStart")
+                        .HasColumnType("date")
+                        .HasColumnName("week_start");
+
+                    b.HasKey("Id")
+                        .HasName("pk_family_goals");
+
+                    b.HasIndex("ByUserId")
+                        .HasDatabaseName("ix_family_goals_by_user_id");
+
+                    b.HasIndex("WeekStart")
+                        .HasDatabaseName("ix_family_goals_week_start");
+
+                    b.HasIndex("FamilyId", "WeekStart")
+                        .IsUnique()
+                        .HasDatabaseName("ix_family_goals_family_id_week_start");
+
+                    b.ToTable("family_goals", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Habits.Habit", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3339,6 +3401,22 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_feeding_entries_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Goals.FamilyGoal", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_family_goals_users_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_family_goals_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Habits.Habit", b =>
