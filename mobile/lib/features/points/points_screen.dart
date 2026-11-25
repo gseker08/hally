@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_repository.dart';
+import '../../core/design/brand.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -104,7 +105,7 @@ class _PointsScreenState extends ConsumerState<PointsScreen> {
                         padding: const EdgeInsets.all(HallySpace.lg),
                         child: Row(
                           children: [
-                            const Icon(Icons.star_rounded, size: 44, color: HallyModule.rewards),
+                            const CherryIcon(size: 44),
                             const SizedBox(width: HallySpace.md),
                             Expanded(
                               child: Column(
@@ -190,7 +191,7 @@ class _Stars extends StatelessWidget {
   Widget build(BuildContext context) => Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, color: HallyModule.rewards, size: 20),
+          const CherryIcon(size: 20),
           Text('$count', style: Theme.of(context).textTheme.titleSmall),
         ],
       );
@@ -274,6 +275,9 @@ class _AddItemSheet extends ConsumerStatefulWidget {
 class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
   bool _reward = false;
   int _stars = 5;
+
+  /// Extra screen minutes this reward gives (null: an ordinary reward).
+  int? _screenMinutes;
   String? _childId;
   final _title = TextEditingController();
   bool _busy = false;
@@ -299,7 +303,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
     try {
       final repo = ref.read(pointsRepositoryProvider);
       _reward
-          ? await repo.addReward(widget.familyId, title: title, cost: _stars)
+          ? await repo.addReward(widget.familyId, title: title, cost: _stars, screenMinutes: _screenMinutes)
           : await repo.addChore(widget.familyId, title: title, points: _stars, childId: _childId);
       if (mounted) Navigator.pop(context, true);
     } catch (_) {
@@ -334,6 +338,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
             onSelectionChanged: (v) => setState(() {
               _reward = v.first;
               _stars = _reward ? 20 : 5;
+              _screenMinutes = null;
             }),
           ),
           const SizedBox(height: HallySpace.md),
@@ -355,7 +360,7 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
               SizedBox(
                 width: 110,
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.star_rounded, color: HallyModule.rewards),
+                  const CherryIcon(size: 24),
                   Text('$_stars', key: const Key('points.value'), style: theme.textTheme.headlineSmall),
                 ]),
               ),
@@ -366,6 +371,32 @@ class _AddItemSheetState extends ConsumerState<_AddItemSheet> {
               ),
             ],
           ),
+          if (_reward) ...[
+            SwitchListTile(
+              key: const Key('points.screen'),
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.smartphone_rounded),
+              title: Text(l10n.pointsScreenReward),
+              subtitle: Text(l10n.pointsScreenRewardBody),
+              value: _screenMinutes != null,
+              onChanged: (v) => setState(() {
+                _screenMinutes = v ? 15 : null;
+                if (v && _title.text.trim().isEmpty) _title.text = l10n.pointsScreenMinutes(15);
+              }),
+            ),
+            if (_screenMinutes != null)
+              Wrap(spacing: HallySpace.sm, children: [
+                for (final m in const [15, 30, 60])
+                  ChoiceChip(
+                    label: Text(l10n.kidMinutes(m)),
+                    selected: _screenMinutes == m,
+                    onSelected: (_) => setState(() {
+                      if (_title.text == l10n.pointsScreenMinutes(_screenMinutes!)) _title.text = l10n.pointsScreenMinutes(m);
+                      _screenMinutes = m;
+                    }),
+                  ),
+              ]),
+          ],
           if (!_reward && widget.children.length > 1) ...[
             const SizedBox(height: HallySpace.sm),
             Wrap(

@@ -20,13 +20,17 @@ class Chore {
 }
 
 class Reward {
-  const Reward({required this.id, required this.title, required this.cost});
+  const Reward({required this.id, required this.title, required this.cost, this.screenMinutes});
 
-  factory Reward.fromJson(Map<String, dynamic> j) => Reward(id: j['id'] as String, title: j['title'] as String, cost: j['cost'] as int);
+  factory Reward.fromJson(Map<String, dynamic> j) =>
+      Reward(id: j['id'] as String, title: j['title'] as String, cost: j['cost'] as int, screenMinutes: j['screenMinutes'] as int?);
 
   final String id;
   final String title;
   final int cost;
+
+  /// Set for "extra screen time" rewards (child mode adds the minutes to today's limit).
+  final int? screenMinutes;
 }
 
 class ChildPoints {
@@ -90,7 +94,7 @@ abstract interface class PointsRepository {
   Future<List<PointEntry>> history(String familyId, String childId);
   Future<void> addChore(String familyId, {required String title, required int points, String? childId});
   Future<void> deleteChore(String familyId, String choreId);
-  Future<void> addReward(String familyId, {required String title, required int cost});
+  Future<void> addReward(String familyId, {required String title, required int cost, int? screenMinutes});
   Future<void> deleteReward(String familyId, String rewardId);
   Future<PointsBoard> done(String familyId, String childId, String choreId);
   Future<PointsBoard> redeem(String familyId, String childId, String rewardId);
@@ -131,8 +135,8 @@ class ApiPointsRepository implements PointsRepository {
   Future<void> deleteChore(String familyId, String choreId) => _call(() => _api.dio.delete<dynamic>('${_f(familyId)}/chores/$choreId'));
 
   @override
-  Future<void> addReward(String familyId, {required String title, required int cost}) =>
-      _call(() => _api.dio.post<dynamic>('${_f(familyId)}/rewards', data: {'title': title, 'cost': cost}));
+  Future<void> addReward(String familyId, {required String title, required int cost, int? screenMinutes}) =>
+      _call(() => _api.dio.post<dynamic>('${_f(familyId)}/rewards', data: {'title': title, 'cost': cost, 'screenMinutes': screenMinutes}));
 
   @override
   Future<void> deleteReward(String familyId, String rewardId) => _call(() => _api.dio.delete<dynamic>('${_f(familyId)}/rewards/$rewardId'));

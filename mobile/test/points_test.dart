@@ -45,7 +45,8 @@ class _FakePoints implements PointsRepository {
   }
 
   @override
-  Future<void> addReward(String familyId, {required String title, required int cost}) async => calls.add('reward $title $cost');
+  Future<void> addReward(String familyId, {required String title, required int cost, int? screenMinutes}) async =>
+      calls.add('reward $title $cost${screenMinutes == null ? '' : ' screen $screenMinutes'}');
 
   @override
   Future<void> deleteReward(String familyId, String rewardId) async => calls.add('delete reward $rewardId');
@@ -103,24 +104,24 @@ void _phone(WidgetTester tester) {
 }
 
 void main() {
-  testWidgets('ticking a chore earns stars and unlocks a reward', (tester) async {
+  testWidgets('ticking a chore earns cherries and unlocks a reward', (tester) async {
     _phone(tester);
     final repo = _FakePoints();
     await tester.pumpWidget(_app(repo));
     await tester.pumpAndSettle();
-    expect(find.text('4 yıldız'), findsOneWidget);
+    expect(find.text('4 kiraz'), findsOneWidget);
     expect(find.text('Kediyi besle'), findsNothing); // Can's chore
-    expect(find.text('3 yıldız daha lazım'), findsOneWidget);
+    expect(find.text('3 kiraz daha lazım'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('points.done.room')));
     await tester.pumpAndSettle();
     expect(repo.calls, ['done c1 room']);
-    expect(find.text('9 yıldız'), findsOneWidget);
+    expect(find.text('9 kiraz'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('points.redeem.park')));
     await tester.pumpAndSettle();
     expect(repo.calls.last, 'redeem c1 park');
-    expect(find.text('2 yıldız'), findsOneWidget);
+    expect(find.text('2 kiraz'), findsOneWidget);
 
     // Unticking undoes today's entry.
     await tester.tap(find.byKey(const Key('points.done.room')));

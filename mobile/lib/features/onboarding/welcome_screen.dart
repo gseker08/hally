@@ -100,6 +100,11 @@ class WelcomeScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: HallySpace.xs),
                           TextButton(onPressed: () => context.go('/join'), child: Text(l10n.welcomeHaveInvite)),
+                          TextButton(
+                            key: const Key('welcome.child'),
+                            onPressed: () => context.push('/kid/pair'),
+                            child: Text(l10n.welcomeChildPhone),
+                          ),
                         ],
                       ),
                     ),

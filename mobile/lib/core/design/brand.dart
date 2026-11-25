@@ -138,3 +138,16 @@ class HallyWordmark extends StatelessWidget {
     );
   }
 }
+
+/// One cherry, the unit children collect in child mode (the Hally mark in small).
+class CherryIcon extends StatelessWidget {
+  const CherryIcon({super.key, this.size = 20});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => HallyMark(
+        size: size,
+        colors: Theme.of(context).brightness == Brightness.dark ? HallyMarkColors.onDark : HallyMarkColors.onLight,
+      );
+}
