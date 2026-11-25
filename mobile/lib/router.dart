@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
 import 'features/activities/activity_screens.dart' show FamilyActivitiesScreen;
+import 'features/bedtime/bedtime_screens.dart' show BedtimeSettingsScreen;
 import 'features/child_mode/child_mode_repository.dart';
 import 'features/goal/goal_widgets.dart' show FamilyGoalScreen;
 import 'features/child_mode/kid_screens.dart';
@@ -147,6 +148,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/handoffs', builder: (_, s) => HandoffHistoryScreen(childId: s.uri.queryParameters['childId'])),
       GoRoute(path: '/balance', builder: (_, __) => const BalanceScreen()),
       GoRoute(path: '/family-goal', builder: (_, s) => FamilyGoalScreen(familyId: s.uri.queryParameters['familyId'])),
+      GoRoute(
+          path: '/bedtime/:childId',
+          builder: (_, s) => BedtimeSettingsScreen(familyId: s.uri.queryParameters['familyId'] ?? '', childId: s.pathParameters['childId']!)),
       GoRoute(path: '/activities', builder: (_, s) => FamilyActivitiesScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
       GoRoute(path: '/weekly-card', builder: (_, __) => const WeeklyCardScreen()),
       GoRoute(path: '/share-links', builder: (_, __) => const ShareLinksScreen()),

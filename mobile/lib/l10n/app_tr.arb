@@ -2275,5 +2275,96 @@
         "type": "int"
       }
     }
+  },
+  "bedTitle": "Uykuya hazırlık 🌙",
+  "bedTimeLine": "{time} · Uyku vakti",
+  "@bedTimeLine": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "bedHint": "Sırayla işaretle. Hepsi bitince sana bir hikâye anlatacağım ✨",
+  "bedLater": "Sonra",
+  "bedCard": "Uyku vakti",
+  "bedCardBody": "{done}/{total} adım · Devam et",
+  "@bedCardBody": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bedDoneLine": "Rutin bitti · +{cherries} kiraz 🍒",
+  "@bedDoneLine": {
+    "placeholders": {
+      "cherries": {
+        "type": "int"
+      }
+    }
+  },
+  "bedDoneNoCherries": "Rutin bitti 🌙",
+  "bedGoodNight": "İyi geceler {name}",
+  "@bedGoodNight": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "bedBreatheIn": "Nefes al…",
+  "bedBreatheOut": "Nefes ver…",
+  "bedStoryLabel": "BU GECENİN HİKÂYESİ",
+  "bedPlay": "Dinle",
+  "bedStop": "Durdur",
+  "bedNightNote": "Hikâye bitince ekran yavaşça kararır.",
+  "bedNightLock": "Sabah 07:00'ye kadar telefon kilitli kalır.",
+  "bedClose": "Kapat",
+  "bedSettingsTitle": "Uyku rutini",
+  "bedSettingsBody": "Akşam saatinde çocuğun telefonunda sırayla adımlar açılır; bitince size haber gelir.",
+  "bedEnabled": "Uyku rutini açık",
+  "bedTime": "Saat",
+  "bedSteps": "Adımlar",
+  "bedAddStep": "Adım ekle",
+  "bedStepHint": "Örn. Su iç",
+  "bedCherries": "Bitince kiraz",
+  "bedLockMorning": "Bitince sabaha kadar telefonu kilitle",
+  "bedSave": "Kaydet",
+  "bedSaved": "Uyku rutini kaydedildi",
+  "bedTonight": "Bu akşam: {done}/{total} adım",
+  "@bedTonight": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "bedTonightDone": "Bu akşam bitti · {time}",
+  "@bedTonightDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "bedStepPajamas": "Pijamalarını giy",
+  "bedStepTeeth": "Dişlerini fırçala",
+  "bedStepBag": "Yarın için çantanı hazırla",
+  "bedStepWater": "Su iç, tuvalete git",
+  "bedStepBed": "Yatağına gir",
+  "bedNotOpen": "Rutin açılış saati: {time}",
+  "@bedNotOpen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   }
 }

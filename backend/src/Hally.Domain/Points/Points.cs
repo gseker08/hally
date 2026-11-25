@@ -68,6 +68,9 @@ public enum PointKind
     /// <summary>Answering "Bugün nasılsın?" (one cherry a day, whatever the answer).</summary>
     Mood,
 
+    /// <summary>The bedtime routine finished (the cherries the parents set for it).</summary>
+    Bedtime,
+
     /// <summary>A screen-free idea done ("Şimdi ne yapsam?"); counts for the streak like chores and habits.</summary>
     Activity,
 }
@@ -169,6 +172,17 @@ public class PointEntry : Entity
         Points = points,
         Day = day,
         ByUserId = userId,
+        CreatedAt = now,
+    };
+
+    public static PointEntry ForBedtime(Guid familyId, Guid childId, int points, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Bedtime,
+        Title = "bedtime",
+        Points = points,
+        Day = day,
         CreatedAt = now,
     };
 

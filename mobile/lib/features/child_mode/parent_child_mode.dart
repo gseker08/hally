@@ -230,6 +230,18 @@ class _ConnectPhoneScreenState extends ConsumerState<ConnectPhoneScreen> {
               onTap: () => context.push('/activities?familyId=${widget.familyId}'),
             ),
           ),
+          const SizedBox(height: HallySpace.sm),
+          Card(
+            margin: EdgeInsets.zero,
+            child: ListTile(
+              key: const Key('phone.bedtime'),
+              leading: const Text('🌙', style: TextStyle(fontSize: 24)),
+              title: Text(l10n.bedSettingsTitle),
+              subtitle: Text(l10n.bedSettingsBody),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () => context.push('/bedtime/${widget.childId}?familyId=${widget.familyId}'),
+            ),
+          ),
         ],
       ),
     );

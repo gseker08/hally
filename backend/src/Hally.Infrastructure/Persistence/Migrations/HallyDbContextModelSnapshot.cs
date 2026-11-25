@@ -173,6 +173,101 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("conversations", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Bedtime.BedtimeRoutine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Cherries")
+                        .HasColumnType("integer")
+                        .HasColumnName("cherries");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<bool>("LockUntilMorning")
+                        .HasColumnType("boolean")
+                        .HasColumnName("lock_until_morning");
+
+                    b.Property<string>("StepsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("steps_json");
+
+                    b.Property<TimeOnly>("Time")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("time");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bedtime_routines");
+
+                    b.HasIndex("ChildId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bedtime_routines_child_id");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_bedtime_routines_family_id");
+
+                    b.ToTable("bedtime_routines", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Bedtime.BedtimeRun", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("Done")
+                        .HasColumnType("integer")
+                        .HasColumnName("done");
+
+                    b.Property<DateOnly>("Evening")
+                        .HasColumnType("date")
+                        .HasColumnName("evening");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bedtime_runs");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_bedtime_runs_family_id");
+
+                    b.HasIndex("ChildId", "Evening")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bedtime_runs_child_id_evening");
+
+                    b.ToTable("bedtime_runs", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Billing.Subscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3089,6 +3184,40 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_conversations_users_user_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Bedtime.BedtimeRoutine", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bedtime_routines_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bedtime_routines_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Bedtime.BedtimeRun", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bedtime_runs_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bedtime_runs_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Billing.Subscription", b =>

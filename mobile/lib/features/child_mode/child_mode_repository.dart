@@ -9,6 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/auth/token_storage.dart';
 import '../../core/config/app_config.dart';
 import '../activities/activities.dart';
+import '../bedtime/bedtime.dart';
 import '../goal/family_goal.dart';
 import '../messages/chat_realtime.dart';
 import 'child_lock.dart';
@@ -108,7 +109,7 @@ class ChildReward {
 }
 
 class ChildScreen {
-  const ChildScreen({this.goalMinutes, this.bonusMinutes = 0, this.limitMinutes, this.usedSeconds = 0, this.locked = false});
+  const ChildScreen({this.goalMinutes, this.bonusMinutes = 0, this.limitMinutes, this.usedSeconds = 0, this.locked = false, this.bedtime = false});
 
   factory ChildScreen.fromJson(Map<String, dynamic> j) => ChildScreen(
         goalMinutes: j['goalMinutes'] as int?,
@@ -116,6 +117,7 @@ class ChildScreen {
         limitMinutes: j['limitMinutes'] as int?,
         usedSeconds: j['usedSeconds'] as int? ?? 0,
         locked: j['locked'] as bool? ?? false,
+        bedtime: j['bedtime'] as bool? ?? false,
       );
 
   final int? goalMinutes;
@@ -123,6 +125,9 @@ class ChildScreen {
   final int? limitMinutes;
   final int usedSeconds;
   final bool locked;
+
+  /// Locked for the night after the bedtime routine (not because time ran out).
+  final bool bedtime;
 
   /// Minutes left today; null without a limit.
   int? get minutesLeft => limitMinutes == null ? null : ((limitMinutes! * 60 - usedSeconds) / 60).ceil().clamp(0, 24 * 60);
@@ -143,6 +148,7 @@ class ChildHome {
     this.rewards = const [],
     this.screen = const ChildScreen(),
     this.todayMood,
+    this.bedtime,
   });
 
   factory ChildHome.fromJson(Map<String, dynamic> j) {
@@ -161,6 +167,7 @@ class ChildHome {
       rewards: [for (final r in j['rewards'] as List? ?? const []) ChildReward.fromJson(r as Map<String, dynamic>)],
       screen: ChildScreen.fromJson(j['screen'] as Map<String, dynamic>? ?? const {}),
       todayMood: j['todayMood'] as String?,
+      bedtime: j['bedtime'] == null ? null : ChildBedtime.fromJson(j['bedtime'] as Map<String, dynamic>),
     );
   }
 
@@ -179,6 +186,9 @@ class ChildHome {
 
   /// Today's "Bugün nasılsın?" answer (Great, Good, Okay, Sad, Angry, Tired); null until the child answers.
   final String? todayMood;
+
+  /// Tonight's bedtime routine; null without one.
+  final ChildBedtime? bedtime;
 
   /// The cheapest reward still out of reach (the "next reward" bar).
   ChildReward? get nextReward {
@@ -213,6 +223,9 @@ abstract interface class ChildApi {
 
   /// This week's family goal (the jar tab).
   Future<FamilyGoalState> goal();
+
+  /// Checks bedtime step [index] (in order).
+  Future<ChildBedtime> bedtimeDone(int index);
 }
 
 class UnpairedException implements Exception {}
@@ -298,6 +311,10 @@ class DioChildApi implements ChildApi {
 
   @override
   Future<FamilyGoalState> goal() => _call(() async => FamilyGoalState.fromJson((await _dio.get<Map<String, dynamic>>('/api/v1/child/goal')).data!));
+
+  @override
+  Future<ChildBedtime> bedtimeDone(int index) =>
+      _call(() async => ChildBedtime.fromJson((await _dio.post<Map<String, dynamic>>('/api/v1/child/bedtime/steps/$index/done')).data!));
 }
 
 final childApiProvider = Provider<ChildApi>((ref) => DioChildApi(ref.watch(childSessionStorageProvider)));

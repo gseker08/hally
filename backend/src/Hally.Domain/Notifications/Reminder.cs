@@ -138,6 +138,9 @@ public enum NotificationKind
 
     /// <summary>The family reached its weekly cherry goal.</summary>
     FamilyGoalReached,
+
+    /// <summary>A child finished the bedtime routine ("Ela yatağında").</summary>
+    BedtimeDone,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.
