@@ -1,3 +1,6 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +12,7 @@ import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../family/family_repository.dart';
 import 'billing_repository.dart';
 
 /// Opens the paywall when [error] is a plan limit (HTTP 402). Returns true when it did,
@@ -21,6 +25,10 @@ bool openPaywallIfLimited(BuildContext context, Object error) {
 
 /// Family Plus offer. Shown at natural moments (4th weekly scan, 3rd adult, 2nd reminder on an item, 4th helper link)
 /// and from the plan screen. Never blocks viewing existing data: closing it always works.
+///
+/// One plan per family: one parent pays and everyone in the family is covered. The first time a family subscribes
+/// it gets the store's 7-day free-trial offer (card in the store, the chosen package starts on day 8); after that,
+/// only the plain package is offered.
 class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key, required this.trigger});
 
@@ -63,35 +71,24 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
   }
 
-  Future<void> _startTrial() => _run(() async {
-        final familyId = _familyId();
-        if (familyId == null) return;
-        final l10n = AppLocalizations.of(context);
-        final messenger = ScaffoldMessenger.of(context);
-        try {
-          await ref.read(billingRepositoryProvider).startTrial(familyId);
-          ref.invalidate(entitlementProvider);
-          messenger.showSnackBar(SnackBar(content: Text(l10n.paywallTrialStarted)));
-          if (mounted) context.pop(true);
-        } catch (_) {
-          messenger.showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
-        }
-      });
-
-  Future<void> _buy(Product product) => _run(() async {
+  Future<void> _buy(Product product, {bool withTrial = false}) => _run(() async {
         final familyId = _familyId();
         if (familyId == null) return;
         final l10n = AppLocalizations.of(context);
         final messenger = ScaffoldMessenger.of(context);
         ref.read(analyticsProvider).track(AnalyticsEvent.purchaseStarted, {'product': product.id});
         try {
-          final purchase = await ref.read(storeGatewayProvider).buy(product.id);
+          final purchase = await ref.read(storeGatewayProvider).buy(product.id, withTrial: withTrial);
           if (purchase == null) return; // cancelled in the store sheet
           await ref.read(billingRepositoryProvider)
               .registerPurchase(familyId, store: purchase.store, productId: purchase.productId, token: purchase.token);
           ref.invalidate(entitlementProvider);
-          messenger.showSnackBar(SnackBar(content: Text(l10n.paywallWelcomePlus)));
+          messenger.showSnackBar(SnackBar(content: Text(withTrial ? l10n.paywallTrialStarted : l10n.paywallWelcomePlus)));
           if (mounted) context.pop(true);
+        } on ApiException catch (e) {
+          // Another parent's plan already covers the family (the server refuses a second payment).
+          ref.invalidate(entitlementProvider);
+          messenger.showSnackBar(SnackBar(content: Text(e.status == 409 ? l10n.paywallFamilyCovered : l10n.errorGeneric)));
         } on StoreUnavailableException {
           messenger.showSnackBar(SnackBar(content: Text(l10n.paywallStoreSoon)));
         } on StorePendingException {
@@ -151,15 +148,26 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           final products = c.products;
           final selected = _selected ?? (products.where((p) => p.yearly).firstOrNull ?? products.firstOrNull)?.id;
           final trial = entitlement?.trialAvailable ?? false;
+          final canBuy = entitlement?.canPurchase ?? true;
+          final apple = !kIsWeb && Platform.isIOS;
+          final small = Theme.of(context).textTheme.bodySmall;
           return HallyPage(
             bottom: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (trial)
+                if (!canBuy)
+                  // A caregiver, or another parent's plan already covers the family: nothing to buy here.
+                  Text(
+                    entitlement!.isPlus ? l10n.paywallFamilyCovered : l10n.paywallParentsOnly,
+                    key: const Key('paywall.notForMe'),
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  )
+                else if (trial)
                   FilledButton(
                     key: const Key('paywall.trial'),
-                    onPressed: _busy ? null : _startTrial,
+                    onPressed: _busy || selected == null ? null : () => _buy(products.firstWhere((p) => p.id == selected), withTrial: true),
                     child: Text(l10n.paywallStartTrial(c.trialDays)),
                   )
                 else
@@ -168,19 +176,23 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     onPressed: _busy || selected == null ? null : () => _buy(products.firstWhere((p) => p.id == selected)),
                     child: Text(l10n.paywallSubscribe),
                   ),
-                const SizedBox(height: HallySpace.xs),
-                Text(
-                  trial ? l10n.paywallTrialNote : l10n.paywallRenewNote,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                TextButton(key: const Key('paywall.restore'), onPressed: _busy || !store.available ? null : _restore, child: Text(l10n.paywallRestore)),
+                if (canBuy) ...[
+                  const SizedBox(height: HallySpace.xs),
+                  Text(
+                    trial ? (apple ? l10n.paywallTrialNoteApple : l10n.paywallTrialNote) : '${l10n.paywallTrialUsed} ${l10n.paywallRenewNote}',
+                    textAlign: TextAlign.center,
+                    style: small,
+                  ),
+                  TextButton(key: const Key('paywall.restore'), onPressed: _busy || !store.available ? null : _restore, child: Text(l10n.paywallRestore)),
+                ],
               ],
             ),
             children: [
               HallyEntrance(child: _Hero(title: _headline(l10n, c), subtitle: l10n.paywallSubtitle)),
-              const SizedBox(height: HallySpace.md),
-              HallyEntrance(index: 1, child: _Comparison(free: c.free, plus: c.plus)),
+              if (trial && canBuy) ...[
+                const SizedBox(height: HallySpace.md),
+                HallyEntrance(index: 1, child: _TrialSteps(days: c.trialDays)),
+              ],
               const SizedBox(height: HallySpace.md),
               for (final (i, p) in products.indexed)
                 HallyEntrance(
@@ -188,10 +200,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   child: _ProductTile(
                     product: p,
                     price: _prices[p.id] ?? _fallbackPrice(p),
+                    trialDays: trial ? c.trialDays : null,
                     selected: p.id == selected,
                     onTap: () => setState(() => _selected = p.id),
                   ),
                 ),
+              const SizedBox(height: HallySpace.sm),
+              HallyEntrance(index: products.length + 2, child: _Comparison(free: c.free, plus: c.plus)),
             ],
           );
         },
@@ -278,11 +293,49 @@ class _Comparison extends StatelessWidget {
   }
 }
 
+/// Today: start free · 7 days: everything on · day 8: the chosen package starts.
+class _TrialSteps extends StatelessWidget {
+  const _TrialSteps({required this.days});
+
+  final int days;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    Widget step(String title, String note) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: HallySpace.sm, horizontal: HallySpace.xs),
+            decoration: BoxDecoration(color: theme.colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(HallyRadius.md)),
+            child: Column(
+              children: [
+                Text(title, style: theme.textTheme.titleSmall?.copyWith(fontFamily: HallyFonts.display, fontWeight: FontWeight.w700)),
+                Text(note, style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
+              ],
+            ),
+          ),
+        );
+    return Row(
+      key: const Key('paywall.steps'),
+      children: [
+        step(l10n.paywallStepToday, l10n.paywallStepTodayNote),
+        const SizedBox(width: HallySpace.xs),
+        step(l10n.paywallStepDays(days), l10n.paywallStepDaysNote),
+        const SizedBox(width: HallySpace.xs),
+        step(l10n.paywallStepStart(days + 1), l10n.paywallStepStartNote),
+      ],
+    );
+  }
+}
+
 class _ProductTile extends StatelessWidget {
-  const _ProductTile({required this.product, required this.price, required this.selected, required this.onTap});
+  const _ProductTile({required this.product, required this.price, this.trialDays, required this.selected, required this.onTap});
 
   final Product product;
   final String? price;
+
+  /// Set while the family can still use its free week: "7 gün ücretsiz, sonra ₺599,99 / yıl".
+  final int? trialDays;
   final bool selected;
   final VoidCallback onTap;
 
@@ -312,7 +365,7 @@ class _ProductTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(product.yearly ? l10n.paywallYearly : l10n.paywallMonthly, style: theme.textTheme.titleMedium),
-                    Text(price ?? l10n.paywallPriceInStore, style: theme.textTheme.bodySmall),
+                    Text(_priceLine(l10n), style: theme.textTheme.bodySmall),
                   ],
                 ),
               ),
@@ -322,6 +375,13 @@ class _ProductTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _priceLine(AppLocalizations l10n) {
+    final p = price;
+    if (p == null) return l10n.paywallPriceInStore;
+    final perPeriod = product.yearly ? l10n.paywallPerYear(p) : l10n.paywallPerMonth(p);
+    return trialDays == null ? perPeriod : l10n.paywallTrialThen(trialDays!, perPeriod);
   }
 }
 
@@ -341,32 +401,96 @@ class PlanScreen extends ConsumerWidget {
         data: (e) {
           if (e == null) return const HallyLoading();
           final dateFormat = DateFormat.yMMMd(Localizations.localeOf(context).toString());
+          final ends = e.expiresAt == null ? '' : dateFormat.format(e.expiresAt!);
           final status = switch (e.state) {
-            'Trialing' => l10n.planStatusTrial(dateFormat.format(e.expiresAt!)),
-            'Active' when e.willRenew => l10n.planStatusRenews(dateFormat.format(e.expiresAt!)),
-            'Active' => l10n.planStatusEnds(dateFormat.format(e.expiresAt!)),
+            'Trialing' when e.fromStore && e.willRenew => l10n.planStatusTrialRenews(ends),
+            'Trialing' => l10n.planStatusTrial(ends),
+            'Active' when e.willRenew => l10n.planStatusRenews(ends),
+            'Active' => l10n.planStatusEnds(ends),
             'GracePeriod' => l10n.planStatusGrace,
+            'TrialDenied' => l10n.planTrialDeniedStatus(ends),
             _ => l10n.planStatusFree,
           };
           final l = e.limits;
           final u = e.usage;
           String of(int used, int limit) => limit <= 0 ? '$used' : '$used / $limit';
+          final name = e.purchasedByName;
+          final covered = e.isPlus && !e.payerLeft;
+          final holder = covered ? _holder(l10n, e) : null;
+          final theme = Theme.of(context);
           return RefreshIndicator(
             onRefresh: () => ref.refresh(entitlementProvider.future),
             child: ListView(
               padding: const EdgeInsets.all(HallySpace.md),
               children: [
+                if (e.payerLeft && e.isPlus)
+                  _Notice(
+                    key: const Key('plan.payerLeft'),
+                    icon: Icons.warning_amber_rounded,
+                    color: HallyColors.apricot,
+                    title: l10n.planPayerLeftTitle,
+                    body: l10n.planPayerLeftBody(name ?? '', ends),
+                  ),
+                if (e.trialDenied)
+                  _Notice(
+                    key: const Key('plan.trialDenied'),
+                    icon: Icons.manage_search_rounded,
+                    color: HallyColors.butter,
+                    title: l10n.planTrialDeniedTitle,
+                    body: l10n.planTrialDeniedBody(ends),
+                  ),
                 Card(
-                  child: ListTile(
-                    key: const Key('plan.status'),
-                    leading: HallyIconBadge(
-                      icon: e.isPlus ? Icons.workspace_premium_rounded : Icons.favorite_rounded,
-                      color: e.isPlus ? HallyColors.cherry : HallyColors.mint,
+                  color: covered ? HallyColors.softOf(HallyColors.cherry, theme.brightness) : null,
+                  child: Padding(
+                    padding: const EdgeInsets.all(HallySpace.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            HallyIconBadge(
+                              icon: e.isPlus ? Icons.workspace_premium_rounded : Icons.favorite_rounded,
+                              color: e.isPlus ? HallyColors.cherry : HallyColors.mint,
+                            ),
+                            const SizedBox(width: HallySpace.md),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(covered ? l10n.planFamilyPlus : e.isPlus ? l10n.planPlus : l10n.planFree,
+                                      key: const Key('plan.title'), style: theme.textTheme.titleMedium),
+                                  if (holder != null)
+                                    Text(holder, key: const Key('plan.holder'),
+                                        style: theme.textTheme.bodyMedium?.copyWith(color: HallyColors.cherryStrong, fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: HallySpace.sm),
+                        Text(status, key: const Key('plan.status'), style: theme.textTheme.bodyMedium),
+                        if (covered) ...[
+                          const SizedBox(height: HallySpace.sm),
+                          _CoveredMembers(),
+                        ],
+                      ],
                     ),
-                    title: Text(e.isPlus ? l10n.planPlus : l10n.planFree, style: Theme.of(context).textTheme.titleMedium),
-                    subtitle: Text(status),
                   ),
                 ),
+                if (covered)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: HallySpace.xs),
+                    child: Text(
+                      !e.purchasedByMe && e.fromStore && name != null ? l10n.planCoveredNote(name) : l10n.planCoveredEveryone,
+                      key: const Key('plan.coveredNote'),
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ),
+                if (e.trialDenied)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: HallySpace.xs),
+                    child: Text(l10n.planTrialDeniedHint, style: theme.textTheme.bodySmall),
+                  ),
                 HallySectionHeader(title: l10n.planUsage),
                 Card(
                   child: Column(
@@ -383,19 +507,104 @@ class PlanScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: HallySpace.md),
-                if (!e.isPlus)
+                if (e.payerLeft && e.canPurchase) ...[
+                  Text(l10n.planPayerLeftHint, style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
+                  const SizedBox(height: HallySpace.sm),
+                  FilledButton(
+                    key: const Key('plan.takeOver'),
+                    onPressed: () => context.push('/paywall?trigger=plan_screen'),
+                    child: Text(l10n.planTakeOver),
+                  ),
+                ] else if (!e.isPlus && !e.trialDenied && e.canPurchase)
                   FilledButton(
                     key: const Key('plan.upgrade'),
                     onPressed: () => context.push('/paywall?trigger=plan_screen'),
                     child: Text(e.trialAvailable ? l10n.paywallStartTrial(ref.watch(catalogProvider).valueOrNull?.trialDays ?? 7) : l10n.paywallSubscribe),
                   )
-                else if (e.source == 'AppStore' || e.source == 'GooglePlay')
+                else if (!e.isPlus && !e.canPurchase)
+                  Text(l10n.paywallParentsOnly, style: theme.textTheme.bodySmall, textAlign: TextAlign.center)
+                else if (e.fromStore && e.purchasedByMe)
                   Text(e.source == 'AppStore' ? l10n.planManageApple : l10n.planManageGoogle,
-                      style: Theme.of(context).textTheme.bodySmall, textAlign: TextAlign.center),
+                      style: theme.textTheme.bodySmall, textAlign: TextAlign.center),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// "Ayşe ödüyor · yıllık", "Sen ödüyorsun · aylık", or who started the trial.
+String? _holder(AppLocalizations l10n, Entitlement e) {
+  final name = e.purchasedByName;
+  if (e.state == 'Trialing' && !e.fromStore) return name == null ? null : l10n.planTrialBy(name);
+  final who = e.purchasedByMe ? l10n.planPaidByMe : name == null ? null : l10n.planPaidBy(name);
+  if (who == null) return null;
+  return e.fromStore ? '$who · ${e.yearly ? l10n.planYearlySuffix : l10n.planMonthlySuffix}' : who;
+}
+
+/// Everyone the family plan covers: parents and caregivers by name.
+class _CoveredMembers extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final familyId = ref.watch(meProvider).valueOrNull?.primaryFamily?.id;
+    final members = familyId == null ? null : ref.watch(familyProvider(familyId)).valueOrNull?.members;
+    if (members == null || members.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Wrap(
+      key: const Key('plan.members'),
+      spacing: HallySpace.xs,
+      runSpacing: HallySpace.xs,
+      children: [
+        for (final m in members)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(color: theme.colorScheme.surface, borderRadius: BorderRadius.circular(12)),
+            child: Text(
+              m.isCaregiver ? '${m.displayName} (${l10n.planCaregiverTag}) ✓' : '${m.displayName} ✓',
+              style: theme.textTheme.labelMedium?.copyWith(color: m.isCaregiver ? HallyColors.sky : HallyColors.cherryStrong),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// A soft coloured notice at the top of the plan screen.
+class _Notice extends StatelessWidget {
+  const _Notice({super.key, required this.icon, required this.color, required this.title, required this.body});
+
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = Theme.of(context).brightness;
+    final fg = HallyColors.readableOn(color, b);
+    return Container(
+      margin: const EdgeInsets.only(bottom: HallySpace.sm),
+      padding: const EdgeInsets.all(HallySpace.md),
+      decoration: BoxDecoration(color: HallyColors.softOf(color, b), borderRadius: BorderRadius.circular(HallyRadius.lg)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: fg),
+          const SizedBox(width: HallySpace.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 15)),
+                const SizedBox(height: 2),
+                Text(body, style: TextStyle(color: fg, fontSize: 13, height: 1.4)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

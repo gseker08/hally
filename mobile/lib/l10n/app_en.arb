@@ -198,15 +198,15 @@
   "assistantReview": "Review and approve",
   "assistantError": "I couldn't answer right now. Could you try again in a bit?",
   "todayAllTasks": "All tasks",
-  "paywallTitle": "Family Plus takes the load off",
-  "paywallSubtitle": "More scans, up to 6 adults, unlimited helper links and multiple reminders.",
+  "paywallTitle": "One Family Plus for the whole family",
+  "paywallSubtitle": "One person pays; your partner, caregiver and kids' phones use it too.",
   "paywallScanLimit": "You've used this week's {count} free scans",
   "paywallAdultLimit": "The free plan is limited to {count} adults",
   "paywallShareLimit": "The free plan keeps {count} helper links open at once",
   "paywallReminderLimit": "Multiple reminders per item come with Family Plus",
-  "paywallStartTrial": "Try free for {days} days",
+  "paywallStartTrial": "Start {days} days free",
   "paywallSubscribe": "Get Family Plus",
-  "paywallTrialNote": "No card needed. You won't be charged when the trial ends.",
+  "paywallTrialNote": "Cancel in Google Play before the trial ends and you won't be charged. One free trial per family.",
   "paywallRenewNote": "Cancel anytime from your store account.",
   "paywallRestore": "Restore purchases",
   "paywallNotNow": "Not now",
@@ -1132,7 +1132,51 @@
   "familyTodayAll": "Family",
   "familyTodayFree": "Nothing today",
   "familyTodayTasks": "{n, plural, =1{1 task} other{{n} tasks}}",
-  "@familyTodayTasks": {"placeholders": {"n": {"type": "int"}}},
+  "@familyTodayTasks": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "familyTodayEvents": "{n, plural, =1{1 event} other{{n} events}}",
-  "@familyTodayEvents": {"placeholders": {"n": {"type": "int"}}}
+  "@familyTodayEvents": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallTrialNoteApple": "Cancel in the App Store before the trial ends and you won't be charged. One free trial per family.",
+  "paywallTrialUsed": "The free trial was already used, so the plan starts right away.",
+  "paywallTrialThen": "{days} days free, then {price}",
+  "paywallPerYear": "{price} / year",
+  "paywallPerMonth": "{price} / month",
+  "paywallStepToday": "Today",
+  "paywallStepTodayNote": "Start free",
+  "paywallStepDays": "{days} days",
+  "paywallStepDaysNote": "Everything on",
+  "paywallStepStart": "Day {day}",
+  "paywallStepStartNote": "Plan starts",
+  "paywallParentsOnly": "A parent in the family can turn on Family Plus.",
+  "paywallFamilyCovered": "Family Plus already covers the whole family.",
+  "planFamilyPlus": "Family Plus · Family plan",
+  "planPaidByMe": "You pay",
+  "planPaidBy": "{name} pays",
+  "planTrialBy": "{name} started the free trial",
+  "planYearlySuffix": "yearly",
+  "planMonthlySuffix": "monthly",
+  "planStatusTrialRenews": "Free trial ends on {date}, then the plan starts automatically",
+  "planCoveredNote": "The plan covers the whole family, so you don't need to pay. Only {name} can manage it from their store account.",
+  "planCoveredEveryone": "Everyone in the family gets Plus: parents, caregivers and kids' phones.",
+  "planCaregiverTag": "caregiver",
+  "planPayerLeftTitle": "The person who pays left the family",
+  "planPayerLeftBody": "{name}'s subscription lasts until {date}. If they move it to their new family or cancel it, the plan goes back to Free.",
+  "planPayerLeftHint": "To avoid a gap, you can take over the plan. Everyone in the family still uses one payment.",
+  "planTakeOver": "Take over the plan",
+  "planTrialDeniedTitle": "This family already used its free trial",
+  "planTrialDeniedBody": "The store gave a new trial week, but Hally gives each family one trial. Plus turns on when the first payment is taken on {date}.",
+  "planTrialDeniedStatus": "Plan starts on {date}",
+  "planTrialDeniedHint": "If you don't want to wait, cancel in the store and you won't be charged.",
+  "planFamilyShort": "Family plan · {name} pays"
 }

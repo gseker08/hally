@@ -134,7 +134,11 @@ class _PlanCard extends StatelessWidget {
     final subtitle = e == null
         ? null
         : plus
-            ? (e.state == 'Trialing' ? l10n.planTrialShort : l10n.planPlusShort)
+            ? (e.state == 'Trialing'
+                ? l10n.planTrialShort
+                : !e.purchasedByMe && e.purchasedByInFamily && e.purchasedByName != null
+                    ? l10n.planFamilyShort(e.purchasedByName!)
+                    : l10n.planPlusShort)
             : l10n.planFreeUsage(e.usage.scansThisWeek, e.limits.scansPerWeek);
     final b = Theme.of(context).brightness;
     final fg = HallyColors.readableOn(HallyColors.butter, b);

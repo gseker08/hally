@@ -4,6 +4,7 @@ using Hally.Api.Auth;
 using Hally.Api.Common;
 using Hally.Api.Features.Proposals;
 using Hally.Domain.Billing;
+using Hally.Domain.Families;
 using Hally.Infrastructure.Analytics;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +30,10 @@ public record EntitlementDto(
     bool PurchasedByMe,
     PlanLimitsDto Limits,
     UsageDto Usage,
-    bool SellingEnabled);
+    bool SellingEnabled,
+    string? PurchasedByName = null,
+    bool PurchasedByInFamily = false,
+    bool CanPurchase = false);
 
 public record PurchaseRequest(SubscriptionSource Store, string ProductId, string Token);
 
@@ -119,17 +123,39 @@ public class BillingController(
             throw new Domain.Common.DomainException("billing.purchase_not_found", "The store does not show an active Family Plus purchase.");
         }
 
-        var owner = await db.Subscriptions.AsNoTracking()
-            .Where(s => s.StoreReference == purchase.StoreReference && s.FamilyId != familyId)
-            .Select(s => (Guid?)s.FamilyId).FirstOrDefaultAsync(ct);
-        if (owner is not null)
+        var userId = User.UserId();
+        var now = clock.GetUtcNow();
+
+        // One plan per family: while a parent's renewing subscription covers the family, nobody else pays again.
+        // The same purchase coming back (restore, renewal) is fine, and so is a new one once the payer left or cancelled.
+        var current = await db.Subscriptions.AsNoTracking().FirstOrDefaultAsync(s => s.FamilyId == familyId, ct);
+        if (current is not null && current.StoreReference != purchase.StoreReference &&
+            current.IsRenewingStorePlan(now, options.Value.Grace) && await IsParentOf(current.FamilyId, current.PurchasedByUserId, ct))
         {
-            throw new ConflictException("billing.purchase_in_use", "This purchase already unlocks Family Plus for another family.");
+            throw new ConflictException("billing.family_already_plus", "Family Plus already covers this family.");
         }
 
-        await updater.ApplyAsync(familyId, request.Store, purchase, User.UserId(), ct);
+        // A purchase unlocks one family. Its payer can take it along after leaving that family; nobody else can.
+        var elsewhere = await db.Subscriptions
+            .FirstOrDefaultAsync(s => s.StoreReference == purchase.StoreReference && s.Source == request.Store && s.FamilyId != familyId, ct);
+        if (elsewhere is not null)
+        {
+            if (elsewhere.PurchasedByUserId != userId || await IsParentOf(elsewhere.FamilyId, userId, ct))
+            {
+                throw new ConflictException("billing.purchase_in_use", "This purchase already unlocks Family Plus for another family.");
+            }
+
+            elsewhere.DetachStore(now);
+        }
+
+        // One free week per family and per parent: a parent who had it in another family does not get it again here.
+        var trialUsedElsewhere = await db.Subscriptions.AnyAsync(s => s.TrialStartedByUserId == userId && s.FamilyId != familyId, ct);
+        await updater.ApplyAsync(familyId, request.Store, purchase, userId, ct, trialAllowed: !trialUsedElsewhere);
         return await Build(familyId, ct);
     }
+
+    private Task<bool> IsParentOf(Guid familyId, Guid? userId, CancellationToken ct) =>
+        userId is null ? Task.FromResult(false) : db.FamilyMembers.AnyAsync(m => m.FamilyId == familyId && m.UserId == userId && m.Role != FamilyRole.Caregiver, ct);
 
     private async Task<EntitlementDto> Build(Guid familyId, CancellationToken ct)
     {
@@ -137,6 +163,20 @@ public class BillingController(
         var e = await entitlements.GetAsync(familyId, userId, ct);
         var u = await entitlements.UsageAsync(familyId, ct);
         var sub = e.Subscription;
+        var isParent = HttpContext.IsParent();
+        var selling = !options.Value.FreeLaunch;
+
+        // Whose plan this is: the parent who pays, or who started the trial.
+        var holderId = sub?.Source switch
+        {
+            SubscriptionSource.Trial => sub.TrialStartedByUserId,
+            SubscriptionSource.AppStore or SubscriptionSource.GooglePlay => sub.PurchasedByUserId,
+            _ => null,
+        };
+        var holderName = holderId is null ? null : await db.Users.AsNoTracking().Where(x => x.Id == holderId).Select(x => x.DisplayName).FirstOrDefaultAsync(ct);
+        var holderInFamily = await IsParentOf(familyId, holderId, ct);
+        var covered = sub is not null && sub.IsRenewingStorePlan(clock.GetUtcNow(), options.Value.Grace) && holderInFamily;
+
         return new EntitlementDto(
             e.Plan.ToString(),
             e.State.ToString(),
@@ -144,20 +184,24 @@ public class BillingController(
             sub?.ProductId,
             sub?.ExpiresAt,
             sub?.WillRenew ?? false,
-            e.TrialAvailable,
+            e.TrialAvailable && isParent,
             sub?.PurchasedByUserId == userId,
             ToDto(e.Limits),
             new UsageDto(u.Adults, u.ScansThisWeek, u.ScansThisMonth, u.ActiveShareLinks),
-            !options.Value.FreeLaunch);
+            selling,
+            holderName,
+            holderInFamily,
+            selling && isParent && !covered);
     }
 
     private static PlanLimitsDto ToDto(PlanLimits l) => new(l.MaxAdults, l.ScansPerWeek, l.ScansPerMonth, l.ActiveShareLinks, l.RemindersPerItem);
 }
 
 /// <summary>Writes a verified store state onto the family's subscription and records the analytics events.</summary>
-public class SubscriptionUpdater(HallyDbContext db, IAnalytics analytics, TimeProvider clock)
+public class SubscriptionUpdater(HallyDbContext db, IAnalytics analytics, TimeProvider clock, ILogger<SubscriptionUpdater> logger)
 {
-    public async Task ApplyAsync(Guid familyId, SubscriptionSource store, StorePurchase purchase, Guid? userId, CancellationToken ct)
+    /// <param name="trialAllowed">False when the buying parent already had a free trial in another family.</param>
+    public async Task ApplyAsync(Guid familyId, SubscriptionSource store, StorePurchase purchase, Guid? userId, CancellationToken ct, bool trialAllowed = true)
     {
         var sub = await db.Subscriptions.FirstOrDefaultAsync(s => s.FamilyId == familyId, ct);
         if (sub is null)
@@ -166,12 +210,20 @@ public class SubscriptionUpdater(HallyDbContext db, IAnalytics analytics, TimePr
             db.Subscriptions.Add(sub);
         }
 
-        var change = sub.ApplyStore(store, purchase.ProductId, purchase.StoreReference, purchase.ExpiresAt, purchase.WillRenew, userId, clock.GetUtcNow());
+        var change = sub.ApplyStore(store, purchase.ProductId, purchase.StoreReference, purchase.ExpiresAt, purchase.WillRenew, userId, clock.GetUtcNow(),
+            purchase.InTrial, trialAllowed);
         var props = new Dictionary<string, object?> { ["product"] = purchase.ProductId, ["store"] = store.ToString() };
         switch (change)
         {
             case SubscriptionChange.Started:
                 analytics.Track(AnalyticsEvents.SubscriptionStarted, userId ?? sub.PurchasedByUserId, familyId, props);
+                break;
+            case SubscriptionChange.TrialStarted:
+                analytics.Track(AnalyticsEvents.TrialStarted, userId, familyId, props);
+                break;
+            case SubscriptionChange.TrialDenied:
+                logger.LogInformation("Store free trial refused: the family already used its trial");
+                analytics.Track(AnalyticsEvents.TrialDenied, userId, familyId, props);
                 break;
             case SubscriptionChange.Cancelled:
                 analytics.Track(AnalyticsEvents.SubscriptionCancelled, sub.PurchasedByUserId, familyId, props);

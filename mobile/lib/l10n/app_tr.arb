@@ -334,8 +334,8 @@
   "assistantReview": "İncele ve onayla",
   "assistantError": "Şu an yanıt veremedim. Biraz sonra tekrar dener misin?",
   "todayAllTasks": "Tüm görevler",
-  "paywallTitle": "Family Plus ile aileniz rahatlasın",
-  "paywallSubtitle": "Daha çok tarama, 6 yetişkine kadar aile, sınırsız yardımcı linki ve birden fazla hatırlatma.",
+  "paywallTitle": "Tüm aile için tek Family Plus",
+  "paywallSubtitle": "Bir kişi öder, eşin, bakıcın ve çocuk telefonları da kullanır.",
   "paywallScanLimit": "Bu haftaki {count} ücretsiz taramayı kullandın",
   "@paywallScanLimit": {
     "placeholders": {
@@ -361,7 +361,7 @@
     }
   },
   "paywallReminderLimit": "Bir işe birden fazla hatırlatma Family Plus ile",
-  "paywallStartTrial": "{days} gün ücretsiz dene",
+  "paywallStartTrial": "{days} gün ücretsiz başla",
   "@paywallStartTrial": {
     "placeholders": {
       "days": {
@@ -370,7 +370,7 @@
     }
   },
   "paywallSubscribe": "Family Plus'a geç",
-  "paywallTrialNote": "Kart gerekmez. Deneme bitince otomatik ücretlendirme yapılmaz.",
+  "paywallTrialNote": "Deneme bitmeden Google Play'den iptal edersen ücret alınmaz. Ücretsiz deneme her aile için bir kez.",
   "paywallRenewNote": "Abonelik mağaza hesabından istediğin zaman iptal edilebilir.",
   "paywallRestore": "Satın alımları geri yükle",
   "paywallNotNow": "Şimdi değil",
@@ -2577,7 +2577,148 @@
   "familyTodayAll": "Aile",
   "familyTodayFree": "Bugün boş",
   "familyTodayTasks": "{n} görev",
-  "@familyTodayTasks": {"placeholders": {"n": {"type": "int"}}},
+  "@familyTodayTasks": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "familyTodayEvents": "{n} etkinlik",
-  "@familyTodayEvents": {"placeholders": {"n": {"type": "int"}}}
+  "@familyTodayEvents": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallTrialNoteApple": "Deneme bitmeden App Store'dan iptal edersen ücret alınmaz. Ücretsiz deneme her aile için bir kez.",
+  "paywallTrialUsed": "Ücretsiz deneme daha önce kullanıldı, paket hemen başlar.",
+  "paywallTrialThen": "{days} gün ücretsiz, sonra {price}",
+  "@paywallTrialThen": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPerYear": "{price} / yıl",
+  "@paywallPerYear": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPerMonth": "{price} / ay",
+  "@paywallPerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallStepToday": "Bugün",
+  "paywallStepTodayNote": "Ücretsiz başla",
+  "paywallStepDays": "{days} gün",
+  "@paywallStepDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallStepDaysNote": "Her şey açık",
+  "paywallStepStart": "{day}. gün",
+  "@paywallStepStart": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallStepStartNote": "Paket başlar",
+  "paywallParentsOnly": "Family Plus'ı aileden bir ebeveyn açabilir.",
+  "paywallFamilyCovered": "Family Plus zaten tüm aileyi kapsıyor.",
+  "planFamilyPlus": "Family Plus · Aile planı",
+  "planPaidByMe": "Sen ödüyorsun",
+  "planPaidBy": "{name} ödüyor",
+  "@planPaidBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "planTrialBy": "{name} ücretsiz denemeyi başlattı",
+  "@planTrialBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "planYearlySuffix": "yıllık",
+  "planMonthlySuffix": "aylık",
+  "planStatusTrialRenews": "Ücretsiz deneme {date} tarihinde biter, sonra paket kendiliğinden başlar",
+  "@planStatusTrialRenews": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planCoveredNote": "Plan tüm aileyi kapsıyor, ayrıca ödemene gerek yok. Aboneliği yalnızca {name} kendi mağaza hesabından yönetebilir.",
+  "@planCoveredNote": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "planCoveredEveryone": "Ailedeki herkes Plus kullanır: ebeveynler, bakıcılar ve çocuk telefonları.",
+  "planCaregiverTag": "bakıcı",
+  "planPayerLeftTitle": "Ödeyen kişi aileden ayrıldı",
+  "planPayerLeftBody": "{name} kişisinin aboneliği {date} tarihine kadar sürer. Aboneliğini yeni ailesine taşırsa ya da iptal ederse plan Ücretsiz'e döner.",
+  "@planPayerLeftBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planPayerLeftHint": "Kesinti olmasın istersen planı sen devralabilirsin. Ailedeki herkes yine tek ödemeyle kullanır.",
+  "planTakeOver": "Planı ben devralayım",
+  "planTrialDeniedTitle": "Ücretsiz deneme bu ailede kullanıldı",
+  "planTrialDeniedBody": "Mağaza yeni bir deneme haftası verdi ama Hally her aileye bir kez deneme verir. Plus, ilk ödeme {date} tarihinde alınınca açılır.",
+  "@planTrialDeniedBody": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planTrialDeniedStatus": "Paket {date} tarihinde başlıyor",
+  "@planTrialDeniedStatus": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "planTrialDeniedHint": "Beklemek istemiyorsan aboneliği mağazadan iptal edebilirsin, ücret alınmaz.",
+  "planFamilyShort": "Aile planı · {name} ödüyor",
+  "@planFamilyShort": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -18,19 +18,43 @@ const _plus = PlanLimits(maxAdults: 6, scansPerWeek: 0, scansPerMonth: 100, acti
 Entitlement _entitlement({bool plus = false, bool trialAvailable = true, int scans = 3}) => Entitlement(
       plan: plus ? 'Plus' : 'Free',
       state: plus ? 'Trialing' : 'Free',
-      source: plus ? 'Trial' : null,
+      source: plus ? 'GooglePlay' : null,
+      productId: plus ? 'hally_plus_yearly' : null,
       expiresAt: plus ? DateTime(2026, 11, 20) : null,
-      willRenew: false,
+      willRenew: plus,
       trialAvailable: trialAvailable,
-      purchasedByMe: false,
+      purchasedByMe: plus,
+      purchasedByName: plus ? 'Ayşe' : null,
+      purchasedByInFamily: plus,
+      canPurchase: !plus,
       limits: plus ? _plus : _free,
       usage: Usage(adults: 2, scansThisWeek: scans, scansThisMonth: scans, activeShareLinks: 1),
     );
 
+/// What a second parent sees while Ayşe's yearly plan covers the family.
+Entitlement _coveredBy(String name, {bool payerInFamily = true}) => Entitlement(
+      plan: 'Plus',
+      state: 'Active',
+      source: 'GooglePlay',
+      productId: 'hally_plus_yearly',
+      expiresAt: DateTime(2027, 12, 12),
+      willRenew: true,
+      trialAvailable: false,
+      purchasedByMe: false,
+      purchasedByName: name,
+      purchasedByInFamily: payerInFamily,
+      canPurchase: !payerInFamily,
+      limits: _plus,
+      usage: const Usage(adults: 2, scansThisWeek: 0, scansThisMonth: 12, activeShareLinks: 1),
+    );
+
 class _FakeBilling implements BillingRepository {
-  _FakeBilling({this.trialAvailable = true});
+  _FakeBilling({this.trialAvailable = true, this.fixed});
 
   final bool trialAvailable;
+
+  /// Answer every entitlement request with this (another parent's plan, a refused trial...).
+  final Entitlement? fixed;
   var trials = 0;
   final purchases = <String>[];
 
@@ -44,7 +68,8 @@ class _FakeBilling implements BillingRepository {
       );
 
   @override
-  Future<Entitlement> entitlement(String familyId) async => _entitlement(plus: trials > 0, trialAvailable: trialAvailable && trials == 0);
+  Future<Entitlement> entitlement(String familyId) async =>
+      fixed ?? _entitlement(plus: trials > 0 || purchases.isNotEmpty, trialAvailable: trialAvailable && trials == 0 && purchases.isEmpty);
 
   @override
   Future<Entitlement> startTrial(String familyId) async {
@@ -60,6 +85,8 @@ class _FakeBilling implements BillingRepository {
 }
 
 class _FakeStore implements StoreGateway {
+  final bought = <String>[];
+
   @override
   bool get available => true;
 
@@ -67,7 +94,10 @@ class _FakeStore implements StoreGateway {
   Future<Map<String, String>> prices(List<String> productIds) async => {'hally_plus_monthly': '₺139,99', 'hally_plus_yearly': '₺1.399,99'};
 
   @override
-  Future<StorePurchaseResult?> buy(String productId) async => StorePurchaseResult(store: 'GooglePlay', productId: productId, token: 'tok-1');
+  Future<StorePurchaseResult?> buy(String productId, {bool withTrial = false}) async {
+    bought.add(withTrial ? '$productId+trial' : productId);
+    return StorePurchaseResult(store: 'GooglePlay', productId: productId, token: 'tok-1');
+  }
 
   @override
   Future<List<StorePurchaseResult>> restore() async => const [];
@@ -138,22 +168,27 @@ void main() {
     expect(Entitlement.fromJson(json()).sellingEnabled, isTrue, reason: 'older servers sell');
   });
 
-  testWidgets('a 402 opens the paywall with the reason, and the trial unlocks Plus', (tester) async {
+  testWidgets('a 402 opens the paywall with the reason, and the free week goes through the store trial offer', (tester) async {
     _phone(tester);
     final billing = _FakeBilling();
-    await tester.pumpWidget(_app(billing));
+    final store = _FakeStore();
+    await tester.pumpWidget(_app(billing, store: store));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('home.scan')));
     await tester.pumpAndSettle();
     expect(find.text('Bu haftaki 3 ücretsiz taramayı kullandın'), findsOneWidget);
-    expect(find.text('Haftada 3'), findsOneWidget, reason: 'free column of the comparison');
-    expect(find.text('Ayda 100'), findsOneWidget);
-    expect(find.text('Fiyat mağazada gösterilir', skipOffstage: false), findsNWidgets(2), reason: 'no store connected yet');
+    expect(find.text('Haftada 3', skipOffstage: false), findsOneWidget, reason: 'free column of the comparison');
+    expect(find.text('Ayda 100', skipOffstage: false), findsOneWidget);
+    expect(find.byKey(const Key('paywall.steps')), findsOneWidget);
+    expect(find.text('7 gün ücretsiz, sonra ₺1.399,99 / yıl', skipOffstage: false), findsOneWidget);
+    expect(find.textContaining('Ücretsiz deneme her aile için bir kez'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('paywall.trial')));
     await tester.pumpAndSettle();
-    expect(billing.trials, 1);
+    expect(store.bought, ['hally_plus_yearly+trial']);
+    expect(billing.purchases, ['GooglePlay:hally_plus_yearly:tok-1']);
+    expect(billing.trials, 0, reason: 'the old card-less server trial is not used');
     expect(find.text('Family Plus denemen başladı'), findsOneWidget);
     expect(find.byKey(const Key('home.scan')), findsOneWidget, reason: 'the paywall closes after the trial starts');
   });
@@ -166,16 +201,85 @@ void main() {
 
     expect(find.text('Ücretsiz planda aile 2 yetişkinle sınırlı'), findsOneWidget);
     expect(find.byKey(const Key('paywall.trial')), findsNothing);
-    expect(find.text('₺1.399,99', skipOffstage: false), findsOneWidget);
+    expect(find.text('₺1.399,99 / yıl', skipOffstage: false), findsOneWidget);
 
     final monthly = find.byKey(const Key('paywall.product.hally_plus_monthly'), skipOffstage: false);
     await tester.ensureVisible(monthly);
     await tester.pumpAndSettle();
     await tester.tap(monthly);
     await tester.pumpAndSettle();
+    expect(find.textContaining('Ücretsiz deneme daha önce kullanıldı'), findsOneWidget);
     await tester.tap(find.byKey(const Key('paywall.buy')));
     await tester.pumpAndSettle();
     expect(billing.purchases, ['GooglePlay:hally_plus_monthly:tok-1']);
+  });
+
+  testWidgets('a second parent sees the family plan and cannot pay again', (tester) async {
+    _phone(tester);
+    await tester.pumpWidget(_app(_FakeBilling(fixed: _coveredBy('Ayşe')), store: _FakeStore(), start: '/plan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Family Plus · Aile planı'), findsOneWidget);
+    expect(find.text('Ayşe ödüyor · yıllık'), findsOneWidget);
+    expect(find.textContaining('ayrıca ödemene gerek yok'), findsOneWidget);
+    expect(find.byKey(const Key('plan.upgrade')), findsNothing);
+    expect(find.byKey(const Key('plan.takeOver')), findsNothing);
+
+    await tester.pumpWidget(_app(_FakeBilling(fixed: _coveredBy('Ayşe')), store: _FakeStore(), start: '/paywall?trigger=plan_screen'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('paywall.buy')), findsNothing);
+    expect(find.byKey(const Key('paywall.trial')), findsNothing);
+    expect(find.text('Family Plus zaten tüm aileyi kapsıyor.'), findsOneWidget);
+  });
+
+  testWidgets('when the payer left, the remaining parent can take the plan over', (tester) async {
+    _phone(tester);
+    await tester.pumpWidget(_app(_FakeBilling(fixed: _coveredBy('Ayşe', payerInFamily: false)), store: _FakeStore(), start: '/plan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ödeyen kişi aileden ayrıldı'), findsOneWidget);
+    expect(find.byKey(const Key('plan.takeOver')), findsOneWidget);
+  });
+
+  testWidgets('a second free week is noticed: Plus waits for the first payment', (tester) async {
+    _phone(tester);
+    final denied = Entitlement(
+      plan: 'Free',
+      state: 'TrialDenied',
+      source: 'GooglePlay',
+      productId: 'hally_plus_monthly',
+      expiresAt: DateTime(2026, 12, 2),
+      willRenew: true,
+      trialAvailable: false,
+      purchasedByMe: true,
+      purchasedByName: 'Mehmet',
+      purchasedByInFamily: true,
+      canPurchase: false,
+      limits: _free,
+      usage: const Usage(adults: 2, scansThisWeek: 1, scansThisMonth: 1, activeShareLinks: 0),
+    );
+    await tester.pumpWidget(_app(_FakeBilling(fixed: denied), start: '/plan'));
+    await tester.pumpAndSettle();
+    expect(find.text('Ücretsiz deneme bu ailede kullanıldı'), findsOneWidget);
+    expect(find.textContaining('Paket'), findsWidgets);
+    expect(find.byKey(const Key('plan.upgrade')), findsNothing);
+  });
+
+  test('entitlement reads the family plan fields', () {
+    final e = Entitlement.fromJson({
+      'plan': 'Plus',
+      'state': 'Active',
+      'source': 'AppStore',
+      'productId': 'hally_plus_monthly',
+      'trialAvailable': false,
+      'purchasedByMe': false,
+      'purchasedByName': 'Ayşe',
+      'purchasedByInFamily': false,
+      'canPurchase': true,
+      'limits': {'maxAdults': 6, 'scansPerWeek': 0, 'scansPerMonth': 100, 'activeShareLinks': 0, 'remindersPerItem': 5},
+      'usage': {'adults': 1, 'scansThisWeek': 0, 'scansThisMonth': 0, 'activeShareLinks': 0},
+    });
+    expect(e.purchasedByName, 'Ayşe');
+    expect(e.payerLeft, isTrue);
+    expect(e.canPurchase, isTrue);
   });
 
   testWidgets('without a store, buying says the store is not available', (tester) async {
@@ -195,6 +299,6 @@ void main() {
 
     expect(find.text('Ücretsiz plandasın'), findsOneWidget);
     expect(find.text('3 / 3'), findsOneWidget);
-    expect(find.text('7 gün ücretsiz dene'), findsOneWidget);
+    expect(find.text('7 gün ücretsiz başla'), findsOneWidget);
   });
 }

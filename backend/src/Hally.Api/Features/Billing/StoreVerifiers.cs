@@ -13,7 +13,8 @@ namespace Hally.Api.Features.Billing;
 
 /// <summary>What a store says about a purchase. <see cref="StoreReference"/> is the stable key we re-check with later
 /// (Apple originalTransactionId, Google purchase token).</summary>
-public record StorePurchase(string ProductId, string StoreReference, DateTimeOffset ExpiresAt, bool WillRenew);
+/// <param name="InTrial">The current period is the store's free-trial offer (nothing charged yet).</param>
+public record StorePurchase(string ProductId, string StoreReference, DateTimeOffset ExpiresAt, bool WillRenew, bool InTrial = false);
 
 /// <summary>Server-side purchase validation (App Store Server API / Google Play Developer API).
 /// The client's own claim about a purchase is never trusted.</summary>
@@ -47,7 +48,7 @@ public class StoreVerification(IEnumerable<IStoreVerifier> verifiers, SandboxSto
 }
 
 /// <summary>Test purchases: "sandbox:{product}:{ref}" renews, "sandbox-cancelled:..." will not renew,
-/// "sandbox-expired:..." has already expired. Only used when <see cref="StoreVerification.SandboxEnabled"/>.</summary>
+/// "sandbox-expired:..." has already expired, "sandbox-trial:..." is in its free trial and renews after <see cref="BillingOptions.TrialDays"/>. Only used when <see cref="StoreVerification.SandboxEnabled"/>.</summary>
 public class SandboxStoreVerifier(IOptions<BillingOptions> options, TimeProvider clock)
 {
     public const string Prefix = "sandbox";
@@ -70,9 +71,10 @@ public class SandboxStoreVerifier(IOptions<BillingOptions> options, TimeProvider
         var expires = parts[0] switch
         {
             "sandbox-expired" => now.AddDays(-10),
+            "sandbox-trial" => now.AddDays(options.Value.TrialDays),
             _ => product.Period == "yearly" ? now.AddYears(1) : now.AddMonths(1),
         };
-        return Task.FromResult<StorePurchase?>(new StorePurchase(product.Id, token, expires, parts[0] == "sandbox"));
+        return Task.FromResult<StorePurchase?>(new StorePurchase(product.Id, token, expires, parts[0] is "sandbox" or "sandbox-trial", parts[0] == "sandbox-trial"));
     }
 }
 
@@ -146,8 +148,11 @@ public class AppStoreVerifier(HttpClient http, IOptions<BillingOptions> options,
                     renew = renew && JwsPayload(r).TryGetProperty("autoRenewStatus", out var ar) && ar.GetInt32() == 1;
                 }
 
+                // offerType 1 = introductory offer; Hally's only one is the free week (offerDiscountType FREE_TRIAL).
+                var inTrial = tx.TryGetProperty("offerType", out var offerType) && offerType.GetInt32() == 1 &&
+                              (!tx.TryGetProperty("offerDiscountType", out var discount) || discount.GetString() == "FREE_TRIAL");
                 var candidate = new StorePurchase(productId, last.GetProperty("originalTransactionId").GetString()!,
-                    DateTimeOffset.FromUnixTimeMilliseconds(exp.GetInt64()), renew);
+                    DateTimeOffset.FromUnixTimeMilliseconds(exp.GetInt64()), renew, inTrial);
                 if (status == 5)
                 {
                     candidate = candidate with { ExpiresAt = DateTimeOffset.UnixEpoch, WillRenew = false };
@@ -249,6 +254,22 @@ public class GooglePlayVerifier(HttpClient http, IOptions<BillingOptions> option
         return purchase;
     }
 
+    /// <summary>The line item is in its free-trial phase: Play reports <c>offerPhase.freeTrial</c>; the offer tag
+    /// <see cref="TrialOfferTag"/> (set on the offer in Play Console) is the fallback.</summary>
+    private static bool IsFreeTrial(JsonElement item)
+    {
+        if (item.TryGetProperty("offerPhase", out var phase) && phase.ValueKind == JsonValueKind.Object)
+        {
+            return phase.TryGetProperty("freeTrial", out _);
+        }
+
+        return item.TryGetProperty("offerDetails", out var offer) && offer.TryGetProperty("offerTags", out var tags) &&
+               tags.ValueKind == JsonValueKind.Array && tags.EnumerateArray().Any(t => t.GetString() == TrialOfferTag);
+    }
+
+    /// <summary>Tag on the Play free-trial offer. The app also uses it to pick (or skip) that offer.</summary>
+    public const string TrialOfferTag = "free-trial";
+
     public static StorePurchase? ParseSubscription(string json, string purchaseToken, IReadOnlySet<string> products, out bool needsAcknowledge)
     {
         using var doc = JsonDocument.Parse(json);
@@ -276,7 +297,8 @@ public class GooglePlayVerifier(HttpClient http, IOptions<BillingOptions> option
             if (best is null || expires > best.ExpiresAt)
             {
                 best = new StorePurchase(productId, purchaseToken, expires,
-                    renew && state is "SUBSCRIPTION_STATE_ACTIVE" or "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" or "SUBSCRIPTION_STATE_ON_HOLD");
+                    renew && state is "SUBSCRIPTION_STATE_ACTIVE" or "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" or "SUBSCRIPTION_STATE_ON_HOLD",
+                    IsFreeTrial(item));
             }
         }
 
