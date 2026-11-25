@@ -1127,5 +1127,12 @@
   "briefingMorningWindow": "Pick a time between 05:00 and 11:30.",
   "briefingMorningSave": "Save",
   "briefingMorningOnDone": "Your summary will arrive every morning at {time}.",
-  "briefingMorningOffDone": "Morning summary is off."
+  "briefingMorningOffDone": "Morning summary is off.",
+  "familyTodayTitle": "My family today",
+  "familyTodayAll": "Family",
+  "familyTodayFree": "Nothing today",
+  "familyTodayTasks": "{n, plural, =1{1 task} other{{n} tasks}}",
+  "@familyTodayTasks": {"placeholders": {"n": {"type": "int"}}},
+  "familyTodayEvents": "{n, plural, =1{1 event} other{{n} events}}",
+  "@familyTodayEvents": {"placeholders": {"n": {"type": "int"}}}
 }
