@@ -13,6 +13,7 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../child_mode/child_mode_repository.dart';
 import 'bedtime.dart';
+import '../child_mode/parent_exit.dart' show ParentExitGesture;
 
 /// The night palette of the bedtime screens (the same in light and dark mode).
 abstract final class _Night {
@@ -257,8 +258,10 @@ class _KidNightViewState extends ConsumerState<KidNightView> with SingleTickerPr
                   Text(b.cherries > 0 ? l10n.bedDoneLine(b.cherries) : l10n.bedDoneNoCherries,
                       textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: _Night.muted, fontWeight: FontWeight.w600)),
                 const SizedBox(height: HallySpace.sm),
-                Text(l10n.bedGoodNight(widget.home.firstName),
-                    textAlign: TextAlign.center, style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+                ParentExitGesture(
+                  child: Text(l10n.bedGoodNight(widget.home.firstName),
+                      textAlign: TextAlign.center, style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w800)),
+                ),
                 const SizedBox(height: HallySpace.lg),
                 Center(
                   child: AnimatedBuilder(

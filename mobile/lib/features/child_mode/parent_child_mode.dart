@@ -11,6 +11,7 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../family/family_repository.dart';
 import 'child_mode_repository.dart';
+import 'parent_exit.dart';
 
 /// A parent pairs a child's phone: a six-digit code, the phones already paired, the approval switch and extra time.
 class ConnectPhoneScreen extends ConsumerStatefulWidget {
@@ -201,6 +202,12 @@ class _ConnectPhoneScreenState extends ConsumerState<ConnectPhoneScreen> {
               ),
             ),
           ],
+          HallySectionHeader(title: l10n.exitPinSection),
+          _ExitPinCard(familyId: widget.familyId, childName: name),
+          Padding(
+            padding: const EdgeInsets.only(top: HallySpace.xs),
+            child: Text(l10n.exitPinNote, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ),
           HallySectionHeader(title: l10n.kidJarTitleParent),
           Card(
             margin: EdgeInsets.zero,
@@ -366,6 +373,70 @@ class ChildClaimsCard extends ConsumerWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// The family's exit PIN: whether it is set, and a button to set or change it.
+class _ExitPinCard extends ConsumerWidget {
+  const _ExitPinCard({required this.familyId, required this.childName});
+
+  final String familyId;
+  final String childName;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final set = ref.watch(childExitPinProvider(familyId)).valueOrNull;
+    return Card(
+      key: const Key('phone.exitPin'),
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(HallySpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const HallyIconBadge(icon: Icons.lock_rounded, color: HallyColors.cherry),
+              const SizedBox(width: HallySpace.sm + 4),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(l10n.exitPinTitle, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text(l10n.exitPinBody(childName), style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                ]),
+              ),
+            ]),
+            const SizedBox(height: HallySpace.sm + 4),
+            Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: HallySpace.sm,
+                runSpacing: HallySpace.sm,
+                children: [
+                  if (set != null)
+                    HallyPill(
+                      key: const Key('phone.exitPin.state'),
+                      label: set ? '✓ ${l10n.exitPinSet}' : l10n.exitPinNotSet,
+                      color: set ? HallyColors.sage : HallyColors.apricot,
+                    ),
+                  OutlinedButton(
+                    key: const Key('phone.exitPin.edit'),
+                    style: OutlinedButton.styleFrom(minimumSize: const Size(0, 44)),
+                    onPressed: set == null
+                        ? null
+                        : () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final saved = await showSetExitPinSheet(context, familyId);
+                            if (saved == true) messenger.showSnackBar(SnackBar(content: Text(l10n.exitPinSaved)));
+                          },
+                    child: Text(set == true ? l10n.exitPinChange : l10n.exitPinCreate),
+                  ),
+                ]),
+          ],
+        ),
+      ),
     );
   }
 }

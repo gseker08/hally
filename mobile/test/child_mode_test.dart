@@ -13,7 +13,10 @@ import 'package:hally/l10n/gen/app_localizations.dart';
 import 'package:hally/router.dart';
 
 ChildHome _home(
-        {List<ChildItem>? today, int balance = 34, ChildScreen screen = const ChildScreen(goalMinutes: 60, limitMinutes: 60, usedSeconds: 1560), String? mood = 'Good'}) =>
+        {List<ChildItem>? today,
+        int balance = 34,
+        ChildScreen screen = const ChildScreen(goalMinutes: 60, limitMinutes: 60, usedSeconds: 1560),
+        String? mood = 'Good'}) =>
     ChildHome(
       todayMood: mood,
       childId: 'c1',
@@ -64,6 +67,12 @@ class _KidApi implements ChildApi {
   Future<void> requestTime(int minutes) async => calls.add('ask $minutes');
 
   @override
+  Future<void> exit(String pin) async {
+    calls.add('exit $pin');
+    if (pin != '2580') throw const ChildExitException('child.exit_pin_wrong', triesLeft: 4);
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
@@ -85,6 +94,17 @@ class _ParentRepo implements ChildModeRepository {
 
   @override
   Future<bool> requireApproval(String familyId) async => true;
+
+  bool pinSet = false;
+
+  @override
+  Future<bool> hasExitPin(String familyId) async => pinSet;
+
+  @override
+  Future<bool> setExitPin(String familyId, String? pin) async {
+    calls.add('pin $pin');
+    return pinSet = pin != null;
+  }
 
   @override
   Future<ChildScreen> deviceScreen(String familyId, String childId) async =>
@@ -207,6 +227,71 @@ void main() {
     await tester.pumpAndSettle();
     expect(api.calls, ['ask 15']);
     expect(find.text('İsteğin gitti'), findsWidgets);
+  });
+
+  testWidgets('holding the greeting asks for the parent PIN and leaves child mode', (tester) async {
+    _phone(tester);
+    final api = _KidApi(_home());
+    await tester.pumpWidget(_app(const KidShell(), kid: api));
+    await tester.pumpAndSettle();
+
+    // A short press does nothing.
+    await tester.longPress(find.byKey(const Key('kid.hello')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ebeveyn çıkışı'), findsNothing);
+
+    final hold = await tester.startGesture(tester.getCenter(find.byKey(const Key('kid.hello'))));
+    await tester.pump(const Duration(seconds: 3, milliseconds: 100));
+    await hold.up();
+    await tester.pumpAndSettle();
+    expect(find.text('Ebeveyn çıkışı'), findsOneWidget);
+
+    for (final d in ['1', '1', '1', '1']) {
+      await tester.tap(find.byKey(Key('pin.$d')));
+    }
+    await tester.pumpAndSettle();
+    expect(find.text('PIN yanlış · 4 deneme kaldı'), findsOneWidget);
+
+    for (final d in ['2', '5', '8', '0']) {
+      await tester.tap(find.byKey(Key('pin.$d')));
+    }
+    await tester.pumpAndSettle();
+    expect(api.calls, ['exit 1111', 'exit 2580']);
+    expect(find.text('Ebeveyn çıkışı'), findsNothing);
+  });
+
+  testWidgets('a parent sets the exit PIN by typing it twice', (tester) async {
+    _phone(tester);
+    final repo = _ParentRepo();
+    await tester.pumpWidget(_app(const ConnectPhoneScreen(familyId: 'f1', childId: 'c1'), parent: repo));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    await tester.scrollUntilVisible(find.byKey(const Key('phone.exitPin.edit')), 200);
+    await tester.ensureVisible(find.byKey(const Key('phone.exitPin.edit')));
+    await tester.pumpAndSettle();
+    expect(find.text('PIN yok'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('phone.exitPin.edit')));
+    await tester.pumpAndSettle();
+    expect(find.text('Yeni PIN belirle'), findsOneWidget);
+    for (final d in ['2', '5', '8', '0']) {
+      await tester.tap(find.byKey(Key('pin.$d')));
+    }
+    await tester.pump();
+    expect(find.text("PIN'i tekrar gir"), findsOneWidget);
+    for (final d in ['2', '5', '8', '1']) {
+      await tester.tap(find.byKey(Key('pin.$d')));
+    }
+    await tester.pump();
+    expect(find.text('PIN\'ler aynı değil, baştan girin.'), findsOneWidget);
+    for (final d in ['2', '5', '8', '0', '2', '5', '8', '0']) {
+      await tester.tap(find.byKey(Key('pin.$d')));
+      await tester.pump();
+    }
+    await tester.pumpAndSettle();
+    expect(repo.calls.last, 'pin 2580');
+    expect(find.text('Çıkış PIN\'i kaydedildi.'), findsOneWidget);
+    expect(find.text('✓ PIN ayarlı'), findsOneWidget);
   });
 
   testWidgets('a parent sees the pairing code, the phone and gives extra time', (tester) async {

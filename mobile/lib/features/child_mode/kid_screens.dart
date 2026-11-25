@@ -22,6 +22,7 @@ import '../goal/goal_widgets.dart' show GoalBody, GoalMiniCard;
 import '../mood/mood.dart' show moodSkippedProvider;
 import '../mood/mood_widgets.dart' show KidMoodCard;
 import 'child_mode_repository.dart';
+import 'parent_exit.dart';
 
 /// "Bu telefon bir çocuğun": the child types the six-digit code from a parent's phone.
 class KidPairScreen extends ConsumerStatefulWidget {
@@ -229,7 +230,10 @@ class _KidToday extends ConsumerWidget {
       padding: const EdgeInsets.all(HallySpace.md),
       children: [
         Text(DateFormat('EEEE', locale).format(DateTime.now()), style: theme.textTheme.bodySmall),
-        Text(l10n.kidHello(home.firstName), key: const Key('kid.hello'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+        // Holding the greeting is the hidden parent exit (no button a child could find).
+        ParentExitGesture(
+          child: Text(l10n.kidHello(home.firstName), key: const Key('kid.hello'), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+        ),
         const SizedBox(height: HallySpace.md),
         if (home.bedtime case final bed? when bed.due) KidBedtimeCard(bedtime: bed),
         if (home.todayMood == null && !ref.watch(moodSkippedProvider)) const KidMoodCard(),
@@ -644,7 +648,11 @@ class _KidLockViewState extends ConsumerState<KidLockView> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Spacer(),
-                    Center(child: CircleAvatar(radius: 48, backgroundColor: theme.colorScheme.surface, child: const CherryIcon(size: 56))),
+                    Center(
+                      child: ParentExitGesture(
+                        child: CircleAvatar(radius: 48, backgroundColor: theme.colorScheme.surface, child: const CherryIcon(size: 56)),
+                      ),
+                    ),
                     const SizedBox(height: HallySpace.md),
                     Text(l10n.kidLockTitle,
                         textAlign: TextAlign.center,

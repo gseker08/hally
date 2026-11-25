@@ -363,6 +363,14 @@ public class ChildModeService(
     private static HashSet<DateOnly> ActiveDays(IEnumerable<(PointKind Kind, int Points, DateOnly Day)> entries) =>
         entries.Where(e => e.Points > 0 && e.Kind is PointKind.Chore or PointKind.Habit or PointKind.Activity).Select(e => e.Day).ToHashSet();
 
+    /// <summary>Tells the parents that a child's phone left child mode with their PIN.</summary>
+    public Task DeviceExitedAsync(ChildDevice device, CancellationToken ct) =>
+        NotifyParentsAsync(device.FamilyId, NotificationKind.ChildDeviceExited, device.ChildId,
+            (tr, name) => tr
+                ? ($"{name}: telefon çocuk modundan çıktı", "Ebeveyn PIN'i girildi ve telefonun bağlantısı kaldırıldı. Tekrar bağlamak için Aile → Telefon ekranından yeni kod alın.")
+                : ($"{name}: phone left child mode", "The parent PIN was entered and the phone was unpaired. To pair it again, get a new code from Family → Phone."),
+            $"child-exit:{device.Id:N}", ct);
+
     /// <summary>One inbox entry (and push) per parent; caregivers are not asked. Best effort.</summary>
     private async Task NotifyParentsAsync(Guid familyId, NotificationKind kind, Guid childId,
         Func<bool, string, (string Title, string Body)> text, string dedup, CancellationToken ct)

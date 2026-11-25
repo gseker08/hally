@@ -244,9 +244,25 @@ abstract interface class ChildApi {
 
   /// "Harçlığa çevir": asks a parent; 422 `allowance.pending`, `points.not_enough`, `allowance.cherries_invalid`.
   Future<ChildSavings> convert(int cherries);
+
+  /// "Ebeveyn çıkışı": the parents' PIN takes this phone out of child mode (the server unpairs it and the session is
+  /// dropped here). Throws [ChildExitException] for a wrong PIN, too many tries or no PIN set.
+  Future<void> exit(String pin);
 }
 
 class UnpairedException implements Exception {}
+
+/// Why "Ebeveyn çıkışı" did not work: `child.exit_pin_wrong` (with [triesLeft]), `child.exit_blocked` or `child.exit_no_pin`.
+class ChildExitException implements Exception {
+  const ChildExitException(this.code, {this.triesLeft});
+
+  final String code;
+  final int? triesLeft;
+
+  bool get wrong => code == 'child.exit_pin_wrong';
+  bool get blocked => code == 'child.exit_blocked';
+  bool get noPin => code == 'child.exit_no_pin';
+}
 
 class DioChildApi implements ChildApi {
   DioChildApi(this._sessions, {Dio? dio}) : _dio = dio ?? Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl, connectTimeout: const Duration(seconds: 15))) {
@@ -296,6 +312,21 @@ class DioChildApi implements ChildApi {
 
   @override
   Future<ChildHome> home() => _call(() => _home(_dio.get<Map<String, dynamic>>('/api/v1/child/home')));
+
+  @override
+  Future<void> exit(String pin) async {
+    try {
+      await _dio.post<dynamic>('/api/v1/child/exit', data: {'pin': pin});
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (e.response?.statusCode == 422 && data is Map && (data['code'] as String? ?? '').startsWith('child.exit_')) {
+        throw ChildExitException(data['code'] as String, triesLeft: data['triesLeft'] as int?);
+      }
+      if (e.response?.statusCode != 401) throw ApiClient.toApiException(e);
+      // Already unpaired by a parent: the phone leaves child mode all the same.
+    }
+    await _sessions.clear();
+  }
 
   @override
   Future<ChildHome> markDone(ChildItem item) =>
@@ -427,6 +458,12 @@ abstract interface class ChildModeRepository {
   Future<void> unpair(String familyId, String childId, String deviceId);
   Future<bool> requireApproval(String familyId);
   Future<bool> setRequireApproval(String familyId, bool value);
+
+  /// Whether the parents set the PIN that takes a child's phone out of child mode.
+  Future<bool> hasExitPin(String familyId);
+
+  /// Sets the four-digit exit PIN (null removes it). It counts for every child phone in the family.
+  Future<bool> setExitPin(String familyId, String? pin);
   Future<List<ChildClaim>> claims(String familyId);
   Future<List<ChildClaim>> decide(String familyId, String claimId, {required bool approve});
   Future<ChildScreen> deviceScreen(String familyId, String childId);
@@ -479,6 +516,18 @@ class ApiChildModeRepository implements ChildModeRepository {
       });
 
   @override
+  Future<bool> hasExitPin(String familyId) => _call(() async {
+        final res = await _api.dio.get<Map<String, dynamic>>('${_f(familyId)}/child-mode');
+        return res.data!['hasExitPin'] as bool? ?? false;
+      });
+
+  @override
+  Future<bool> setExitPin(String familyId, String? pin) => _call(() async {
+        final res = await _api.dio.put<Map<String, dynamic>>('${_f(familyId)}/child-mode/exit-pin', data: {'pin': pin});
+        return res.data!['hasExitPin'] as bool? ?? false;
+      });
+
+  @override
   Future<List<ChildClaim>> claims(String familyId) => _call(() async => _claims((await _api.dio.get<List<dynamic>>('${_f(familyId)}/claims')).data));
 
   @override
@@ -508,6 +557,8 @@ final childDevicesProvider =
 
 final childApprovalProvider =
     FutureProvider.autoDispose.family<bool, String>((ref, familyId) => ref.watch(childModeRepositoryProvider).requireApproval(familyId));
+
+final childExitPinProvider = FutureProvider.autoDispose.family<bool, String>((ref, familyId) => ref.watch(childModeRepositoryProvider).hasExitPin(familyId));
 
 final childDeviceScreenProvider =
     FutureProvider.autoDispose.family<ChildScreen, (String, String)>((ref, key) => ref.watch(childModeRepositoryProvider).deviceScreen(key.$1, key.$2));
