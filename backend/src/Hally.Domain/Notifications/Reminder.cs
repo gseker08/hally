@@ -129,6 +129,12 @@ public enum NotificationKind
 
     /// <summary>Child mode: the child spent cherries on a reward.</summary>
     ChildReward,
+
+    /// <summary>A caregiver ended the day with a handoff report.</summary>
+    HandoffReport,
+
+    /// <summary>A parent thanked the caregiver for a handoff report.</summary>
+    HandoffThanks,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

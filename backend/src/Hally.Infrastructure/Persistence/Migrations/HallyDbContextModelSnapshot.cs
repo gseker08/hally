@@ -348,6 +348,88 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("proposals", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Care.HandoffReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("by_user_id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<int[]>("Incidents")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("incidents");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("PhotoContentType")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("photo_content_type");
+
+                    b.Property<string>("PhotoKey")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("photo_key");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("SummaryJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("summary_json");
+
+                    b.Property<DateTimeOffset?>("ThankedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("thanked_at");
+
+                    b.Property<Guid?>("ThankedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("thanked_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_handoff_reports");
+
+                    b.HasIndex("ByUserId")
+                        .HasDatabaseName("ix_handoff_reports_by_user_id");
+
+                    b.HasIndex("ThankedByUserId")
+                        .HasDatabaseName("ix_handoff_reports_thanked_by_user_id");
+
+                    b.HasIndex("FamilyId", "Day")
+                        .HasDatabaseName("ix_handoff_reports_family_id_day");
+
+                    b.HasIndex("ChildId", "Day", "ByUserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_handoff_reports_child_id_day_by_user_id");
+
+                    b.ToTable("handoff_reports", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.ChildMode.ChildClaim", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2851,6 +2933,36 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_proposals_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Care.HandoffReport", b =>
+                {
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_handoff_reports_users_by_user_id");
+
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_handoff_reports_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_handoff_reports_families_family_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ThankedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_handoff_reports_users_thanked_by_user_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.ChildMode.ChildClaim", b =>

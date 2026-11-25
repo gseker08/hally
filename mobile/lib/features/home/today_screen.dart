@@ -17,6 +17,7 @@ import '../notifications/notifications_screen.dart';
 import '../planning/event_editor.dart';
 import '../planning/planning_repository.dart';
 import '../planning/task_sheet.dart';
+import '../handoff/handoff_cards.dart';
 import 'live_now.dart';
 import '../profile/profile_screen.dart';
 
@@ -81,6 +82,7 @@ class TodayScreen extends ConsumerWidget {
       LiveNowStrip(familyId: familyId),
       ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
       if (!ref.watch(isCaregiverProvider)) ChildClaimsCard(familyId: familyId),
+      if (ref.watch(isCaregiverProvider)) CaregiverHandoffCard(familyId: familyId) else ParentHandoffCards(familyId: familyId),
       if (d.waiting.isNotEmpty)
         HallyEntrance(
           index: i++,
