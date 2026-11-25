@@ -5,6 +5,7 @@ using Hally.Api.Common;
 using Hally.Api.Features.Messages;
 using Hally.Domain.Common;
 using Hally.Domain.Expenses;
+using Hally.Domain.Families;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -75,7 +76,7 @@ public class ExpensesController(HallyDbContext db, IHubContext<ChatHub, IChatCli
 
         var all = await db.Expenses.AsNoTracking().Where(e => e.FamilyId == familyId).ToListAsync(ct);
         var settlements = await db.Settlements.AsNoTracking().Where(s => s.FamilyId == familyId).ToListAsync(ct);
-        var adults = await db.FamilyMembers.AsNoTracking().Where(f => f.FamilyId == familyId)
+        var adults = await db.FamilyMembers.AsNoTracking().Where(f => f.FamilyId == familyId && f.Role != FamilyRole.Caregiver)
             .Join(db.Users.AsNoTracking(), f => f.UserId, u => u.Id, (f, u) => new { u.Id, u.DisplayName, f.CreatedAt }).OrderBy(a => a.CreatedAt).ToListAsync(ct);
         var ids = all.Select(e => e.PaidByUserId).Concat(settlements.SelectMany(s => new[] { s.FromUserId, s.ToUserId })).Distinct().ToList();
         var names = await db.Users.AsNoTracking().Where(u => ids.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.DisplayName, ct);
@@ -111,7 +112,7 @@ public class ExpensesController(HallyDbContext db, IHubContext<ChatHub, IChatCli
     [ProducesResponseType<ExpenseMonthDto>(201)]
     public async Task<IActionResult> Add(Guid familyId, AddExpenseRequest request, CancellationToken ct)
     {
-        var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId).Select(m => m.UserId).ToListAsync(ct);
+        var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver).Select(m => m.UserId).ToListAsync(ct);
         var payer = request.PaidByUserId ?? User.UserId();
         if (!adults.Contains(payer))
         {
@@ -154,7 +155,7 @@ public class ExpensesController(HallyDbContext db, IHubContext<ChatHub, IChatCli
     [ProducesResponseType<ExpenseMonthDto>(201)]
     public async Task<IActionResult> Settle(Guid familyId, SettleRequest request, CancellationToken ct)
     {
-        if (!await db.FamilyMembers.AnyAsync(m => m.FamilyId == familyId && m.UserId == request.ToUserId, ct))
+        if (!await db.FamilyMembers.AnyAsync(m => m.FamilyId == familyId && m.UserId == request.ToUserId && m.Role != FamilyRole.Caregiver, ct))
         {
             throw new DomainException("expense.payer_not_member", "Pick an adult of this family.");
         }
@@ -183,7 +184,7 @@ public class ExpensesController(HallyDbContext db, IHubContext<ChatHub, IChatCli
     {
         try
         {
-            var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId).Select(m => m.UserId).ToListAsync(ct);
+            var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver).Select(m => m.UserId).ToListAsync(ct);
             await hub.Clients.Groups(adults.Select(ChatHub.UserGroup).ToList()).ExpensesChanged(new ExpensesEvent(familyId));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

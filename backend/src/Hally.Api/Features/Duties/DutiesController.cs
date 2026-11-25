@@ -47,6 +47,7 @@ public class DutiesController(
     ILogger<DutiesController> logger) : ControllerBase
 {
     /// <summary>The week starting <paramref name="start"/> (default: this week's Monday).</summary>
+    [CaregiverAllowed]
     [HttpGet]
     public async Task<DutyWeekDto> Week(Guid familyId, [FromQuery] DateOnly? start, CancellationToken ct)
     {
@@ -142,6 +143,7 @@ public class DutiesController(
     }
 
     /// <summary>"Dropped off" / "Picked up" for today. Tells the other adults once; a second tap changes nothing.</summary>
+    [CaregiverAllowed]
     [HttpPost("today/{kind}/done")]
     public async Task<DutyWeekDto> Done(Guid familyId, DutyKind kind, CancellationToken ct)
     {
@@ -166,6 +168,7 @@ public class DutiesController(
         return await Week(familyId, null, ct);
     }
 
+    [CaregiverAllowed]
     [HttpDelete("today/{kind}/done")]
     public async Task<DutyWeekDto> Undone(Guid familyId, DutyKind kind, CancellationToken ct)
     {

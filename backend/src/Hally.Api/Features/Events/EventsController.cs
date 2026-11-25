@@ -43,6 +43,7 @@ public class SaveEventRequestValidator : AbstractValidator<SaveEventRequest>
 public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvider clock) : ControllerBase
 {
     /// <summary>Events overlapping [from, to). Defaults to the next 31 days. <c>child</c> keeps only events tagged with that child.</summary>
+    [CaregiverAllowed]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<EventDto>>> List(Guid familyId, [FromQuery] DateTimeOffset? from, [FromQuery] DateTimeOffset? to,
         [FromQuery] Guid? child, CancellationToken ct)

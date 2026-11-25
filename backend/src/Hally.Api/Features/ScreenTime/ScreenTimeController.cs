@@ -37,15 +37,18 @@ public class ScreenTimeEntryRequestValidator : AbstractValidator<ScreenTimeEntry
 public class ScreenTimeController(HallyDbContext db, ScreenTimeService screenTime, TimeProvider clock) : ControllerBase
 {
     /// <summary>Today's totals (family-local day) and running timers for every child.</summary>
+    [CaregiverAllowed]
     [HttpGet("screen-time")]
     public Task<ScreenTimeTodayDto> Today(Guid familyId, CancellationToken ct) => screenTime.TodayAsync(familyId, ct);
 
     /// <summary>Daily totals for the week starting <paramref name="start"/> (default: this week's Monday).</summary>
+    [CaregiverAllowed]
     [HttpGet("screen-time/week")]
     public Task<ScreenTimeWeekDto> Week(Guid familyId, [FromQuery] DateOnly? start, CancellationToken ct) => screenTime.WeekAsync(familyId, start, ct);
 
     /// <summary>Starts the child's timer. Already running (for example the other parent just started it) is not an
     /// error: the current status comes back either way.</summary>
+    [CaregiverAllowed]
     [HttpPost("children/{childId:guid}/screen-time/start")]
     public async Task<ChildScreenTimeDto> Start(Guid familyId, Guid childId, CancellationToken ct)
     {
@@ -69,6 +72,7 @@ public class ScreenTimeController(HallyDbContext db, ScreenTimeService screenTim
     }
 
     /// <summary>Stops the child's timer. Already stopped is not an error.</summary>
+    [CaregiverAllowed]
     [HttpPost("children/{childId:guid}/screen-time/stop")]
     public async Task<ChildScreenTimeDto> Stop(Guid familyId, Guid childId, CancellationToken ct)
     {
@@ -84,6 +88,7 @@ public class ScreenTimeController(HallyDbContext db, ScreenTimeService screenTim
     }
 
     /// <summary>Adds finished minutes ending now, for when nobody started the timer.</summary>
+    [CaregiverAllowed]
     [HttpPost("children/{childId:guid}/screen-time/entries")]
     public async Task<ChildScreenTimeDto> AddEntry(Guid familyId, Guid childId, ScreenTimeEntryRequest request, CancellationToken ct)
     {

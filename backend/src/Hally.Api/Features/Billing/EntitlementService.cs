@@ -2,6 +2,7 @@ using Hally.Api.Features.Proposals;
 using Hally.Domain.Billing;
 using Hally.Domain.Capture;
 using Hally.Domain.Common;
+using Hally.Domain.Families;
 using Hally.Domain.Notifications;
 using Hally.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -52,7 +53,7 @@ public class EntitlementService(HallyDbContext db, IOptions<BillingOptions> opti
         var (weekStart, monthStart) = await WindowsAsync(familyId, now, ct);
         var scans = db.Captures.Where(c => c.FamilyId == familyId && c.ContentType != null && c.Status != CaptureStatus.Failed);
         return new Usage(
-            await db.FamilyMembers.CountAsync(m => m.FamilyId == familyId, ct),
+            await db.FamilyMembers.CountAsync(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver, ct),
             await scans.CountAsync(c => c.CreatedAt >= weekStart, ct),
             await scans.CountAsync(c => c.CreatedAt >= monthStart, ct),
             await db.ShareLinks.CountAsync(l => l.FamilyId == familyId && l.RevokedAt == null && l.ExpiresAt > now, ct));
@@ -80,7 +81,7 @@ public class EntitlementService(HallyDbContext db, IOptions<BillingOptions> opti
     public async Task EnsureCanAddAdultAsync(Guid familyId, CancellationToken ct)
     {
         var (plan, limits) = await LimitsAsync(familyId, ct);
-        var adults = await db.FamilyMembers.CountAsync(m => m.FamilyId == familyId, ct);
+        var adults = await db.FamilyMembers.CountAsync(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver, ct);
         if (!PlanLimits.Allows(limits.MaxAdults, adults))
         {
             throw new PlanLimitException("plan.adult_limit", PaywallTriggers.AdultLimit, limits.MaxAdults,

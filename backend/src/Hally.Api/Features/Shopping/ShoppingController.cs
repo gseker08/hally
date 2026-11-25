@@ -46,6 +46,7 @@ public class AddShoppingItemsRequestValidator : AbstractValidator<AddShoppingIte
 /// </summary>
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
+[CaregiverAllowed]
 [Route("api/v1/families/{familyId:guid}/shopping")]
 public class ShoppingController(HallyDbContext db, IHubContext<ChatHub, IChatClient> hub, IPushSender push, TimeProvider clock, ILogger<ShoppingController> logger)
     : ControllerBase

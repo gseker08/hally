@@ -37,6 +37,7 @@ public class SaveTaskRequestValidator : AbstractValidator<SaveTaskRequest>
 [Route("api/v1/families/{familyId:guid}/tasks")]
 public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvider clock) : ControllerBase
 {
+    [CaregiverAllowed]
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<TaskDto>>> List(Guid familyId, [FromQuery] string? state, [FromQuery] Guid? assignee,
         [FromQuery] Guid? child, [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken ct = default)
@@ -64,6 +65,7 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
         return items.Select(t => ToDto(t, now)).ToList();
     }
 
+    [CaregiverAllowed]
     [HttpGet("{taskId:guid}")]
     public async Task<ActionResult<TaskDto>> Get(Guid familyId, Guid taskId, CancellationToken ct) =>
         ToDto(await Find(familyId, taskId, ct, track: false), clock.GetUtcNow());
@@ -95,6 +97,7 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
         return ToDto(task, clock.GetUtcNow());
     }
 
+    [CaregiverAllowed]
     [HttpPost("{taskId:guid}/complete")]
     [Idempotent]
     public async Task<ActionResult<TaskDto>> Complete(Guid familyId, Guid taskId, CancellationToken ct)
@@ -108,6 +111,7 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
         return ToDto(task, clock.GetUtcNow());
     }
 
+    [CaregiverAllowed]
     [HttpPost("{taskId:guid}/reopen")]
     [Idempotent]
     public async Task<ActionResult<TaskDto>> Reopen(Guid familyId, Guid taskId, CancellationToken ct)

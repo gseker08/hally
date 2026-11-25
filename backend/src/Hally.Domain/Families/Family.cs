@@ -4,7 +4,10 @@ namespace Hally.Domain.Families;
 
 public class Family : Entity
 {
+    /// <summary>Parents (mother, father or another parent figure). Caregivers are counted separately.</summary>
     public const int MaxAdults = 6;
+
+    public const int MaxCaregivers = 4;
 
     private readonly List<FamilyMember> _members = [];
     private readonly List<Child> _children = [];
@@ -45,26 +48,48 @@ public class Family : Entity
 
     public bool IsMember(Guid userId) => _members.Any(m => m.UserId == userId);
 
-    public FamilyMember AddAdult(Guid userId)
+    public FamilyMember? MemberOf(Guid userId) => _members.FirstOrDefault(m => m.UserId == userId);
+
+    /// <summary>True when no other parent would remain after this user leaves.</summary>
+    public bool IsLastParent(Guid userId) => !_members.Any(m => m.IsParent && m.UserId != userId);
+
+    public FamilyMember AddAdult(Guid userId) => AddMember(userId, FamilyRole.Adult);
+
+    /// <summary>Adds a parent (<see cref="FamilyRole.Adult"/>) or a <see cref="FamilyRole.Caregiver"/>. A user who is
+    /// already a member keeps their current role.</summary>
+    public FamilyMember AddMember(Guid userId, FamilyRole role)
     {
+        if (role == FamilyRole.Owner)
+        {
+            throw new ArgumentException("The owner is set when the family is created.", nameof(role));
+        }
+
         var existing = _members.FirstOrDefault(m => m.UserId == userId);
         if (existing is not null)
         {
             return existing;
         }
 
-        if (_members.Count >= MaxAdults)
+        if (role == FamilyRole.Caregiver)
+        {
+            if (_members.Count(m => m.Role == FamilyRole.Caregiver) >= MaxCaregivers)
+            {
+                throw new DomainException("family.caregiver_limit", $"A family can have at most {MaxCaregivers} caregivers.");
+            }
+        }
+        else if (_members.Count(m => m.IsParent) >= MaxAdults)
         {
             throw new DomainException("family.adult_limit", $"A family can have at most {MaxAdults} adults.");
         }
 
-        var member = new FamilyMember(Id, userId, FamilyRole.Adult);
+        var member = new FamilyMember(Id, userId, role);
         _members.Add(member);
         return member;
     }
 
-    /// <summary>Removes an adult (leaving or deleting their account). If the owner leaves, the longest-standing
-    /// remaining adult becomes owner. Returns false when the user was not a member.</summary>
+    /// <summary>Removes a member (leaving or deleting their account). If the owner leaves, the longest-standing
+    /// remaining parent becomes owner. Callers delete the whole family instead when the last parent leaves
+    /// (see <see cref="IsLastParent"/>): a caregiver never keeps a family on their own. Returns false when the user was not a member.</summary>
     public bool RemoveMember(Guid userId)
     {
         var member = _members.FirstOrDefault(m => m.UserId == userId);
@@ -74,9 +99,9 @@ public class Family : Entity
         }
 
         _members.Remove(member);
-        if (member.Role == FamilyRole.Owner && _members.Count > 0 && _members.All(m => m.Role != FamilyRole.Owner))
+        if (member.Role == FamilyRole.Owner && _members.Any(m => m.IsParent) && _members.All(m => m.Role != FamilyRole.Owner))
         {
-            _members.OrderBy(m => m.CreatedAt).First().Promote();
+            _members.Where(m => m.IsParent).OrderBy(m => m.CreatedAt).First().Promote();
         }
 
         return true;
@@ -102,10 +127,14 @@ public class Family : Entity
     public bool RemoveChild(Guid childId) => _children.RemoveAll(c => c.Id == childId) > 0;
 }
 
+/// <summary>A member's role. <see cref="Owner"/> and <see cref="Adult"/> are both parents with equal rights (the owner
+/// is only who created the family). A <see cref="Caregiver"/> (nanny, grandparent) helps with the day-to-day but
+/// cannot manage the family, billing, expenses or health records.</summary>
 public enum FamilyRole
 {
     Owner = 1,
     Adult = 2,
+    Caregiver = 3,
 }
 
 public class FamilyMember : Entity
@@ -122,6 +151,8 @@ public class FamilyMember : Entity
     public Guid FamilyId { get; private set; }
     public Guid UserId { get; private set; }
     public FamilyRole Role { get; private set; }
+
+    public bool IsParent => Role is FamilyRole.Owner or FamilyRole.Adult;
 
     internal void Promote() => Role = FamilyRole.Owner;
 }

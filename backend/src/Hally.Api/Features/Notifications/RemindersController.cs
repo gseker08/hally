@@ -28,6 +28,7 @@ public class CreateReminderRequestValidator : AbstractValidator<CreateReminderRe
 
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
+[CaregiverAllowed]
 [Route("api/v1/families/{familyId:guid}/reminders")]
 public class RemindersController(HallyDbContext db, IAnalytics analytics, Billing.EntitlementService entitlements, TimeProvider clock) : ControllerBase
 {

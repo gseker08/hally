@@ -48,6 +48,7 @@ public class AddFeedingRequestValidator : AbstractValidator<AddFeedingRequest>
 /// </summary>
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
+[CaregiverAllowed]
 [Route("api/v1/families/{familyId:guid}")]
 public class FeedingController(HallyDbContext db, IHubContext<ChatHub, IChatClient> hub, TimeProvider clock, ILogger<FeedingController> logger) : ControllerBase
 {

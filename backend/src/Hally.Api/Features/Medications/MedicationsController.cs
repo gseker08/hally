@@ -44,6 +44,7 @@ public class GiveDoseRequestValidator : AbstractValidator<GiveDoseRequest>
 [Route("api/v1/families/{familyId:guid}/medications")]
 public class MedicationsController(HallyDbContext db, MedicationService medications, TimeProvider clock) : ControllerBase
 {
+    [CaregiverAllowed]
     [HttpGet]
     public Task<List<MedicationDto>> List(Guid familyId, [FromQuery] bool includeInactive, CancellationToken ct) =>
         medications.ListAsync(familyId, includeInactive, ct);
@@ -88,6 +89,7 @@ public class MedicationsController(HallyDbContext db, MedicationService medicati
     }
 
     /// <summary>Doses of the last <paramref name="days"/> days, newest first.</summary>
+    [CaregiverAllowed]
     [HttpGet("{medicationId:guid}/doses")]
     public async Task<List<DoseDto>> Doses(Guid familyId, Guid medicationId, [FromQuery] int days = 14, CancellationToken ct = default)
     {
@@ -109,6 +111,7 @@ public class MedicationsController(HallyDbContext db, MedicationService medicati
     /// nothing is saved and 409 comes back with the last dose, so the app can ask "Mehmet gave it at 14:05, save
     /// anyway?". Two parents pressing at the same moment are serialized, so the second one gets that question.
     /// </summary>
+    [CaregiverAllowed]
     [HttpPost("{medicationId:guid}/doses")]
     [ProducesResponseType<MedicationDto>(201)]
     [ProducesResponseType<DoseWarningDto>(409)]
@@ -149,6 +152,7 @@ public class MedicationsController(HallyDbContext db, MedicationService medicati
     }
 
     /// <summary>Removes a dose recorded by mistake.</summary>
+    [CaregiverAllowed]
     [HttpDelete("{medicationId:guid}/doses/{doseId:guid}")]
     public async Task<IActionResult> DeleteDose(Guid familyId, Guid medicationId, Guid doseId, CancellationToken ct)
     {

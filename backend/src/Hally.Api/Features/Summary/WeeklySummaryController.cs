@@ -22,6 +22,7 @@ public record WeeklySummaryDto(string WeekStart, string WeekEnd, int TasksComple
 
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
+[CaregiverAllowed]
 [Route("api/v1/families/{familyId:guid}/weekly-summary")]
 public class WeeklySummaryController(HallyDbContext db, TimeProvider clock) : ControllerBase
 {

@@ -1,18 +1,23 @@
 using Hally.Api.Auth;
 using Hally.Api.Common;
+using Hally.Domain.Common;
 using Hally.Domain.Families;
 using Hally.Domain.Users;
 using Hally.Infrastructure.Analytics;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace Hally.Api.Features.Invitations;
 
-public record InvitationCreatedDto(Guid Id, string Token, string Url, string ShareText, string WhatsAppUrl, DateTimeOffset ExpiresAt);
-public record InvitationPreviewDto(string FamilyName, string InvitedBy, string Status, DateTimeOffset ExpiresAt);
+/// <param name="Role">"parent" (default) or "caregiver".</param>
+public record CreateInvitationRequest(string? Role = null);
+/// <param name="Role">"parent" or "caregiver": what the invited person becomes.</param>
+public record InvitationCreatedDto(Guid Id, string Token, string Url, string ShareText, string WhatsAppUrl, DateTimeOffset ExpiresAt, string Role = "parent");
+public record InvitationPreviewDto(string FamilyName, string InvitedBy, string Status, DateTimeOffset ExpiresAt, string Role = "parent");
 public record InvitationAcceptedDto(Guid FamilyId, string FamilyName);
 
 [ApiController]
@@ -24,26 +29,41 @@ public class InvitationsController(
     Billing.EntitlementService entitlements,
     TimeProvider clock) : ControllerBase
 {
-    /// <summary>Creates a 7-day invitation link for another adult, with a prefilled WhatsApp message.</summary>
+    /// <summary>Creates a 7-day invitation link for another parent or a caregiver, with a prefilled WhatsApp message.
+    /// Only parents can invite.</summary>
     [HttpPost("api/v1/families/{familyId:guid}/invitations")]
     [Idempotent]
     [Authorize(Policy = Policies.FamilyMember)]
     [ProducesResponseType<InvitationCreatedDto>(201)]
-    public async Task<IActionResult> Create(Guid familyId, CancellationToken ct)
+    public async Task<IActionResult> Create(Guid familyId, [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] CreateInvitationRequest? request,
+        CancellationToken ct)
     {
-        await entitlements.EnsureCanAddAdultAsync(familyId, ct);
+        var role = ParseRole(request?.Role);
+        if (role == FamilyRole.Caregiver)
+        {
+            var caregivers = await db.FamilyMembers.CountAsync(m => m.FamilyId == familyId && m.Role == FamilyRole.Caregiver, ct);
+            if (caregivers >= Family.MaxCaregivers)
+            {
+                throw new DomainException("family.caregiver_limit", $"A family can have at most {Family.MaxCaregivers} caregivers.");
+            }
+        }
+        else
+        {
+            await entitlements.EnsureCanAddAdultAsync(familyId, ct);
+        }
+
         var userId = User.UserId();
         var inviter = await db.Users.AsNoTracking().FirstAsync(u => u.Id == userId, ct);
         var token = Crypto.NewToken();
-        var invitation = new Invitation(familyId, userId, Crypto.Sha256(token), clock.GetUtcNow());
+        var invitation = new Invitation(familyId, userId, Crypto.Sha256(token), clock.GetUtcNow(), role: role);
         db.Invitations.Add(invitation);
         analytics.Track(AnalyticsEvents.InvitationCreated, userId, familyId);
         await db.SaveChangesAsync(ct);
 
         var url = $"{app.Value.PublicBaseUrl.TrimEnd('/')}/i/{token}";
-        var text = ShareText(inviter, app.Value.Name, url);
+        var text = ShareText(inviter, app.Value.Name, url, role);
         return StatusCode(201, new InvitationCreatedDto(invitation.Id, token, url, text,
-            $"https://wa.me/?text={Uri.EscapeDataString(text)}", invitation.ExpiresAt));
+            $"https://wa.me/?text={Uri.EscapeDataString(text)}", invitation.ExpiresAt, RoleName(role)));
     }
 
     /// <summary>Public preview shown on the invite landing page and in the app before accepting.</summary>
@@ -55,7 +75,7 @@ public class InvitationsController(
         var inviter = await db.Users.AsNoTracking().Where(u => u.Id == invitation.InvitedByUserId)
             .Select(u => u.DisplayName).FirstAsync(ct);
         return new InvitationPreviewDto(invitation.Family!.Name, inviter,
-            invitation.StatusAt(clock.GetUtcNow()).ToString().ToLowerInvariant(), invitation.ExpiresAt);
+            invitation.StatusAt(clock.GetUtcNow()).ToString().ToLowerInvariant(), invitation.ExpiresAt, RoleName(invitation.Role));
     }
 
     [HttpPost("api/v1/invitations/{token}/accept")]
@@ -67,7 +87,7 @@ public class InvitationsController(
         var invitation = await Find(token, ct, track: true);
         var family = await db.Families.Include(f => f.Members).FirstAsync(f => f.Id == invitation.FamilyId, ct);
         var wasMember = family.IsMember(userId);
-        if (!wasMember && invitation.StatusAt(clock.GetUtcNow()) == InvitationStatus.Pending)
+        if (!wasMember && invitation.Role != FamilyRole.Caregiver && invitation.StatusAt(clock.GetUtcNow()) == InvitationStatus.Pending)
         {
             // Checked after the invitation itself so an expired or used link still says so.
             await entitlements.EnsureCanAddAdultAsync(family.Id, ct);
@@ -96,7 +116,20 @@ public class InvitationsController(
                ?? throw new NotFoundException("invitation.not_found", "Invitation not found.");
     }
 
-    private static string ShareText(User inviter, string appName, string url) => inviter.Locale == Locales.English
-        ? $"{inviter.DisplayName} invited you to share family planning on {appName}. Join here: {url}"
-        : $"{inviter.DisplayName} seni {appName}'de aile planlamasını paylaşmaya davet etti. Buradan katıl: {url}";
+    private static FamilyRole ParseRole(string? role) => role?.Trim().ToLowerInvariant() switch
+    {
+        null or "" or "parent" => FamilyRole.Adult,
+        "caregiver" => FamilyRole.Caregiver,
+        _ => throw new DomainException("invitation.role_invalid", "Role must be 'parent' or 'caregiver'."),
+    };
+
+    public static string RoleName(FamilyRole role) => role == FamilyRole.Caregiver ? "caregiver" : "parent";
+
+    private static string ShareText(User inviter, string appName, string url, FamilyRole role) => (inviter.Locale == Locales.English, role) switch
+    {
+        (true, FamilyRole.Caregiver) => $"{inviter.DisplayName} invited you to {appName} as a caregiver, to help with the children's day. Join here: {url}",
+        (true, _) => $"{inviter.DisplayName} invited you to share family planning on {appName}. Join here: {url}",
+        (false, FamilyRole.Caregiver) => $"{inviter.DisplayName} seni {appName}'ye bakıcı olarak davet etti: çocukların gününü birlikte takip edelim. Buradan katıl: {url}",
+        _ => $"{inviter.DisplayName} seni {appName}'de aile planlamasını paylaşmaya davet etti. Buradan katıl: {url}",
+    };
 }
