@@ -21,6 +21,7 @@ import '../planning/event_editor.dart';
 import '../planning/planning_repository.dart';
 import '../planning/task_sheet.dart';
 import '../handoff/handoff_cards.dart';
+import 'family_today.dart';
 import 'live_now.dart';
 import '../profile/profile_screen.dart';
 
@@ -41,7 +42,24 @@ class TodayScreen extends ConsumerWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           slivers: [
-            SliverToBoxAdapter(child: TodayHero(name: me.displayName, data: today.valueOrNull, caregiverFor: _caregiverFor(context, ref, familyId))),
+            SliverToBoxAdapter(
+              child: TodayHero(
+                name: me.displayName,
+                data: today.valueOrNull,
+                caregiverFor: _caregiverFor(context, ref, familyId),
+                onTasks: () => context.push('/tasks'),
+                onEvents: () => context.go('/calendar'),
+                onSuggestions: () {
+                  // Waiting suggestions open the review screen; with none, Hally is where new ones come from.
+                  if ((today.valueOrNull?.waiting ?? const []).isEmpty) {
+                    context.push('/assistant');
+                  } else {
+                    ref.read(lastCaptureProvider.notifier).state = null;
+                    context.push('/capture/review');
+                  }
+                },
+              ),
+            ),
             ...today.when(
               loading: () => [const SliverFillRemaining(hasScrollBody: false, child: HallyLoading())],
               error: (_, __) => [
@@ -82,6 +100,7 @@ class TodayScreen extends ConsumerWidget {
     );
     var i = 0;
     return [
+      FamilyTodayCard(familyId: familyId, data: all),
       LiveNowStrip(familyId: familyId),
       ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
       if (!ref.watch(isCaregiverProvider)) ParentAsksCard(familyId: familyId),
@@ -131,10 +150,15 @@ class TodayScreen extends ConsumerWidget {
 
 /// Header: wordmark and shortcuts, date, greeting, the Hally assistant card and the day's counts as pastel tiles.
 class TodayHero extends StatelessWidget {
-  const TodayHero({super.key, required this.name, required this.data, this.caregiverFor});
+  const TodayHero({super.key, required this.name, required this.data, this.caregiverFor, this.onTasks, this.onEvents, this.onSuggestions});
 
   final String name;
   final TodayData? data;
+
+  /// Where each count tile leads: the task list, the calendar, and the suggestions waiting for approval.
+  final VoidCallback? onTasks;
+  final VoidCallback? onEvents;
+  final VoidCallback? onSuggestions;
 
   /// Set for a caregiver: a banner names their children and the assistant card and suggestion count are hidden.
   final String? caregiverFor;
@@ -212,6 +236,8 @@ class TodayHero extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _Stat(
+                      key: const Key('today.tile.tasks'),
+                      onTap: onTasks,
                       icon: Icons.checklist_rounded,
                       color: HallyModule.tasks,
                       count: (d?.overdue.length ?? 0) + (d?.dueToday.length ?? 0),
@@ -222,6 +248,8 @@ class TodayHero extends StatelessWidget {
                   const SizedBox(width: HallySpace.sm + 2),
                   Expanded(
                     child: _Stat(
+                      key: const Key('today.tile.events'),
+                      onTap: onEvents,
                       icon: Icons.calendar_month_rounded,
                       color: HallyModule.calendar,
                       count: d?.events.length ?? 0,
@@ -233,6 +261,8 @@ class TodayHero extends StatelessWidget {
                   if (caregiverFor == null)
                     Expanded(
                       child: _Stat(
+                        key: const Key('today.tile.suggestions'),
+                        onTap: onSuggestions,
                         icon: Icons.auto_awesome_rounded,
                         color: HallyColors.powder,
                         count: d?.waiting.length ?? 0,
@@ -349,9 +379,11 @@ class AskHallyBar extends StatelessWidget {
   }
 }
 
-/// One pastel count tile (tasks, events, suggestions).
+/// One pastel count tile (tasks, events, suggestions); tapping it opens that list.
 class _Stat extends StatelessWidget {
-  const _Stat({required this.icon, required this.color, required this.count, required this.label, required this.semantics});
+  const _Stat({super.key, required this.icon, required this.color, required this.count, required this.label, required this.semantics, this.onTap});
+
+  final VoidCallback? onTap;
 
   final IconData icon;
   final Color color;
@@ -366,8 +398,12 @@ class _Stat extends StatelessWidget {
     final fg = HallyColors.readableOn(color, b);
     return Semantics(
       label: semantics,
+      button: onTap != null,
       excludeSemantics: true,
-      child: Container(
+      child: HallyPressable(
+        onTap: onTap,
+        borderRadius: HallyRadius.md + 2,
+        child: Container(
         padding: const EdgeInsets.fromLTRB(14, 14, 10, 12),
         decoration: BoxDecoration(color: HallyColors.softOf(color, b), borderRadius: BorderRadius.circular(HallyRadius.md + 2)),
         child: Column(
@@ -377,9 +413,17 @@ class _Stat extends StatelessWidget {
             const SizedBox(height: HallySpace.sm),
             Text('$count', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, height: 1, color: theme.colorScheme.onSurface)),
             const SizedBox(height: HallySpace.xs),
-            Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodySmall?.copyWith(color: fg, fontWeight: FontWeight.w600)),
+                ),
+                if (onTap != null) Icon(Icons.chevron_right_rounded, size: 16, color: fg),
+              ],
+            ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -2572,5 +2572,12 @@
       }
     }
   },
-  "briefingMorningOffDone": "Sabah özeti kapalı."
+  "briefingMorningOffDone": "Sabah özeti kapalı.",
+  "familyTodayTitle": "Ailem bugün",
+  "familyTodayAll": "Aile",
+  "familyTodayFree": "Bugün boş",
+  "familyTodayTasks": "{n} görev",
+  "@familyTodayTasks": {"placeholders": {"n": {"type": "int"}}},
+  "familyTodayEvents": "{n} etkinlik",
+  "@familyTodayEvents": {"placeholders": {"n": {"type": "int"}}}
 }
