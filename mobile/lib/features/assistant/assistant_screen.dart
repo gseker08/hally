@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,10 +11,17 @@ import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_repository.dart';
 import '../privacy/ai_consent.dart';
 import 'assistant_repository.dart';
+import 'voice_input.dart';
 
 /// Chat with Hally. Answers come from the family's own data; anything to add arrives as a suggestion to approve.
+///
+/// The microphone button (and `/assistant?voice=1`, used by the home screen widget and the app icon shortcut)
+/// lets the parent speak instead of type: the words are sent as a message when they stop talking.
 class AssistantScreen extends ConsumerStatefulWidget {
-  const AssistantScreen({super.key});
+  const AssistantScreen({super.key, this.startVoice = false});
+
+  /// Starts listening as soon as the screen opens.
+  final bool startVoice;
 
   @override
   ConsumerState<AssistantScreen> createState() => _AssistantScreenState();
@@ -24,12 +33,60 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
   final _entries = <ChatEntry>[];
   String? _conversationId;
   bool _sending = false;
+  bool _listening = false;
+  bool _voiceStarted = false;
+  late final VoiceInput _voice;
+
+  @override
+  void initState() {
+    super.initState();
+    _voice = ref.read(voiceInputProvider);
+  }
 
   @override
   void dispose() {
+    if (_listening) unawaited(_voice.cancel());
     _input.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// Mic button: starts listening, or while listening, sends what was heard so far.
+  Future<void> _toggleVoice(String familyId) async {
+    final voice = _voice;
+    if (_listening) {
+      await voice.stop();
+      return;
+    }
+    if (_sending) return;
+    // The words go to the AI service, so ask for that consent before the parent speaks, not after.
+    if (!await ensureAiConsent(context, ref) || !mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final languageCode = Localizations.localeOf(context).languageCode;
+    if (!await voice.ensureReady()) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.voiceUnavailable)));
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _listening = true;
+      _input.clear();
+    });
+    await voice.listen(
+      localeId: voiceLocaleFor(languageCode),
+      onText: (words) {
+        if (mounted) _input.text = words;
+      },
+      onDone: (words) {
+        if (!mounted) return;
+        setState(() => _listening = false);
+        if (words.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.voiceNotHeard)));
+        } else {
+          unawaited(_send(familyId, words));
+        }
+      },
+    );
   }
 
   Future<void> _send(String familyId, String text) async {
@@ -68,6 +125,12 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     final familyId = ref.watch(meProvider).valueOrNull?.primaryFamily?.id;
     if (familyId == null) return const Scaffold(body: HallyLoading());
     final starters = [l10n.assistantStarterTomorrow, l10n.assistantStarterWeek, l10n.assistantStarterAdd];
+    if (widget.startVoice && !_voiceStarted) {
+      _voiceStarted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(_toggleVoice(familyId));
+      });
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.tabAssistant)),
@@ -113,14 +176,23 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
                       maxLines: 4,
                       maxLength: 2000,
                       textInputAction: TextInputAction.send,
+                      readOnly: _listening,
                       onSubmitted: (t) => _send(familyId, t),
-                      decoration: InputDecoration(hintText: l10n.assistantHint, counterText: ''),
+                      decoration: InputDecoration(hintText: _listening ? l10n.voiceListening : l10n.assistantHint, counterText: ''),
                     ),
+                  ),
+                  IconButton(
+                    key: const Key('assistant.voice'),
+                    tooltip: _listening ? l10n.voiceStop : l10n.voiceSpeak,
+                    onPressed: _sending ? null : () => _toggleVoice(familyId),
+                    style: _listening ? IconButton.styleFrom(backgroundColor: HallyColors.softOf(HallyColors.cherry, Theme.of(context).brightness)) : null,
+                    color: _listening ? HallyColors.cherry : null,
+                    icon: Icon(_listening ? Icons.stop_rounded : Icons.mic_none_rounded),
                   ),
                   IconButton.filled(
                     key: const Key('assistant.send'),
                     tooltip: l10n.assistantSend,
-                    onPressed: _sending ? null : () => _send(familyId, _input.text),
+                    onPressed: _sending || _listening ? null : () => _send(familyId, _input.text),
                     icon: const Icon(Icons.arrow_upward_rounded),
                   ),
                 ],

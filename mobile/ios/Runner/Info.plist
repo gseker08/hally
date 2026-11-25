@@ -72,6 +72,10 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Okul duyurusunu ya da belgeyi çekip planına eklemek için kamerayı kullanırız.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Hally'ye konuşarak sorabilmen ya da ekleyebilmen için mikrofonu yalnızca mikrofon düğmesine bastığında kullanırız.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Söylediklerini yazıya çevirip Hally'ye göndermek için iPhone'un konuşma tanımasını kullanırız.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Seçtiğin ekran görüntüsünü ya da fotoğrafı planına eklemek için kullanırız.</string>
 	<key>NSSupportsLiveActivities</key>

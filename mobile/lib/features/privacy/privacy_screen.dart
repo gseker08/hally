@@ -105,6 +105,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
         HallyColors.sky,
         info?.aiProviderNoTraining == true ? l10n.privacyPointAiNoTraining : l10n.privacyPointAiProcessing,
       ),
+      (Icons.mic_rounded, HallyModule.assistant, l10n.privacyPointVoice),
       (Icons.lock_rounded, HallyColors.mint, l10n.privacyPointPhotos(info?.originalsRetentionDays ?? 30)),
       (Icons.child_care_rounded, HallyColors.apricot, l10n.privacyPointChildren),
       (Icons.forum_rounded, HallyColors.mint, l10n.privacyPointChat),

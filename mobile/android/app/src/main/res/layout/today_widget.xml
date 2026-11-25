@@ -33,6 +33,17 @@
             android:maxLines="1"
             android:textColor="@color/widget_muted"
             android:textSize="12sp"/>
+
+        <!-- "Hally'ye söyle": opens the assistant already listening. -->
+        <ImageView
+            android:id="@+id/today_voice"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/now_widget_stop"
+            android:contentDescription="@string/today_widget_voice"
+            android:padding="6dp"
+            android:src="@drawable/ic_widget_mic"/>
     </LinearLayout>
 
         <LinearLayout

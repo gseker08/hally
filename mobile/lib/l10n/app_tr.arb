@@ -1583,5 +1583,12 @@
   "todayTileTasks": "Görevler",
   "todayTileEvents": "Etkinlikler",
   "todayTileWaiting": "Öneriler",
-  "todaySeeAll": "Tümünü gör"
+  "todaySeeAll": "Tümünü gör",
+  "voiceSpeak": "Hally'ye söyle",
+  "voiceStop": "Bitir ve gönder",
+  "voiceListening": "Dinliyorum… konuşabilirsin",
+  "voiceNotHeard": "Seni duyamadım. Tekrar dener misin?",
+  "voiceUnavailable": "Mikrofon kullanılamıyor. Ayarlardan Hally'ye mikrofon izni verebilirsin.",
+  "voiceShortcut": "Hally'ye söyle",
+  "privacyPointVoice": "Mikrofon yalnızca mikrofon düğmesine bastığında dinler, arka planda asla dinlemez. Konuşman telefonunun konuşma tanıma servisinde (Android'de Google, iPhone'da Apple) yazıya çevrilir. Ses kaydı Hally'ye gönderilmez ya da saklanmaz, sadece metin Hally'ye gider."
 }

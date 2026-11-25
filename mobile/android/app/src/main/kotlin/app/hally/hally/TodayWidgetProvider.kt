@@ -3,6 +3,7 @@ package app.hally.hally
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.net.Uri
 import android.view.View
 import android.widget.RemoteViews
 import es.antonborri.home_widget.HomeWidgetLaunchIntent
@@ -17,7 +18,8 @@ import java.util.Locale
  *
  * The app saves today's list (lib/features/home/today_widget.dart) whenever Today loads. The widget hides items
  * that have passed by itself, so it stays right while the app is closed; a list from an earlier day is never
- * shown, the widget asks to open the app instead. Tapping anywhere opens the app.
+ * shown, the widget asks to open the app instead. Tapping anywhere opens the app; the microphone opens the
+ * assistant already listening (lib/features/assistant/voice_launch.dart).
  */
 class TodayWidgetProvider : HomeWidgetProvider() {
     private data class Row(val time: String, val title: String)
@@ -58,6 +60,10 @@ class TodayWidgetProvider : HomeWidgetProvider() {
             message?.let { views.setTextViewText(R.id.today_message, it) }
 
             views.setOnClickPendingIntent(R.id.today_root, HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java))
+            views.setOnClickPendingIntent(
+                R.id.today_voice,
+                HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, Uri.parse("hally://voice")),
+            )
             appWidgetManager.updateAppWidget(id, views)
         }
     }

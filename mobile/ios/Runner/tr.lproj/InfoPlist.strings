@@ -1,3 +1,5 @@
 /* iOS'un Türkçe gösterdiği izin metinleri. */
 "NSCameraUsageDescription" = "Okul duyurusunu ya da belgeyi çekip planına eklemek için kamerayı kullanırız.";
 "NSPhotoLibraryUsageDescription" = "Seçtiğin ekran görüntüsünü ya da fotoğrafı planına eklemek için kullanırız.";
+"NSMicrophoneUsageDescription" = "Hally'ye konuşarak sorabilmen ya da ekleyebilmen için mikrofonu yalnızca mikrofon düğmesine bastığında kullanırız.";
+"NSSpeechRecognitionUsageDescription" = "Söylediklerini yazıya çevirip Hally'ye göndermek için iPhone'un konuşma tanımasını kullanırız.";

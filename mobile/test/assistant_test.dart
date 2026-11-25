@@ -6,6 +6,8 @@ import 'package:hally/core/auth/auth_repository.dart';
 import 'package:hally/core/design/theme.dart';
 import 'package:hally/features/assistant/assistant_repository.dart';
 import 'package:hally/features/assistant/assistant_screen.dart';
+import 'package:hally/features/assistant/voice_input.dart';
+import 'package:hally/features/assistant/voice_launch.dart';
 import 'package:hally/features/capture/capture_models.dart';
 import 'package:hally/features/privacy/ai_consent.dart';
 import 'package:hally/features/privacy/privacy_repository.dart';
@@ -46,8 +48,43 @@ class _MemoryConsent implements AiConsentStorage {
   Future<void> write(bool value) async => granted = value;
 }
 
-Widget _app(_FakeAssistant repo, _MemoryConsent consent) => ProviderScope(
+/// Speech to text that "hears" whatever the test says.
+class _FakeVoice implements VoiceInput {
+  bool ready = true;
+  String? localeId;
+  void Function(String)? _onText;
+  void Function(String)? _onDone;
+
+  bool get listening => _onDone != null;
+
+  void say(String words) => _onText?.call(words);
+
+  void finish(String words) {
+    final done = _onDone;
+    _onDone = null;
+    done?.call(words);
+  }
+
+  @override
+  Future<bool> ensureReady() async => ready;
+
+  @override
+  Future<void> listen({required String localeId, required void Function(String words) onText, required void Function(String words) onDone}) async {
+    this.localeId = localeId;
+    _onText = onText;
+    _onDone = onDone;
+  }
+
+  @override
+  Future<void> stop() async => finish('Yarın ne var');
+
+  @override
+  Future<void> cancel() async => _onDone = null;
+}
+
+Widget _app(_FakeAssistant repo, _MemoryConsent consent, {_FakeVoice? voice, bool startVoice = false}) => ProviderScope(
       overrides: [
+        voiceInputProvider.overrideWithValue(voice ?? _FakeVoice()),
         meProvider.overrideWith((ref) async => _me),
         assistantRepositoryProvider.overrideWithValue(repo),
         aiConsentStorageProvider.overrideWithValue(consent),
@@ -65,7 +102,7 @@ Widget _app(_FakeAssistant repo, _MemoryConsent consent) => ProviderScope(
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: const AssistantScreen(),
+        home: AssistantScreen(startVoice: startVoice),
       ),
     );
 
@@ -108,5 +145,86 @@ void main() {
     expect(repo.sent.last.$2, 'c1', reason: 'follow-up messages stay in the same conversation');
     expect(find.text('Yüzme dersi · 2026-11-14 · 17:00'), findsOneWidget);
     expect(find.byKey(const Key('assistant.review.m2')), findsOneWidget);
+  });
+
+  testWidgets('speaking sends the words as a message', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final repo = _FakeAssistant();
+    final consent = _MemoryConsent()..granted = true;
+    final voice = _FakeVoice();
+    await tester.pumpWidget(_app(repo, consent, voice: voice));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('assistant.voice')));
+    await tester.pumpAndSettle();
+    expect(voice.listening, isTrue);
+    expect(voice.localeId, 'tr_TR');
+    expect(find.text('Dinliyorum… konuşabilirsin'), findsOneWidget);
+
+    // Words appear in the field while the parent speaks; the message goes when they stop.
+    voice.say('Yarın saat beşte');
+    await tester.pump();
+    expect(find.text('Yarın saat beşte'), findsOneWidget);
+    voice.finish('Yarın saat beşte yüzme dersi ekle');
+    await tester.pumpAndSettle();
+    expect(repo.sent.single.$1, 'Yarın saat beşte yüzme dersi ekle');
+    expect(find.text('Yüzme dersi · 2026-11-14 · 17:00'), findsOneWidget);
+
+    // The stop button sends what was heard so far.
+    await tester.tap(find.byKey(const Key('assistant.voice')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('assistant.voice')));
+    await tester.pumpAndSettle();
+    expect(repo.sent.last.$1, 'Yarın ne var');
+
+    // Silence sends nothing.
+    await tester.tap(find.byKey(const Key('assistant.voice')));
+    await tester.pumpAndSettle();
+    voice.finish('');
+    await tester.pumpAndSettle();
+    expect(repo.sent, hasLength(2));
+    expect(find.text('Seni duyamadım. Tekrar dener misin?'), findsOneWidget);
+  });
+
+  testWidgets('voice asks for the AI consent before listening, and opens listening from the widget link', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final consent = _MemoryConsent();
+    final voice = _FakeVoice();
+    await tester.pumpWidget(_app(_FakeAssistant(), consent, voice: voice, startVoice: true));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('aiConsent.decline')), findsOneWidget);
+    expect(voice.listening, isFalse);
+    await tester.tap(find.byKey(const Key('aiConsent.accept')));
+    await tester.pumpAndSettle();
+    expect(voice.listening, isTrue);
+
+    expect(isVoiceLaunchUri(Uri.parse('hally://voice')), isTrue);
+    expect(isVoiceLaunchUri(Uri.parse('hally://timer/stop')), isFalse);
+    expect(isVoiceLaunchUri(null), isFalse);
+  });
+
+  testWidgets('a phone without a recognizer says so', (tester) async {
+    tester.view.physicalSize = const Size(1170, 2532);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+
+    final voice = _FakeVoice()..ready = false;
+    await tester.pumpWidget(_app(_FakeAssistant(), _MemoryConsent()..granted = true, voice: voice));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('assistant.voice')));
+    await tester.pumpAndSettle();
+    expect(voice.listening, isFalse);
+    expect(find.textContaining('Mikrofon kullanılamıyor'), findsOneWidget);
+  });
+
+  test('speech language follows the app language', () {
+    expect(voiceLocaleFor('tr'), 'tr_TR');
+    expect(voiceLocaleFor('en'), 'en_US');
   });
 }

@@ -257,34 +257,50 @@ class AskHallyBar extends StatelessWidget {
             ],
           ),
           const SizedBox(height: HallySpace.md - 2),
-          Semantics(
-            button: true,
-            label: l10n.askHally,
-            excludeSemantics: true,
-            child: HallyPressable(
-              key: const Key('today.askHally'),
-              onTap: () => context.push('/assistant'),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(HallySpace.md, 8, 8, 8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
-                  borderRadius: BorderRadius.circular(HallyRadius.md),
-                  boxShadow: HallyShadows.soft(b),
+          Container(
+            padding: const EdgeInsets.fromLTRB(HallySpace.md, 8, 8, 8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              borderRadius: BorderRadius.circular(HallyRadius.md),
+              boxShadow: HallyShadows.soft(b),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: l10n.askHally,
+                    excludeSemantics: true,
+                    child: HallyPressable(
+                      key: const Key('today.askHally'),
+                      onTap: () => context.push('/assistant'),
+                      child: Row(
+                        children: [
+                          Icon(Icons.auto_awesome_rounded, color: HallyColors.readableOn(HallyModule.assistant, b), size: 20),
+                          const SizedBox(width: HallySpace.sm + 2),
+                          Expanded(child: Text(l10n.askHally, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_awesome_rounded, color: HallyColors.readableOn(HallyModule.assistant, b), size: 20),
-                    const SizedBox(width: HallySpace.sm + 2),
-                    Expanded(child: Text(l10n.askHally, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant))),
-                    Container(
+                // Speak instead of type: opens the assistant already listening.
+                Semantics(
+                  button: true,
+                  label: l10n.voiceSpeak,
+                  excludeSemantics: true,
+                  child: HallyPressable(
+                    key: const Key('today.askHallyVoice'),
+                    onTap: () => context.push('/assistant?voice=1'),
+                    child: Container(
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(color: theme.colorScheme.primary, borderRadius: BorderRadius.circular(12)),
-                      child: Icon(Icons.arrow_upward_rounded, color: theme.colorScheme.onPrimary, size: 18),
+                      child: Icon(Icons.mic_rounded, color: theme.colorScheme.onPrimary, size: 18),
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],
