@@ -46,8 +46,8 @@ public class MedicationsController(HallyDbContext db, MedicationService medicati
 {
     [CaregiverAllowed]
     [HttpGet]
-    public Task<List<MedicationDto>> List(Guid familyId, [FromQuery] bool includeInactive, CancellationToken ct) =>
-        medications.ListAsync(familyId, includeInactive, ct);
+    public async Task<List<MedicationDto>> List(Guid familyId, [FromQuery] bool includeInactive, CancellationToken ct) =>
+        (await medications.ListAsync(familyId, includeInactive, ct)).Where(m => HttpContext.Access().SeesChild(m.ChildId)).ToList();
 
     [HttpPost]
     [Idempotent]
@@ -127,8 +127,12 @@ public class MedicationsController(HallyDbContext db, MedicationService medicati
         await using var tx = await db.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted, ct);
         // Row lock on the medication: concurrent doses for it wait here, then see each other.
         var med = await db.Medications.FromSqlInterpolated($"SELECT * FROM medications WHERE id = {medicationId} AND family_id = {familyId} FOR UPDATE")
-                      .FirstOrDefaultAsync(ct)
-                  ?? throw new NotFoundException("medication.not_found", "Medication not found.");
+                      .FirstOrDefaultAsync(ct);
+        if (med is null || !HttpContext.Access().SeesChild(med.ChildId))
+        {
+            throw new NotFoundException("medication.not_found", "Medication not found.");
+        }
+
         var recent = await medications.RecentDosesAsync(medicationId, at, ct);
         if (!request.Force && med.Check(recent, at) is { } warning)
         {
@@ -156,6 +160,7 @@ public class MedicationsController(HallyDbContext db, MedicationService medicati
     [HttpDelete("{medicationId:guid}/doses/{doseId:guid}")]
     public async Task<IActionResult> DeleteDose(Guid familyId, Guid medicationId, Guid doseId, CancellationToken ct)
     {
+        await Find(familyId, medicationId, ct);
         var dose = await db.MedicationDoses.FirstOrDefaultAsync(d => d.Id == doseId && d.MedicationId == medicationId && d.FamilyId == familyId, ct)
                    ?? throw new NotFoundException("medication.dose_not_found", "Dose not found.");
         db.MedicationDoses.Remove(dose);
@@ -164,9 +169,13 @@ public class MedicationsController(HallyDbContext db, MedicationService medicati
         return NoContent();
     }
 
-    private async Task<Medication> Find(Guid familyId, Guid medicationId, CancellationToken ct) =>
-        await db.Medications.FirstOrDefaultAsync(m => m.FamilyId == familyId && m.Id == medicationId, ct)
-        ?? throw new NotFoundException("medication.not_found", "Medication not found.");
+    private async Task<Medication> Find(Guid familyId, Guid medicationId, CancellationToken ct)
+    {
+        var med = await db.Medications.FirstOrDefaultAsync(m => m.FamilyId == familyId && m.Id == medicationId, ct);
+        return med is not null && HttpContext.Access().SeesChild(med.ChildId)
+            ? med
+            : throw new NotFoundException("medication.not_found", "Medication not found.");
+    }
 
     private async Task EnsureChild(Guid familyId, Guid childId, CancellationToken ct)
     {

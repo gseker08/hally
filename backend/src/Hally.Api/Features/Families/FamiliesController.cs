@@ -17,7 +17,13 @@ public record CreateFamilyRequest(string Name, string? TimeZoneId);
 /// <param name="Color">One of <see cref="ChildColors.All"/>; when omitted a colour no sibling uses is picked.</param>
 public record AddChildRequest(string FirstName, int? BirthYear, string? Color = null);
 public record UpdateChildRequest(string FirstName, int? BirthYear, string Color);
-public record MemberDto(Guid UserId, string DisplayName, string Role);
+/// <param name="AccessUntil">Caregivers: when access ends (null = no end).</param>
+/// <param name="ChildIds">Caregivers: the children they look after (empty = all). Always empty for parents.</param>
+/// <param name="CanSeeHealth">Caregivers: may read the health card. Always true for parents.</param>
+public record MemberDto(Guid UserId, string DisplayName, string Role, DateTimeOffset? AccessUntil = null, IReadOnlyList<Guid>? ChildIds = null,
+    bool CanSeeHealth = true);
+/// <summary>What a caregiver can reach. <c>AccessUntil</c> null means until removed; empty <c>ChildIds</c> means every child.</summary>
+public record CaregiverAccessRequest(DateTimeOffset? AccessUntil, IReadOnlyList<Guid>? ChildIds, bool CanSeeHealth);
 /// <param name="PhotoUrl">Relative URL of the profile photo (it changes when the photo does), or null for none.</param>
 public record ChildDto(Guid Id, string FirstName, int? BirthYear, string Color, string? PhotoUrl = null)
 {
@@ -78,7 +84,7 @@ public class FamiliesController(HallyDbContext db, IAnalytics analytics, IDocume
             new Dictionary<string, object?> { ["time_zone"] = family.TimeZoneId });
         await db.SaveChangesAsync(ct);
 
-        var dto = await LoadDto(family.Id, ct);
+        var dto = await LoadDto(family.Id, ct, scoped: false);
         return CreatedAtAction(nameof(Get), new { familyId = family.Id }, dto);
     }
 
@@ -223,19 +229,53 @@ public class FamiliesController(HallyDbContext db, IAnalytics analytics, IDocume
         }
     }
 
-    private async Task<FamilyDto> LoadDto(Guid familyId, CancellationToken ct)
+    /// <summary>Changes what a caregiver can reach: end date, children and health card. Parents only.</summary>
+    [HttpPut("{familyId:guid}/members/{userId:guid}/access")]
+    [Authorize(Policy = Policies.FamilyMember)]
+    public async Task<ActionResult<MemberDto>> SetCaregiverAccess(Guid familyId, Guid userId, CaregiverAccessRequest request, CancellationToken ct)
+    {
+        var family = await db.Families.Include(f => f.Members).Include(f => f.Children).FirstAsync(f => f.Id == familyId, ct);
+        var member = family.MemberOf(userId) ?? throw new NotFoundException("member.not_found", "Member not found.");
+        var access = new CaregiverAccess(request.AccessUntil, request.ChildIds ?? [], request.CanSeeHealth);
+        access.Validate(family, clock.GetUtcNow());
+        member.SetCaregiverAccess(access);
+        await db.SaveChangesAsync(ct);
+        return (await LoadDto(familyId, ct)).Members.First(m => m.UserId == userId);
+    }
+
+    /// <summary>Removes a caregiver from the family right away. Parents leave themselves; one parent cannot remove another.</summary>
+    [HttpDelete("{familyId:guid}/members/{userId:guid}")]
+    [Authorize(Policy = Policies.FamilyMember)]
+    public async Task<IActionResult> RemoveCaregiver(Guid familyId, Guid userId, [FromServices] Privacy.AccountService accounts, CancellationToken ct)
+    {
+        var member = await db.FamilyMembers.AsNoTracking().FirstOrDefaultAsync(m => m.FamilyId == familyId && m.UserId == userId, ct)
+                     ?? throw new NotFoundException("member.not_found", "Member not found.");
+        if (member.Role != FamilyRole.Caregiver)
+        {
+            throw new DomainException("member.not_caregiver", "Only caregivers can be removed by a parent.");
+        }
+
+        await accounts.LeaveFamilyAsync(userId, familyId, ct);
+        return NoContent();
+    }
+
+    private async Task<FamilyDto> LoadDto(Guid familyId, CancellationToken ct, bool scoped = true)
     {
         var family = await db.Families.AsNoTracking().Include(f => f.Children)
                          .FirstOrDefaultAsync(f => f.Id == familyId, ct)
                      ?? throw new NotFoundException("family.not_found", "Family not found.");
         var members = await db.FamilyMembers.AsNoTracking()
             .Where(m => m.FamilyId == familyId)
-            .Join(db.Users, m => m.UserId, u => u.Id, (m, u) => new { m.UserId, u.DisplayName, m.Role, m.CreatedAt })
+            .Join(db.Users, m => m.UserId, u => u.Id, (m, u) => new { m.UserId, u.DisplayName, m.Role, m.CreatedAt, m.AccessUntil, m.ChildIds, m.CanSeeHealth })
             .OrderBy(m => m.CreatedAt)
             .ToListAsync(ct);
 
+        // A caregiver sees only the children they look after. A family being created has only its parent.
+        var access = scoped ? HttpContext.Access() : null;
         return new FamilyDto(family.Id, family.Name, family.TimeZoneId,
-            members.Select(m => new MemberDto(m.UserId, m.DisplayName, m.Role.ToString())).ToList(),
-            family.Children.OrderBy(c => c.CreatedAt).Select(ChildDto.From).ToList());
+            members.Select(m => m.Role == FamilyRole.Caregiver
+                ? new MemberDto(m.UserId, m.DisplayName, m.Role.ToString(), m.AccessUntil, m.ChildIds, m.CanSeeHealth)
+                : new MemberDto(m.UserId, m.DisplayName, m.Role.ToString(), null, [], true)).ToList(),
+            family.Children.Where(c => access?.SeesChild(c.Id) ?? true).OrderBy(c => c.CreatedAt).Select(ChildDto.From).ToList());
     }
 }

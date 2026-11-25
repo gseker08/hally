@@ -153,11 +153,13 @@ public class InsightsController(HallyDbContext db, TimeProvider clock) : Control
         var medDtos = meds.Where(m => m.Active || doses.Any(d => d.MedicationId == m.Id))
             .Select(m => new MedicationInsightDto(m.Id, m.Name, doses.Count(d => d.MedicationId == m.Id))).OrderByDescending(m => m.Doses).ToList();
 
-        if (!HttpContext.IsParent())
+        var access = HttpContext.Access();
+        if (!access.IsParent)
         {
-            // Caregivers see the day-to-day logs, not money or health records.
+            // Caregivers see the day-to-day logs, not money; health only when a parent allowed it.
             return new ChildInsightsDto(childId, first, last, today, child.DailyScreenMinutes, child.DailyStudyMinutes, list, habitDtos, medDtos,
-                points.Sum(p => p.Points), 0, new HealthSnapshotDto(null, null, null, 0, 0, null, null, false));
+                points.Sum(p => p.Points), 0,
+                access.CanSeeHealth ? await Health(childId, today, now, ct) : new HealthSnapshotDto(null, null, null, 0, 0, null, null, false));
         }
 
         var firstDay = days[0];

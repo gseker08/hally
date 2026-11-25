@@ -112,6 +112,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
         b.Entity<FamilyMember>(e =>
         {
             e.Property(x => x.Role).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ChildIds).HasDefaultValueSql("'{}'::uuid[]");
             e.HasIndex(x => new { x.FamilyId, x.UserId }).IsUnique();
             e.HasIndex(x => x.UserId);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
@@ -129,6 +130,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
         {
             e.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
             e.Property(x => x.Role).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.ChildIds).HasDefaultValueSql("'{}'::uuid[]");
             e.HasIndex(x => x.TokenHash).IsUnique();
             e.HasOne(x => x.Family).WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
         });

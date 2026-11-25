@@ -53,7 +53,9 @@ public class HabitsController(HallyDbContext db, IHubContext<ChatHub, IChatClien
     {
         var today = await Today(familyId, ct);
         var since = today.AddDays(-HistoryDays);
-        var habits = await db.Habits.AsNoTracking().Where(h => h.FamilyId == familyId).OrderBy(h => h.CreatedAt).ToListAsync(ct);
+        var access = HttpContext.Access();
+        var habits = (await db.Habits.AsNoTracking().Where(h => h.FamilyId == familyId).OrderBy(h => h.CreatedAt).ToListAsync(ct))
+            .Where(h => access.SeesChild(h.ChildId)).ToList();
         var checks = await db.HabitChecks.AsNoTracking().Where(c => c.FamilyId == familyId && c.Day >= since)
             .Select(c => new { c.HabitId, c.Day }).ToListAsync(ct);
         var byHabit = checks.GroupBy(c => c.HabitId).ToDictionary(g => g.Key, g => (ISet<DateOnly>)g.Select(c => c.Day).ToHashSet());

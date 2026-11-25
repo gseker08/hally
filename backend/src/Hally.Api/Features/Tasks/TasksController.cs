@@ -62,7 +62,8 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
         var items = await query.OrderBy(t => t.DueAt == null).ThenBy(t => t.DueAt).ThenBy(t => t.CreatedAt)
             .Skip((Math.Max(page, 1) - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         var now = clock.GetUtcNow();
-        return items.Select(t => ToDto(t, now)).ToList();
+        var access = HttpContext.Access();
+        return items.Where(t => access.SeesTagged(t.ChildIds)).Select(t => ToDto(t, now)).ToList();
     }
 
     [CaregiverAllowed]
@@ -137,8 +138,10 @@ public class TasksController(HallyDbContext db, IAnalytics analytics, TimeProvid
     private async Task<FamilyTask> Find(Guid familyId, Guid taskId, CancellationToken ct, bool track = true)
     {
         var q = track ? db.Tasks : db.Tasks.AsNoTracking();
-        return await q.FirstOrDefaultAsync(t => t.Id == taskId && t.FamilyId == familyId, ct)
-               ?? throw new NotFoundException("task.not_found", "Task not found.");
+        var task = await q.FirstOrDefaultAsync(t => t.Id == taskId && t.FamilyId == familyId, ct);
+        return task is not null && HttpContext.Access().SeesTagged(task.ChildIds)
+            ? task
+            : throw new NotFoundException("task.not_found", "Task not found.");
     }
 
     private async Task EnsureRefs(Guid familyId, Guid? assignee, IReadOnlyList<Guid> children, CancellationToken ct)

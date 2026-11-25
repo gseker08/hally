@@ -698,6 +698,21 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<DateTimeOffset?>("AccessUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("access_until");
+
+                    b.Property<bool>("CanSeeHealth")
+                        .HasColumnType("boolean")
+                        .HasColumnName("can_see_health");
+
+                    b.Property<List<Guid>>("ChildIds")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("child_ids")
+                        .HasDefaultValueSql("'{}'::uuid[]");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -742,6 +757,21 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("AcceptedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("accepted_by_user_id");
+
+                    b.Property<DateTimeOffset?>("AccessUntil")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("access_until");
+
+                    b.Property<bool>("CanSeeHealth")
+                        .HasColumnType("boolean")
+                        .HasColumnName("can_see_health");
+
+                    b.Property<List<Guid>>("ChildIds")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("child_ids")
+                        .HasDefaultValueSql("'{}'::uuid[]");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")

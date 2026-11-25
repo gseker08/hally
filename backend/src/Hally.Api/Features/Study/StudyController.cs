@@ -94,7 +94,7 @@ public class StudyController(
     {
         var family = await db.Families.AsNoTracking().Include(f => f.Children).FirstAsync(f => f.Id == familyId, ct);
         var result = new List<ChildStudyDto>();
-        foreach (var child in family.Children.OrderBy(c => c.CreatedAt))
+        foreach (var child in family.Children.Where(c => HttpContext.Access().SeesChild(c.Id)).OrderBy(c => c.CreatedAt))
         {
             result.Add(await StatusAsync(family.TimeZoneId, child, ct));
         }

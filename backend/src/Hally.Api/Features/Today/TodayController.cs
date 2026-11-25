@@ -40,6 +40,15 @@ public class TodayController(HallyDbContext db, TimeProvider clock) : Controller
             .Where(p => p.FamilyId == familyId && p.Status == ProposalStatus.Pending && p.ExpiresAt > now)
             .OrderBy(p => p.CreatedAt).Take(50).ToListAsync(ct);
 
+        // Caregivers see their children's (and whole-family) items, and no AI proposals: approving them is for parents.
+        var access = HttpContext.Access();
+        open = open.Where(t => access.SeesTagged(t.ChildIds)).ToList();
+        events = events.Where(e => access.SeesTagged(e.ChildIds)).ToList();
+        if (!access.IsParent)
+        {
+            pending.Clear();
+        }
+
         return new TodayDto(
             localToday.ToString("yyyy-MM-dd"),
             family.TimeZoneId,

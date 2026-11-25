@@ -1,12 +1,18 @@
 using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
+using Hally.Api.Features.Privacy;
 using Hally.Domain.Common;
 using Hally.Domain.Families;
+using Hally.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Hally.Api.Tests;
 
 public record RoleInvitationBody(Guid Id, string Token, string Url, string ShareText, string Role);
+public record AccessMemberBody(Guid UserId, string DisplayName, string Role, DateTimeOffset? AccessUntil, List<Guid> ChildIds, bool CanSeeHealth);
+public record ScopedFamilyBody(Guid Id, List<AccessMemberBody> Members, List<ChildBody> Children);
 
 [Collection(ApiCollection.Name)]
 public class RolesTests(HallyApiFactory api)
@@ -127,5 +133,83 @@ public class RolesTests(HallyApiFactory api)
         family.MemberOf(partner)!.Role.Should().Be(FamilyRole.Owner);
         family.Members.Where(m => caregivers.Contains(m.UserId)).Should().OnlyContain(m => m.Role == FamilyRole.Caregiver);
         family.IsLastParent(partner).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Caregiver_sees_only_the_children_they_look_after()
+    {
+        var parent = await api.SignInAsync(Email(), "Ayşe");
+        var family = (await (await parent.PostIdempotentAsync("/api/v1/families", new { name = "Yılmaz" })).Content.ReadFromJsonAsync<FamilyBody>())!;
+        var f = $"/api/v1/families/{family.Id}";
+        var ela = (await (await parent.PostIdempotentAsync($"{f}/children", new { firstName = "Ela" })).Content.ReadFromJsonAsync<ChildBody>())!;
+        var deniz = (await (await parent.PostIdempotentAsync($"{f}/children", new { firstName = "Deniz" })).Content.ReadFromJsonAsync<ChildBody>())!;
+        var until = api.Clock.GetUtcNow().AddDays(90);
+        var invite = (await (await parent.PostIdempotentAsync($"{f}/invitations",
+            new { role = "caregiver", childIds = new[] { ela.Id }, accessUntil = until })).Content.ReadFromJsonAsync<RoleInvitationBody>())!;
+        var caregiver = await api.SignInAsync(Email(), "Zeynep");
+        await caregiver.PostIdempotentAsync($"/api/v1/invitations/{invite.Token}/accept", null);
+
+        await parent.PostIdempotentAsync($"{f}/tasks", new { title = "Ela yüzme", childIds = new[] { ela.Id } });
+        await parent.PostIdempotentAsync($"{f}/tasks", new { title = "Deniz aşı", childIds = new[] { deniz.Id } });
+        await parent.PostIdempotentAsync($"{f}/tasks", new { title = "Market" });
+
+        var seen = (await caregiver.GetFromJsonAsync<ScopedFamilyBody>(f))!;
+        seen.Children.Select(c => c.FirstName).Should().Equal("Ela");
+        var me = seen.Members.Single(m => m.DisplayName == "Zeynep");
+        me.ChildIds.Should().Equal(ela.Id);
+        me.CanSeeHealth.Should().BeFalse();
+        me.AccessUntil.Should().BeCloseTo(until, TimeSpan.FromSeconds(1));
+
+        var tasks = (await caregiver.GetFromJsonAsync<List<TaskBody>>($"{f}/tasks"))!;
+        tasks.Select(t => t.Title).Should().BeEquivalentTo("Ela yüzme", "Market");
+        (await parent.GetFromJsonAsync<List<TaskBody>>($"{f}/tasks"))!.Should().HaveCount(3);
+        (await caregiver.PostIdempotentAsync($"{f}/children/{deniz.Id}/screen-time/start", null)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await caregiver.PostIdempotentAsync($"{f}/children/{ela.Id}/screen-time/start", null)).IsSuccessStatusCode.Should().BeTrue();
+        (await caregiver.GetFromJsonAsync<Dictionary<string, object>>($"{f}/screen-time"))!["children"].ToString().Should().NotContain(deniz.Id.ToString());
+
+        // Health stays closed until a parent opens it.
+        (await caregiver.GetAsync($"{f}/children/{ela.Id}/health")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        var userId = me.UserId;
+        var put = await parent.PutAsJsonAsync($"{f}/members/{userId}/access", new { accessUntil = (DateTimeOffset?)null, childIds = Array.Empty<Guid>(), canSeeHealth = true });
+        put.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await caregiver.GetAsync($"{f}/children/{ela.Id}/health")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await caregiver.GetAsync($"{f}/children/{deniz.Id}/health")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await caregiver.PutAsJsonAsync($"{f}/members/{userId}/access", new { canSeeHealth = true })).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await parent.PutAsJsonAsync($"{f}/members/{userId}/access", new { childIds = new[] { Guid.NewGuid() } })).StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+    }
+
+    [Fact]
+    public async Task Caregiver_access_ends_on_its_date_and_parents_can_remove_them()
+    {
+        var (parent, caregiver, family) = await FamilyWithCaregiverAsync();
+        var f = $"/api/v1/families/{family.Id}";
+        var userId = (await caregiver.GetFromJsonAsync<MeBody>("/api/v1/me"))!.Id;
+
+        using (var scope = api.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<HallyDbContext>();
+            var past = api.Clock.GetUtcNow().AddMinutes(-1);
+            await db.FamilyMembers.Where(m => m.FamilyId == family.Id && m.UserId == userId)
+                .ExecuteUpdateAsync(u => u.SetProperty(m => m.AccessUntil, past));
+        }
+
+        (await caregiver.GetAsync(f)).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await caregiver.GetFromJsonAsync<MeBody>("/api/v1/me"))!.Families.Should().BeEmpty();
+
+        using (var scope = api.Services.CreateScope())
+        {
+            (await scope.ServiceProvider.GetRequiredService<CaregiverExpiryJob>().RunAsync(CancellationToken.None)).Should().BeGreaterThan(0);
+        }
+
+        (await parent.GetFromJsonAsync<List<MemberBody>>($"{f}/members"))!.Should().ContainSingle();
+
+        // A parent removes a caregiver directly; parents cannot be removed this way.
+        var (parent2, caregiver2, family2) = await FamilyWithCaregiverAsync();
+        var parentId = (await parent2.GetFromJsonAsync<MeBody>("/api/v1/me"))!.Id;
+        var caregiverId = (await caregiver2.GetFromJsonAsync<MeBody>("/api/v1/me"))!.Id;
+        (await caregiver2.DeleteAsync($"/api/v1/families/{family2.Id}/members/{parentId}")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await parent2.DeleteAsync($"/api/v1/families/{family2.Id}/members/{parentId}")).StatusCode.Should().Be(HttpStatusCode.UnprocessableEntity);
+        (await parent2.DeleteAsync($"/api/v1/families/{family2.Id}/members/{caregiverId}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await caregiver2.GetAsync($"/api/v1/families/{family2.Id}")).StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 }

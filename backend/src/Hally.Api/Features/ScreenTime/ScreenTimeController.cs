@@ -39,12 +39,20 @@ public class ScreenTimeController(HallyDbContext db, ScreenTimeService screenTim
     /// <summary>Today's totals (family-local day) and running timers for every child.</summary>
     [CaregiverAllowed]
     [HttpGet("screen-time")]
-    public Task<ScreenTimeTodayDto> Today(Guid familyId, CancellationToken ct) => screenTime.TodayAsync(familyId, ct);
+    public async Task<ScreenTimeTodayDto> Today(Guid familyId, CancellationToken ct)
+    {
+        var dto = await screenTime.TodayAsync(familyId, ct);
+        return dto with { Children = dto.Children.Where(c => HttpContext.Access().SeesChild(c.ChildId)).ToList() };
+    }
 
     /// <summary>Daily totals for the week starting <paramref name="start"/> (default: this week's Monday).</summary>
     [CaregiverAllowed]
     [HttpGet("screen-time/week")]
-    public Task<ScreenTimeWeekDto> Week(Guid familyId, [FromQuery] DateOnly? start, CancellationToken ct) => screenTime.WeekAsync(familyId, start, ct);
+    public async Task<ScreenTimeWeekDto> Week(Guid familyId, [FromQuery] DateOnly? start, CancellationToken ct)
+    {
+        var dto = await screenTime.WeekAsync(familyId, start, ct);
+        return dto with { Children = dto.Children.Where(c => HttpContext.Access().SeesChild(c.ChildId)).ToList() };
+    }
 
     /// <summary>Starts the child's timer. Already running (for example the other parent just started it) is not an
     /// error: the current status comes back either way.</summary>
