@@ -1956,5 +1956,101 @@
       }
     }
   },
-  "balanceDraftGeneric": "Bu hafta biraz yüklendim, birkaç işi sen alabilir misin? 🙏"
+  "balanceDraftGeneric": "Bu hafta biraz yüklendim, birkaç işi sen alabilir misin? 🙏",
+  "handoffTitle": "Günü bitir",
+  "handoffIntro": "{name} için bugünün özeti. Hally gün içinde girdiklerinden hazırladı; kontrol et ve gönder.",
+  "@handoffIntro": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "handoffFood": "Yemek",
+  "handoffSleep": "Uyku",
+  "handoffMeds": "İlaç",
+  "handoffScreen": "Ekran süresi",
+  "handoffEdit": "Düzenle",
+  "handoffNothing": "Kaydedilmedi",
+  "handoffMeals": "{count} öğün",
+  "@handoffMeals": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "handoffBottle": "Biberon {ml} ml",
+  "@handoffBottle": {
+    "placeholders": {
+      "ml": {
+        "type": "int"
+      }
+    }
+  },
+  "handoffBreast": "Emzirme {minutes} dk",
+  "@handoffBreast": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "handoffDoses": "{count} doz",
+  "@handoffDoses": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "handoffIncidentQuestion": "Olay var mı?",
+  "handoffIncidentNone": "Yok",
+  "handoffIncidentFall": "Küçük düşme",
+  "handoffIncidentFever": "Ateş",
+  "handoffIncidentOther": "Diğer",
+  "handoffNote": "Not (isteğe bağlı)",
+  "handoffNoteHint": "Gün nasıl geçti?",
+  "handoffPhoto": "Fotoğraf ekle",
+  "handoffPhotoChange": "Fotoğrafı değiştir",
+  "handoffSend": "Raporu ebeveynlere gönder",
+  "handoffResend": "Raporu güncelle",
+  "handoffSentSnack": "Rapor gönderildi",
+  "handoffSentAt": "Gönderildi · {time}",
+  "@handoffSentAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "handoffCardBody": "{name} için akşam raporunu tek dokunuşla gönder.",
+  "@handoffCardBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "handoffCardDone": "{name} · rapor gönderildi",
+  "@handoffCardDone": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "handoffFinished": "{name} günü bitirdi",
+  "@handoffFinished": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "handoffThanks": "Teşekkürler 💛",
+  "handoffWrite": "Mesaj yaz",
+  "handoffThanked": "Teşekkür edildi 💛",
+  "handoffHistory": "Bakıcı raporları",
+  "handoffHistoryEmpty": "Henüz bakıcı raporu yok."
 }
