@@ -2,15 +2,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
 import '../capture/capture_models.dart';
+import 'briefing.dart';
 
 class ChatEntry {
-  const ChatEntry({required this.id, required this.fromUser, required this.text, this.proposals = const [], this.fallback = false});
+  const ChatEntry({required this.id, required this.fromUser, required this.text, this.proposals = const [], this.fallback = false, this.briefing});
 
   final String id;
   final bool fromUser;
   final String text;
   final List<Proposal> proposals;
   final bool fallback;
+
+  /// "Bugün ne var?": the day as lines, read aloud with the phone's voice.
+  final Briefing? briefing;
 }
 
 class AssistantReply {
@@ -32,9 +36,9 @@ class ApiAssistantRepository implements AssistantRepository {
   @override
   Future<AssistantReply> send(String familyId, String text, {String? conversationId}) async {
     try {
-      final d = (await _api.dio.post<Map<String, dynamic>>('/api/v1/families/$familyId/assistant/messages',
-              data: {'conversationId': conversationId, 'text': text}))
-          .data!;
+      final d =
+          (await _api.dio.post<Map<String, dynamic>>('/api/v1/families/$familyId/assistant/messages', data: {'conversationId': conversationId, 'text': text}))
+              .data!;
       final r = d['reply'] as Map<String, dynamic>;
       return AssistantReply(
         conversationId: d['conversationId'] as String,

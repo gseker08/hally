@@ -150,6 +150,9 @@ public enum NotificationKind
 
     /// <summary>A child asks to turn cherries into pocket money ("Harçlığa çevir").</summary>
     AllowanceRequest,
+
+    /// <summary>The daily "Sabah özeti" at the time the user chose; opens the spoken summary.</summary>
+    MorningBriefing,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

@@ -1503,6 +1503,14 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("access_until");
 
+                    b.Property<DateOnly?>("BriefingSentOn")
+                        .HasColumnType("date")
+                        .HasColumnName("briefing_sent_on");
+
+                    b.Property<TimeOnly?>("BriefingTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("briefing_time");
+
                     b.Property<bool>("CanSeeHealth")
                         .HasColumnType("boolean")
                         .HasColumnName("can_see_health");

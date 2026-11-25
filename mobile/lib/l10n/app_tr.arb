@@ -2552,5 +2552,25 @@
   "allowanceStatusPaid": "Ödendi",
   "allowanceStatusDeclined": "Şimdi değil",
   "allowanceDisclaimer": "Hally para tutmaz ve ödeme yapmaz; sadece ne kadar verdiğinizi takip eder.",
-  "allowancePhoneTileBody": "Kiraz değeri, haftalık harçlık ve birikim hedefi"
+  "allowancePhoneTileBody": "Kiraz değeri, haftalık harçlık ve birikim hedefi",
+  "briefingStarter": "Bugün ne var?",
+  "briefingError": "Günün özetini şu an alamadım. Biraz sonra tekrar dener misin?",
+  "briefingStop": "Durdur",
+  "briefingAgain": "Tekrar oku",
+  "briefingShorter": "Daha kısa",
+  "briefingMorningTitle": "Sabah özeti",
+  "briefingMorningBody": "Seçtiğin saatte bir bildirim gelir; dokununca Hally günü sesli okur. Yapay zekâ kullanılmaz.",
+  "briefingMorningSwitch": "Her sabah bildir",
+  "briefingMorningTime": "Saat",
+  "briefingMorningWindow": "05:00 ile 11:30 arasında bir saat seç.",
+  "briefingMorningSave": "Kaydet",
+  "briefingMorningOnDone": "Her sabah {time}'da günün özeti gelecek.",
+  "@briefingMorningOnDone": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "briefingMorningOffDone": "Sabah özeti kapalı."
 }

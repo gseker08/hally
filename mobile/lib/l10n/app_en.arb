@@ -1114,5 +1114,18 @@
   "allowanceStatusPaid": "Paid",
   "allowanceStatusDeclined": "Not now",
   "allowanceDisclaimer": "Hally doesn't hold money or make payments; it only keeps track of what you gave.",
-  "allowancePhoneTileBody": "Cherry value, weekly allowance and savings goal"
+  "allowancePhoneTileBody": "Cherry value, weekly allowance and savings goal",
+  "briefingStarter": "What's on today?",
+  "briefingError": "I couldn't get the day's summary right now. Try again in a moment?",
+  "briefingStop": "Stop",
+  "briefingAgain": "Read again",
+  "briefingShorter": "Shorter",
+  "briefingMorningTitle": "Morning summary",
+  "briefingMorningBody": "A notification comes at the time you choose; tap it and Hally reads the day aloud. No AI is used.",
+  "briefingMorningSwitch": "Notify me every morning",
+  "briefingMorningTime": "Time",
+  "briefingMorningWindow": "Pick a time between 05:00 and 11:30.",
+  "briefingMorningSave": "Save",
+  "briefingMorningOnDone": "Your summary will arrive every morning at {time}.",
+  "briefingMorningOffDone": "Morning summary is off."
 }

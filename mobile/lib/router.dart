@@ -172,7 +172,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/plan', builder: (_, __) => const PlanScreen()),
-      GoRoute(path: '/assistant', builder: (_, s) => AssistantScreen(startVoice: s.uri.queryParameters['voice'] == '1')),
+      GoRoute(
+          path: '/assistant',
+          builder: (_, s) => AssistantScreen(startVoice: s.uri.queryParameters['voice'] == '1', startBriefing: s.uri.queryParameters['briefing'] == '1')),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
       GoRoute(path: '/privacy', builder: (_, __) => const PrivacyScreen()),
       StatefulShellRoute.indexedStack(

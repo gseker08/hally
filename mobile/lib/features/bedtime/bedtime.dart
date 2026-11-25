@@ -135,12 +135,16 @@ abstract interface class StorySpeaker {
 }
 
 class TtsStorySpeaker implements StorySpeaker {
+  TtsStorySpeaker({this.rate = 0.42});
+
+  /// Slow and calm for a bedtime story; the morning summary reads a little faster.
+  final double rate;
   final _tts = FlutterTts();
 
   @override
   Future<void> speak(String text, {required String language, required void Function() onDone}) async {
     await _tts.setLanguage(language == 'en' ? 'en-US' : 'tr-TR');
-    await _tts.setSpeechRate(0.42);
+    await _tts.setSpeechRate(rate);
     await _tts.setPitch(1.0);
     _tts.setCompletionHandler(onDone);
     await _tts.speak(text);

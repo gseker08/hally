@@ -212,6 +212,43 @@ public class FamilyMember : Entity
     }
 
     internal void Promote() => Role = FamilyRole.Owner;
+
+    /// <summary>"Sabah özeti": a family-local time for a daily notification that opens the spoken summary; null is off.</summary>
+    public TimeOnly? BriefingTime { get; private set; }
+
+    /// <summary>The family-local day the morning summary was last sent, so it goes once a day.</summary>
+    public DateOnly? BriefingSentOn { get; private set; }
+
+    /// <summary>Mornings only (05:00-11:30), so the 30-minute send window never crosses midnight.</summary>
+    public void SetBriefingTime(TimeOnly? time)
+    {
+        if (time is { } t && (t < new TimeOnly(5, 0) || t > new TimeOnly(11, 30)))
+        {
+            throw new DomainException("briefing.time_invalid", "The morning summary time must be 05:00-11:30.");
+        }
+
+        BriefingTime = time is { } v ? new TimeOnly(v.Hour, v.Minute) : null;
+    }
+
+    /// <summary>True when the summary is due at <paramref name="local"/> and was not sent today; marks it sent.</summary>
+    public bool TakeBriefing(DateTime local)
+    {
+        if (BriefingTime is not { } at)
+        {
+            return false;
+        }
+
+        var day = DateOnly.FromDateTime(local);
+        var time = TimeOnly.FromDateTime(local);
+        // A 30-minute window, so a late job run still sends it but a time set for later today doesn't fire at once.
+        if (BriefingSentOn == day || time < at || time >= at.AddMinutes(30))
+        {
+            return false;
+        }
+
+        BriefingSentOn = day;
+        return true;
+    }
 }
 
 /// <summary>What a caregiver can reach: until when, which children (empty = all), and whether the health card.</summary>
