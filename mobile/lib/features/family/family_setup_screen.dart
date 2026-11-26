@@ -10,6 +10,7 @@ import '../../l10n/gen/app_localizations.dart';
 import '../capture/capture_repository.dart';
 import '../demo/demo_repository.dart';
 import 'family_repository.dart';
+import '../../core/locale/app_language.dart';
 
 /// IANA zones offered at setup, launch markets first.
 const supportedTimeZones = [
@@ -74,7 +75,7 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final defaultZone = Localizations.localeOf(context).languageCode == 'tr' ? 'Europe/Istanbul' : 'Europe/London';
+    final defaultZone = defaultTimeZoneFor(Localizations.localeOf(context).languageCode);
     final zone = _timeZone ?? defaultZone;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.familySetupTitle)),

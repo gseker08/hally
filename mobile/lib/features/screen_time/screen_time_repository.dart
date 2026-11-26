@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api/api_client.dart';
 import '../messages/chat_realtime.dart';
+import '../../core/locale/units.dart';
 
 /// One child's screen time today as the server reported it at [receivedAt] (this phone's clock).
 ///
@@ -213,7 +214,7 @@ final screenTimeProvider =
 final screenTimeWeekProvider = FutureProvider.autoDispose.family<ScreenTimeWeek, String>((ref, familyId) => ref.watch(screenTimeRepositoryProvider).week(familyId));
 
 /// "1 sa 05 dk" / "1 h 05 min"; under an hour "12 dk"; with [withSeconds] "12:07" style for a running clock.
-String formatScreenDuration(int seconds, {required bool turkish, bool withSeconds = false}) {
+String formatScreenDuration(int seconds, {required String lang, bool withSeconds = false}) {
   final h = seconds ~/ 3600;
   final m = (seconds % 3600) ~/ 60;
   final s = seconds % 60;
@@ -222,8 +223,8 @@ String formatScreenDuration(int seconds, {required bool turkish, bool withSecond
     final ss = s.toString().padLeft(2, '0');
     return h > 0 ? '$h:$mm:$ss' : '$mm:$ss';
   }
-  final hu = turkish ? 'sa' : 'h';
-  final mu = turkish ? 'dk' : 'min';
+  final hu = durationUnits(lang).h;
+  final mu = durationUnits(lang).min;
   if (h == 0) return '$m $mu';
   if (m == 0) return '$h $hu';
   return '$h $hu ${m.toString().padLeft(2, '0')} $mu';

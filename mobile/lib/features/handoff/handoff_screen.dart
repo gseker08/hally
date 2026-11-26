@@ -11,23 +11,24 @@ import '../family/children.dart';
 import '../messages/chat_photo.dart';
 import '../sleep/sleep_screen.dart' show formatSleepMinutes;
 import 'handoff_repository.dart';
+import '../../core/locale/units.dart';
 
 /// One line per part of the summary, e.g. "2 öğün · Çorba · Biberon 150 ml". Null when nothing was logged.
 ({String? food, String? sleep, String? meds, String? screen}) handoffLines(BuildContext context, HandoffSummary s) {
   final l10n = AppLocalizations.of(context);
-  final tr = Localizations.localeOf(context).languageCode == 'tr';
+  final lang = langOf(context);
   final food = [
     if (s.solids > 0) l10n.handoffMeals(s.solids),
     if (s.foods.isNotEmpty) s.foods.join(', '),
     if (s.bottleMl > 0) l10n.handoffBottle(s.bottleMl),
     if (s.breastMinutes > 0) l10n.handoffBreast(s.breastMinutes),
   ].join(' · ');
-  final sleep = s.sleeps.isEmpty ? null : '${s.sleeps.join(', ')} (${formatSleepMinutes(s.sleepMinutes, turkish: tr)})';
+  final sleep = s.sleeps.isEmpty ? null : '${s.sleeps.join(', ')} (${formatSleepMinutes(s.sleepMinutes, lang: lang)})';
   return (
     food: food.isEmpty ? null : food,
     sleep: sleep,
     meds: s.doses.isEmpty ? null : s.doses.join('\n'),
-    screen: s.screenMinutes == 0 ? null : formatSleepMinutes(s.screenMinutes, turkish: tr),
+    screen: s.screenMinutes == 0 ? null : formatSleepMinutes(s.screenMinutes, lang: lang),
   );
 }
 

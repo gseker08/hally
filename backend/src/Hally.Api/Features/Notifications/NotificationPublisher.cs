@@ -1,4 +1,5 @@
 using Hally.Domain.Notifications;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -82,7 +83,7 @@ public static class NotificationTexts
 {
     public static (string Title, string Body) Reminder(string locale, string title, DateTimeOffset? at, bool allDay, DateTimeOffset localNow)
     {
-        var tr = locale != "en";
+        var tr = Locales.IsTurkish(locale);
         if (at is not { } when)
         {
             return (title, tr ? "Bu görev hâlâ açık." : "This task is still open.");
@@ -98,7 +99,7 @@ public static class NotificationTexts
 
     public static (string Title, string Body) EveningPrep(string locale, int taskCount, int eventCount, IReadOnlyList<string> highlights)
     {
-        var tr = locale != "en";
+        var tr = Locales.IsTurkish(locale);
         var counts = tr
             ? string.Join(", ", new[] { eventCount > 0 ? $"{eventCount} etkinlik" : null, taskCount > 0 ? $"{taskCount} görev" : null }.OfType<string>())
             : string.Join(", ", new[] { eventCount > 0 ? $"{eventCount} event{(eventCount > 1 ? "s" : "")}" : null, taskCount > 0 ? $"{taskCount} task{(taskCount > 1 ? "s" : "")}" : null }.OfType<string>());

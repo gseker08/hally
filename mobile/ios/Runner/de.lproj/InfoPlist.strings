@@ -1,0 +1,5 @@
+/* Berechtigungstexte, die iOS auf Deutsch zeigt. */
+"NSCameraUsageDescription" = "Hally nutzt die Kamera, um einen Elternbrief oder ein Dokument zu fotografieren und zu deinem Plan hinzuzufügen.";
+"NSPhotoLibraryUsageDescription" = "Hally fügt den Screenshot oder das Foto, das du auswählst, zu deinem Plan hinzu.";
+"NSMicrophoneUsageDescription" = "Hally nutzt das Mikrofon nur, während du auf die Mikrofon-Taste tippst, damit du per Sprache fragen oder etwas hinzufügen kannst.";
+"NSSpeechRecognitionUsageDescription" = "Hally nutzt die Spracherkennung des iPhones, um das Gesagte für Hally in Text umzuwandeln.";

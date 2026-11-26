@@ -7,6 +7,7 @@ using Hally.Api.Features.Proposals;
 using Hally.Domain.Capture;
 using Hally.Domain.Common;
 using Hally.Domain.Families;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Ai;
 
 namespace Hally.Api.Features.Captures;
@@ -136,7 +137,7 @@ public partial class ExtractionService(IVisionModel model)
             : [];
         if (materials.Count > 0)
         {
-            var label = family.Locale == "en" ? "Needed" : "Gerekenler";
+            var label = !Locales.IsTurkish(family.Locale) ? "Needed" : "Gerekenler";
             notes = string.Join("\n", new[] { notes, $"{label}: {string.Join(", ", materials)}" }.Where(x => !string.IsNullOrWhiteSpace(x)));
         }
 
@@ -180,7 +181,7 @@ public partial class ExtractionService(IVisionModel model)
         sb.AppendLine($"- Today is {f.Today:yyyy-MM-dd} ({f.Today.DayOfWeek}) in time zone {f.TimeZoneId}. Put your best ISO reading of dateText in date.");
         sb.AppendLine("- kind is \"event\" for something that happens at a time (meeting, trip, show), \"task\" for something to do or bring.");
         sb.AppendLine("- Put things to bring or buy in materials. Copy the sentence you used into sourceQuote.");
-        sb.AppendLine($"- Write titles in the content's language; if unclear use {(f.Locale == "en" ? "English" : "Turkish")}. Keep titles short and actionable.");
+        sb.AppendLine($"- Write titles in the content's language; if unclear use {(!Locales.IsTurkish(f.Locale) ? "English" : "Turkish")}. Keep titles short and actionable.");
         if (f.Children.Count > 0)
         {
             sb.AppendLine($"- The family's children: {string.Join(", ", f.Children.Select(c => c.FirstName))}. Set childName only if the content names one or more of them; separate several names with commas.");

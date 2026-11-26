@@ -16,6 +16,7 @@ import '../exams/exam_screens.dart' show examCountdown;
 import '../exams/exams.dart';
 import '../school/school.dart';
 import '../profile/profile_screen.dart';
+import '../../core/locale/units.dart';
 
 /// The child picked on the Kids tab. Null means "the first child".
 final kidsSelectedProvider = StateProvider<String?>((ref) => null);
@@ -199,8 +200,8 @@ class _ChildDayState extends ConsumerState<_ChildDay> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final tr = Localizations.localeOf(context).languageCode == 'tr';
-    String dur(int m) => formatSleepMinutes(m, turkish: tr);
+    final lang = langOf(context);
+    String dur(int m) => formatSleepMinutes(m, lang: lang);
     final c = widget.child;
     final day = insightsDay(widget.now);
     final data = ref.watch(childInsightsProvider((widget.familyId, c.id, day, day))).valueOrNull;

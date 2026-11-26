@@ -9,6 +9,7 @@ using Hally.Domain.Families;
 using Hally.Domain.Feeding;
 using Hally.Domain.Notifications;
 using Hally.Domain.Sleep;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Hally.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authorization;
@@ -282,7 +283,7 @@ public class HandoffController(
             var added = false;
             foreach (var r in locales)
             {
-                var (title, body) = await text(r.Locale != "en", r.Id);
+                var (title, body) = await text(Locales.IsTurkish(r.Locale), r.Id);
                 added |= await publisher.AddAsync(r.Id, familyId, kind, title, body, null, report.Id, $"{dedup}:{r.Id:N}", ct);
             }
 

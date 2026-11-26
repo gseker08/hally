@@ -10,6 +10,7 @@ using Hally.Domain.Families;
 using Hally.Domain.Habits;
 using Hally.Domain.Notifications;
 using Hally.Domain.Points;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -446,7 +447,7 @@ public class ChildModeService(
             var added = false;
             foreach (var p in parents)
             {
-                var (title, body) = text(p.Locale != "en", name);
+                var (title, body) = text(Locales.IsTurkish(p.Locale), name);
                 added |= await publisher.AddAsync(p.Id, familyId, kind, title, body, null, childId, $"{dedup}:{p.Id:N}", ct);
             }
 

@@ -10,7 +10,8 @@ import '../auth/token_storage.dart';
 enum AppLanguage {
   system(null),
   tr('tr'),
-  en('en');
+  en('en'),
+  de('de');
 
   const AppLanguage(this.code);
 
@@ -23,11 +24,25 @@ enum AppLanguage {
       AppLanguage.values.firstWhere((l) => l.code != null && l.code == code, orElse: () => AppLanguage.system);
 }
 
-const supportedLanguageCodes = ['tr', 'en'];
+const supportedLanguageCodes = ['tr', 'en', 'de'];
 
-/// Picks a supported language for a device locale. Turkish is the default (Türkiye is the launch market).
+/// Picks a supported language for a device locale. A phone in a language Hally does not speak gets English.
 Locale resolveDeviceLocale(Locale? device) =>
-    supportedLanguageCodes.contains(device?.languageCode) ? Locale(device!.languageCode) : const Locale('tr');
+    supportedLanguageCodes.contains(device?.languageCode) ? Locale(device!.languageCode) : const Locale('en');
+
+/// The speech recognizer / text-to-speech locale for an app language, e.g. tr_TR.
+String speechLocaleFor(String languageCode) => switch (languageCode) {
+      'tr' => 'tr_TR',
+      'de' => 'de_DE',
+      _ => 'en_US',
+    };
+
+/// The time zone suggested when a family is created; the user can change it there.
+String defaultTimeZoneFor(String languageCode) => switch (languageCode) {
+      'tr' => 'Europe/Istanbul',
+      'de' => 'Europe/Berlin',
+      _ => 'Europe/London',
+    };
 
 /// Where the choice is kept between launches. It sits next to the tokens in the platform keystore,
 /// so no extra plugin is needed.

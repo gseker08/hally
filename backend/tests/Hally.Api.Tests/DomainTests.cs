@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Hally.Domain.Common;
 using Hally.Domain.Families;
+using Hally.Domain.Users;
 
 namespace Hally.Api.Tests;
 
@@ -90,5 +91,19 @@ public class DomainTests
         var family = new Family("Aile", "Europe/Istanbul", Guid.NewGuid());
         var act = () => family.AddChild(name, null);
         act.Should().Throw<DomainException>();
+    }
+
+    [Theory]
+    [InlineData(null, "tr")]
+    [InlineData("", "tr")]
+    [InlineData("tr-TR", "tr")]
+    [InlineData("en-GB", "en")]
+    [InlineData("de", "de")]
+    [InlineData("DE-at", "de")]
+    [InlineData("fr", "en")]
+    public void Locales_keep_supported_languages_and_send_the_rest_to_English(string? input, string expected)
+    {
+        Locales.Normalize(input).Should().Be(expected);
+        Locales.IsTurkish(input).Should().Be(expected == "tr");
     }
 }

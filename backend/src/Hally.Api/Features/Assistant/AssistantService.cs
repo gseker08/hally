@@ -9,6 +9,7 @@ using Hally.Domain.Assistant;
 using Hally.Domain.Capture;
 using Hally.Domain.Common;
 using Hally.Domain.Planning;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Ai;
 using Hally.Infrastructure.Analytics;
 using Hally.Infrastructure.Persistence;
@@ -80,7 +81,7 @@ public class AssistantService(HallyDbContext db, IChatModel model, IAnalytics an
 
             if (reply.Length == 0)
             {
-                reply = ctx.Locale == "en" ? "Sorry, I couldn't put an answer together. Could you ask again?" : "Kusura bakma, bir yanıt toparlayamadım. Tekrar sorar mısın?";
+                reply = !Locales.IsTurkish(ctx.Locale) ? "Sorry, I couldn't put an answer together. Could you ask again?" : "Kusura bakma, bir yanıt toparlayamadım. Tekrar sorar mısın?";
             }
         }
         catch (AiUnavailableException ex)
@@ -114,7 +115,7 @@ public class AssistantService(HallyDbContext db, IChatModel model, IAnalytics an
     {
         var sb = new StringBuilder();
         sb.AppendLine("You are Hally, a family logistics assistant. Be warm, brief and practical: 1-4 short sentences or a short list.");
-        sb.AppendLine($"Reply in the user's language; default to {(f.Locale == "en" ? "English" : "Turkish")}.");
+        sb.AppendLine($"Reply in the user's language; default to {(!Locales.IsTurkish(f.Locale) ? "English" : "Turkish")}.");
         sb.AppendLine($"Today is {f.Today:yyyy-MM-dd} ({f.Today.DayOfWeek}) in {f.TimeZoneId}. Dates in tools are family-local yyyy-MM-dd.");
         sb.AppendLine($"The family has {adults} adult(s) and {f.Children.Count} child(ren).");
         sb.AppendLine("Rules:");
@@ -305,7 +306,7 @@ public class AssistantFallback(HallyDbContext db, Guid familyId, FamilyContext c
 {
     public async Task<string> AnswerAsync(string text, CancellationToken ct)
     {
-        var en = ctx.Locale == "en";
+        var en = !Locales.IsTurkish(ctx.Locale);
         var lower = text.ToLower(CultureInfo.GetCultureInfo("tr-TR"));
         if (LooksLikeAddRequest(lower))
         {

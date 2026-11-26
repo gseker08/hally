@@ -4,6 +4,7 @@ using Hally.Api.Features.Messages;
 using Hally.Api.Features.Notifications;
 using Hally.Domain.Common;
 using Hally.Domain.Duties;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -247,7 +248,7 @@ public class DutiesController(
 
 public static class DutyTexts
 {
-    public static (string Title, string Body) Done(string locale, DutyKind kind, string who) => (locale != "en", kind) switch
+    public static (string Title, string Body) Done(string locale, DutyKind kind, string who) => (Locales.IsTurkish(locale), kind) switch
     {
         (true, DutyKind.DropOff) => ("Okula bırakıldı", $"{who} çocukları okula bıraktı."),
         (true, _) => ("Okuldan alındı", $"{who} çocukları okuldan aldı."),

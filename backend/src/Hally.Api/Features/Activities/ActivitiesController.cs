@@ -4,6 +4,7 @@ using Hally.Api.Features.ChildMode;
 using Hally.Domain.Activities;
 using Hally.Domain.ChildMode;
 using Hally.Domain.Common;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +45,7 @@ public class ChildActivitiesController(HallyDbContext db, ChildModeService child
     public async Task<ChildActivitiesDto> Get([FromQuery] string? lang, CancellationToken ct)
     {
         var (familyId, childId) = (User.ChildFamilyId(), User.ChildId());
-        var turkish = lang is null || !lang.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+        var turkish = Locales.IsTurkish(lang);
         var family = await db.Families.AsNoTracking().FirstAsync(f => f.Id == familyId, ct);
         var child = await db.Children.AsNoTracking().FirstAsync(c => c.Id == childId, ct);
         var today = FamilyTimeZone.LocalDate(clock.GetUtcNow(), family.TimeZoneId);
@@ -90,7 +91,7 @@ public class ChildActivitiesController(HallyDbContext db, ChildModeService child
     [HttpPost("{activityId:guid}/done")]
     public async Task<ChildActivitiesDto> Done(Guid activityId, [FromQuery] string? lang, CancellationToken ct)
     {
-        var turkish = lang is null || !lang.StartsWith("en", StringComparison.OrdinalIgnoreCase);
+        var turkish = Locales.IsTurkish(lang);
         await childMode.MarkDoneAsync(User.ChildFamilyId(), User.ChildId(), ClaimKind.Activity, activityId, ct, turkish);
         return await Get(lang, ct);
     }

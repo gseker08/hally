@@ -12,8 +12,8 @@ import '../../l10n/gen/app_localizations.dart';
 import '../family/children.dart';
 import '../family/family_repository.dart';
 import 'screen_time_repository.dart';
+import '../../core/locale/units.dart';
 
-bool _turkish(BuildContext context) => Localizations.localeOf(context).languageCode != 'en';
 
 /// Rebuilds every second while [running] so a running timer counts up on screen.
 class _Ticker extends StatefulWidget {
@@ -134,10 +134,10 @@ class _ScreenTimeRowState extends ConsumerState<ScreenTimeRow> {
         final seconds = status?.secondsAt(now) ?? 0;
         final progress = status?.progressAt(now);
         final over = progress != null && progress >= 1;
-        final tr = _turkish(context);
-        final time = formatScreenDuration(seconds, turkish: tr, withSeconds: running);
+        final lang = langOf(context);
+        final time = formatScreenDuration(seconds, lang: lang, withSeconds: running);
         final goal = status?.dailyGoalMinutes;
-        final line = goal == null ? l10n.screenTimeToday(time) : l10n.screenTimeOfGoal(time, formatScreenDuration(goal * 60, turkish: tr));
+        final line = goal == null ? l10n.screenTimeToday(time) : l10n.screenTimeOfGoal(time, formatScreenDuration(goal * 60, lang: lang));
         final by = running && status?.startedByName != null && status?.startedByUserId != me ? l10n.screenTimeStartedBy(status!.startedByName!) : null;
         return Padding(
           padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.xs, HallySpace.md, HallySpace.xs),
@@ -266,7 +266,7 @@ class _ChildActions extends ConsumerWidget {
             key: Key('screenTime.goal.${child.id}'),
             onPressed: () => _showGoalSheet(context, ref, familyId, child, goal),
             icon: const Icon(Icons.flag_outlined),
-            label: Text(goal == null ? l10n.screenTimeSetGoal : '${l10n.screenTimeGoal}: ${formatScreenDuration(goal * 60, turkish: _turkish(context))}'),
+            label: Text(goal == null ? l10n.screenTimeSetGoal : '${l10n.screenTimeGoal}: ${formatScreenDuration(goal * 60, lang: langOf(context))}'),
           ),
           TextButton.icon(
             key: Key('screenTime.add.${child.id}'),
@@ -285,7 +285,7 @@ const _addChoices = [15, 30, 45, 60, 90, 120];
 
 Future<void> _showGoalSheet(BuildContext context, WidgetRef ref, String familyId, ChildProfile child, int? current) async {
   final l10n = AppLocalizations.of(context);
-  final tr = _turkish(context);
+  final lang = langOf(context);
   final picked = await showModalBottomSheet<int>(
     context: context,
     useRootNavigator: true,
@@ -307,7 +307,7 @@ Future<void> _showGoalSheet(BuildContext context, WidgetRef ref, String familyId
                 for (final m in _goalChoices)
                   ChoiceChip(
                     key: Key('screenTime.goal.$m'),
-                    label: Text(formatScreenDuration(m * 60, turkish: tr)),
+                    label: Text(formatScreenDuration(m * 60, lang: lang)),
                     selected: current == m,
                     onSelected: (_) => Navigator.pop(context, m),
                   ),
@@ -328,7 +328,7 @@ Future<void> _showGoalSheet(BuildContext context, WidgetRef ref, String familyId
 
 Future<void> _showAddSheet(BuildContext context, WidgetRef ref, String familyId, ChildProfile child) async {
   final l10n = AppLocalizations.of(context);
-  final tr = _turkish(context);
+  final lang = langOf(context);
   final picked = await showModalBottomSheet<int>(
     context: context,
     useRootNavigator: true,
@@ -349,7 +349,7 @@ Future<void> _showAddSheet(BuildContext context, WidgetRef ref, String familyId,
               runSpacing: HallySpace.sm,
               children: [
                 for (final m in _addChoices)
-                  ActionChip(key: Key('screenTime.add.$m'), label: Text('+${formatScreenDuration(m * 60, turkish: tr)}'), onPressed: () => Navigator.pop(context, m)),
+                  ActionChip(key: Key('screenTime.add.$m'), label: Text('+${formatScreenDuration(m * 60, lang: lang)}'), onPressed: () => Navigator.pop(context, m)),
               ],
             ),
           ],
@@ -377,7 +377,7 @@ class _WeekBars extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final tr = _turkish(context);
+    final lang = langOf(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final goalSeconds = week.dailyGoalMinutes == null ? null : week.dailyGoalMinutes! * 60;
     final maxValue = [...week.dailySeconds, goalSeconds ?? 0, 60 * 30].reduce((a, b) => a > b ? a : b).toDouble();
@@ -389,7 +389,7 @@ class _WeekBars extends StatelessWidget {
         children: [
           Text(l10n.screenTimeWeek, style: theme.textTheme.labelLarge),
           Text(
-            l10n.screenTimeWeekSummary(formatScreenDuration(week.totalSeconds, turkish: tr), formatScreenDuration(week.averageSeconds, turkish: tr)),
+            l10n.screenTimeWeekSummary(formatScreenDuration(week.totalSeconds, lang: lang), formatScreenDuration(week.averageSeconds, lang: lang)),
             key: Key('screenTime.week.${week.childId}'),
             style: theme.textTheme.bodySmall,
           ),
@@ -413,7 +413,7 @@ class _WeekBars extends StatelessWidget {
                     for (final s in week.dailySeconds)
                       Expanded(
                         child: Tooltip(
-                          message: formatScreenDuration(s, turkish: tr),
+                          message: formatScreenDuration(s, lang: lang),
                           child: Container(
                             margin: const EdgeInsets.symmetric(horizontal: 6),
                             height: s == 0 ? 2 : (height * s / maxValue).clamp(4, height).toDouble(),

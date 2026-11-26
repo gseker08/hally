@@ -6,6 +6,7 @@ using Hally.Domain.Families;
 using Hally.Domain.Goals;
 using Hally.Domain.Notifications;
 using Hally.Domain.Points;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -190,7 +191,7 @@ public class FamilyGoalService(HallyDbContext db, NotificationPublisher publishe
                 .Join(db.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => new { u.Id, u.Locale }).ToListAsync(ct);
             foreach (var p in parents)
             {
-                var tr = p.Locale != "en";
+                var tr = Locales.IsTurkish(p.Locale);
                 await publisher.AddAsync(p.Id, goal.FamilyId, NotificationKind.FamilyGoalReached,
                     tr ? "🎉 Aile görevi tamam!" : "🎉 Family goal reached!",
                     tr ? $"{total} kiraz toplandı: {goal.RewardEmoji} {goal.RewardTitle}" : $"{total} cherries together: {goal.RewardEmoji} {goal.RewardTitle}",

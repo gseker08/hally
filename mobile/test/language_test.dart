@@ -58,11 +58,20 @@ class _Shell extends ConsumerWidget {
 }
 
 void main() {
-  test('device languages resolve to Turkish unless they are English', () {
+  test('supported device languages are used, the rest get English', () {
     expect(resolveDeviceLocale(const Locale('en', 'GB')), const Locale('en'));
     expect(resolveDeviceLocale(const Locale('tr', 'TR')), const Locale('tr'));
-    expect(resolveDeviceLocale(const Locale('de')), const Locale('tr'));
-    expect(resolveDeviceLocale(null), const Locale('tr'));
+    expect(resolveDeviceLocale(const Locale('de', 'AT')), const Locale('de'));
+    expect(resolveDeviceLocale(const Locale('xx')), const Locale('en'));
+    expect(resolveDeviceLocale(null), const Locale('en'));
+  });
+
+  test('every supported language has a picker entry, a speech locale and translations', () {
+    for (final code in supportedLanguageCodes) {
+      expect(AppLanguage.fromCode(code).code, code);
+      expect(speechLocaleFor(code), startsWith('${code}_'));
+      expect(lookupAppLocalizations(Locale(code)).localeName, code);
+    }
   });
 
   test('stored codes map back to a choice, unknown ones follow the phone', () {
@@ -111,5 +120,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Dil'), findsOneWidget);
     expect(storage.stored, AppLanguage.system);
+
+    // German, picked by its own name.
+    await tester.tap(find.byKey(const Key('open')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('language.de')));
+    await tester.pumpAndSettle();
+    expect(find.text('Sprache'), findsOneWidget);
+    expect(storage.stored, AppLanguage.de);
   });
 }

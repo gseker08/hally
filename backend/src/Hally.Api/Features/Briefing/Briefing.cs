@@ -10,6 +10,7 @@ using Hally.Domain.Duties;
 using Hally.Domain.Families;
 using Hally.Domain.Notifications;
 using Hally.Domain.Planning;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -189,7 +190,7 @@ public class BriefingService(HallyDbContext db, IWeatherService weather, Medicat
         {
             try
             {
-                var turkish = await db.Users.AsNoTracking().Where(u => u.Id == m.UserId).Select(u => u.Locale).FirstAsync(ct) != "en";
+                var turkish = Locales.IsTurkish(await db.Users.AsNoTracking().Where(u => u.Id == m.UserId).Select(u => u.Locale).FirstAsync(ct));
                 var brief = await BuildAsync(m.FamilyId, m.UserId, false, turkish, m.IsParent ? null : new FamilyAccessInfo(m.Role, m.ChildIds.Count == 0 ? null : m.ChildIds.ToHashSet(), m.CanSeeHealth), ct);
                 var body = string.Join(" · ", brief.Lines.Where(l => l.Kind != "Weather").Take(2).Select(l => $"{l.Emoji} {l.Text}"));
                 await publisher.AddAsync(m.UserId, m.FamilyId, NotificationKind.MorningBriefing, turkish ? "☀️ Günaydın! Bugünün özeti" : "☀️ Good morning! Today's summary",
@@ -225,7 +226,7 @@ public class BriefingController(HallyDbContext db, BriefingService briefing) : C
     public Task<BriefingDto> Get(Guid familyId, [FromQuery] string? day, [FromQuery] string? lang, CancellationToken ct)
     {
         var access = HttpContext.Access();
-        return briefing.BuildAsync(familyId, User.UserId(), day == "tomorrow", lang != "en", access.IsParent ? null : access, ct);
+        return briefing.BuildAsync(familyId, User.UserId(), day == "tomorrow", Locales.IsTurkish(lang), access.IsParent ? null : access, ct);
     }
 
     [HttpGet("settings")]

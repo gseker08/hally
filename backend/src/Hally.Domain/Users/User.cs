@@ -78,11 +78,24 @@ public static class Locales
 {
     public const string Turkish = "tr";
     public const string English = "en";
+    public const string German = "de";
 
+    /// <summary>The languages the app and the server texts speak.</summary>
+    public static readonly IReadOnlyList<string> Supported = [Turkish, English, German];
+
+    /// <summary>Two-letter code of a supported language. Missing means Turkish (the launch market); any other
+    /// language gets English.</summary>
     public static string Normalize(string? locale)
     {
         var two = (locale ?? string.Empty).Trim().ToLowerInvariant();
         two = two.Length >= 2 ? two[..2] : two;
-        return two == English ? English : Turkish;
+        if (two.Length == 0)
+        {
+            return Turkish;
+        }
+
+        return Supported.Contains(two) ? two : English;
     }
+
+    public static bool IsTurkish(string? locale) => Normalize(locale) == Turkish;
 }

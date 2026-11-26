@@ -590,7 +590,7 @@
   },
   "languageTitle": "Dil",
   "languageSystem": "Telefonun dili",
-  "languageSystemBody": "Telefon Türkçe ya da İngilizce değilse Türkçe",
+  "languageSystemBody": "Telefon desteklenmeyen bir dildeyse İngilizce",
   "pushOpen": "Aç",
   "@pushOpen": {
     "description": "Snack bar action that opens what a notification is about"

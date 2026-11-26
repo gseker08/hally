@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="child_lock_title">Die Bildschirmzeit ist um</string>
+    <string name="child_lock_used">Du hast heute %1$s genutzt.\nMorgen geht es wieder.</string>
+    <string name="child_lock_hint">In Hally kannst du mit Kirschen Zeit kaufen oder deine Eltern fragen.</string>
+    <string name="child_lock_open">Hally öffnen</string>
+    <string name="child_lock_emergency">Notruf</string>
+    <string name="child_lock_hours_minutes">%1$d Std. %2$d Min.</string>
+    <string name="child_lock_minutes">%1$d Min.</string>
+    <string name="child_lock_notice_title">Bildschirmzeit wird erfasst</string>
+    <string name="child_lock_notice_body">Der Hally-Kindermodus ist für deine Familie aktiv</string>
+    <string name="child_lock_channel">Hally-Kindermodus</string>
+    <string name="today_widget_description">Die nächsten Termine und Aufgaben von heute</string>
+    <string name="today_widget_title">Heute</string>
+    <string name="today_widget_stale">Öffne Hally, um heute zu sehen</string>
+    <string name="now_widget_description">Laufende Timer mit Live-Uhr</string>
+    <string name="now_widget_title">Gerade jetzt</string>
+    <string name="now_widget_empty">Kein Timer läuft</string>
+    <string name="today_widget_voice">Mit Hally sprechen</string>
+</resources>

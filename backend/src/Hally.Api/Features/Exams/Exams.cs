@@ -14,6 +14,7 @@ using Hally.Domain.Notifications;
 using Hally.Domain.Planning;
 using Hally.Domain.Points;
 using Hally.Domain.School;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -145,7 +146,7 @@ public class ExamService(HallyDbContext db, NotificationPublisher publisher, IHu
         }
 
         exam.Update(request.ChildId, request.Subject, request.Topics, request.Date, request.Slot, request.StudyDaysBefore);
-        var turkish = await db.Users.AsNoTracking().Where(u => u.Id == (exam.CreatedByUserId ?? userId)).Select(u => u.Locale).FirstOrDefaultAsync(ct) != "en";
+        var turkish = Locales.IsTurkish(await db.Users.AsNoTracking().Where(u => u.Id == (exam.CreatedByUserId ?? userId)).Select(u => u.Locale).FirstOrDefaultAsync(ct));
         var (start, end, allDay) = EventTimes(exam, family.TimeZoneId);
         var evt = exam.EventId is { } eventId ? await db.Events.FirstOrDefaultAsync(e => e.Id == eventId, ct) : null;
         if (evt is null)
@@ -244,7 +245,7 @@ public class ExamService(HallyDbContext db, NotificationPublisher publisher, IHu
             var name = names.GetValueOrDefault(exam.ChildId, "");
             foreach (var p in parents[exam.FamilyId])
             {
-                var tr = p.Locale != "en";
+                var tr = Locales.IsTurkish(p.Locale);
                 if (exam.IsStudyDay(today))
                 {
                     var (title, body) = ExamTexts.Study(tr, name, exam.Subject, exam.Topics, exam.Date.DayNumber - today.DayNumber);

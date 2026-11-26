@@ -11,6 +11,7 @@ import '../family/children.dart';
 import '../family/family_repository.dart' show familyProvider, isCaregiverProvider;
 import '../sleep/sleep_screen.dart' show formatSleepMinutes;
 import 'insights_repository.dart';
+import '../../core/locale/units.dart';
 
 /// One child's logs at a glance, for a day or for the 7 days ending on a day: screen time, homework and reading, sleep,
 /// feeding, stars, habits, medicine and the health card. Each part shows only when it has something to say.
@@ -101,8 +102,8 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen> {
 
   List<Widget> _sections(BuildContext context, ChildInsights d) {
     final l10n = AppLocalizations.of(context);
-    final tr = Localizations.localeOf(context).languageCode == 'tr';
-    String dur(int m) => formatSleepMinutes(m, turkish: tr);
+    final lang = langOf(context);
+    String dur(int m) => formatSleepMinutes(m, lang: lang);
     final n = d.days.length;
     final out = <Widget>[];
 

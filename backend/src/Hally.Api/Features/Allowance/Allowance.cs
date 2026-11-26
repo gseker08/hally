@@ -7,6 +7,7 @@ using Hally.Domain.Expenses;
 using Hally.Domain.Families;
 using Hally.Domain.Notifications;
 using Hally.Domain.Points;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -127,7 +128,7 @@ public class AllowanceService(HallyDbContext db, NotificationPublisher publisher
             var name = await db.Children.AsNoTracking().Where(c => c.Id == childId).Select(c => c.FirstName).FirstAsync(ct);
             foreach (var p in await ParentsAsync(familyId, ct))
             {
-                var tr = p.Locale != "en";
+                var tr = Locales.IsTurkish(p.Locale);
                 var money = Money(amount, plan.Currency, tr);
                 await publisher.AddAsync(p.Id, familyId, NotificationKind.AllowanceRequest,
                     tr ? $"{name} harçlık istiyor" : $"{name} asks for pocket money",
@@ -163,7 +164,7 @@ public class AllowanceService(HallyDbContext db, NotificationPublisher publisher
             {
                 var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver).Select(m => m.UserId).ToListAsync(ct);
                 var name = await db.Children.AsNoTracking().Where(c => c.Id == request.ChildId).Select(c => c.FirstName).FirstAsync(ct);
-                var turkish = await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Locale).FirstAsync(ct) != "en";
+                var turkish = Locales.IsTurkish(await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Locale).FirstAsync(ct));
                 var expense = new Expense(familyId, turkish ? $"Harçlık · {name}" : $"Pocket money · {name}", request.Amount, ExpenseCategory.Other, today, userId,
                     adults, request.ChildId, turkish ? $"{request.Cherries} kiraz" : $"{request.Cherries} cherries", userId, now);
                 db.Expenses.Add(expense);

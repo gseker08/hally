@@ -5,6 +5,7 @@ using Hally.Domain.Common;
 using Hally.Domain.Families;
 using Hally.Domain.Notifications;
 using Hally.Domain.ScreenTime;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -172,7 +173,7 @@ public static class ScreenTimeTexts
 {
     public static string Duration(string locale, int minutes)
     {
-        var tr = locale != "en";
+        var tr = Locales.IsTurkish(locale);
         var h = minutes / 60;
         var m = minutes % 60;
         return (h, m) switch
@@ -185,7 +186,7 @@ public static class ScreenTimeTexts
 
     public static (string Title, string Body) GoalReached(string locale, string childName, int goalMinutes, bool stillRunning)
     {
-        var tr = locale != "en";
+        var tr = Locales.IsTurkish(locale);
         var goal = Duration(locale, goalMinutes);
         return tr
             ? ($"{childName}: ekran süresi hedefi doldu", stillRunning ? $"Bugünkü {goal} hedefe ulaşıldı, sayaç hâlâ çalışıyor." : $"Bugünkü {goal} hedefe ulaşıldı.")

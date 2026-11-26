@@ -7,4 +7,14 @@
     <string name="now_widget_title">Right now</string>
     <string name="now_widget_empty">No timer running</string>
     <string name="today_widget_voice">Speak to Hally</string>
+    <string name="child_lock_title">Screen time is up</string>
+    <string name="child_lock_used">You used %1$s today.\nIt opens again tomorrow.</string>
+    <string name="child_lock_hint">In Hally you can buy time with cherries or ask your parents.</string>
+    <string name="child_lock_open">Open Hally</string>
+    <string name="child_lock_emergency">Emergency call</string>
+    <string name="child_lock_hours_minutes">%1$d h %2$d min</string>
+    <string name="child_lock_minutes">%1$d min</string>
+    <string name="child_lock_notice_title">Screen time is on</string>
+    <string name="child_lock_notice_body">Hally child mode is on for your family</string>
+    <string name="child_lock_channel">Hally child mode</string>
 </resources>

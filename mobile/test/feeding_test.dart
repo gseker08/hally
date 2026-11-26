@@ -81,8 +81,8 @@ void _phone(WidgetTester tester) {
 void main() {
   test('time since the last feed reads naturally', () {
     final now = DateTime(2026, 11, 23, 12);
-    expect(feedingAgo(now.subtract(const Duration(minutes: 45)), now, turkish: true), '45 dk');
-    expect(feedingAgo(now.subtract(const Duration(minutes: 130)), now, turkish: false), '2 h 10 min');
+    expect(feedingAgo(now.subtract(const Duration(minutes: 45)), now, lang: 'tr'), '45 dk');
+    expect(feedingAgo(now.subtract(const Duration(minutes: 130)), now, lang: 'en'), '2 h 10 min');
   });
 
   testWidgets('a breast feed then a bottle show the last feed, next side and today', (tester) async {

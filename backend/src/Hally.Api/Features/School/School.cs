@@ -10,6 +10,7 @@ using Hally.Domain.Common;
 using Hally.Domain.Families;
 using Hally.Domain.Notifications;
 using Hally.Domain.School;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -375,7 +376,7 @@ public class SchoolService(
             {
                 foreach (var p in parents)
                 {
-                    var (title, body) = SchoolTexts.Bag(p.Locale != "en", bag, lessons.Where(l => l.ChildId == bag.ChildId).OrderBy(l => l.Period).ToList(), plan.DailyItems);
+                    var (title, body) = SchoolTexts.Bag(Locales.IsTurkish(p.Locale), bag, lessons.Where(l => l.ChildId == bag.ChildId).OrderBy(l => l.Period).ToList(), plan.DailyItems);
                     if (await publisher.AddAsync(p.Id, familyId, NotificationKind.SchoolBag, title, body, null, bag.ChildId, $"school-bag:{bag.ChildId:N}:{bag.Day:yyyyMMdd}:{p.Id:N}", ct))
                     {
                         added++;

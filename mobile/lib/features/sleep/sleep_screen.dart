@@ -11,18 +11,18 @@ import '../../l10n/gen/app_localizations.dart';
 import '../family/children.dart';
 import '../family/family_repository.dart';
 import 'sleep_repository.dart';
+import '../../core/locale/units.dart';
 
 /// "1 sa 05 dk" / "1 h 05 min", "45 dk" under an hour.
-String formatSleepMinutes(int minutes, {required bool turkish}) {
+String formatSleepMinutes(int minutes, {required String lang}) {
   final h = minutes ~/ 60;
   final m = minutes % 60;
-  final hu = turkish ? 'sa' : 'h';
-  final mu = turkish ? 'dk' : 'min';
+  final hu = durationUnits(lang).h;
+  final mu = durationUnits(lang).min;
   if (h == 0) return '$m $mu';
   return '$h $hu ${m.toString().padLeft(2, '0')} $mu';
 }
 
-bool _tr(BuildContext context) => Localizations.localeOf(context).languageCode != 'en';
 String _hm(BuildContext context, DateTime t) => DateFormat.Hm(Localizations.localeOf(context).toLanguageTag()).format(t);
 
 /// Asleep / awake for every child, with one tap to switch. Tapping a child opens the week.
@@ -65,7 +65,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
     final children = watchChildren(ref, familyId);
     final status = ref.watch(sleepStatusProvider(familyId));
     final now = DateTime.now();
-    final tr = _tr(context);
+    final lang = langOf(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.sleepTitle)),
@@ -86,9 +86,9 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
                         final last = s?.lastSleep;
                         final String line;
                         if (asleep != null) {
-                          line = l10n.sleepAsleepFor(formatSleepMinutes(now.difference(asleep.startedAt).inMinutes, turkish: tr), _hm(context, asleep.startedAt));
+                          line = l10n.sleepAsleepFor(formatSleepMinutes(now.difference(asleep.startedAt).inMinutes, lang: lang), _hm(context, asleep.startedAt));
                         } else if (last?.endedAt != null) {
-                          line = l10n.sleepAwakeFor(formatSleepMinutes(now.difference(last!.endedAt!).inMinutes, turkish: tr), _hm(context, last.endedAt!));
+                          line = l10n.sleepAwakeFor(formatSleepMinutes(now.difference(last!.endedAt!).inMinutes, lang: lang), _hm(context, last.endedAt!));
                         } else {
                           line = l10n.sleepNoRecord;
                         }
@@ -109,7 +109,7 @@ class _SleepScreenState extends ConsumerState<SleepScreen> {
                                       children: [
                                         Row(
                                           children: [
-                                            Text(c.firstName, style: theme.textTheme.titleMedium),
+                                            Flexible(child: Text(c.firstName, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis)),
                                             const SizedBox(width: HallySpace.xs),
                                             Icon(asleep != null ? Icons.bedtime_rounded : Icons.wb_sunny_rounded,
                                                 size: 18, color: asleep != null ? HallyModule.sleep : HallyColors.apricot),
@@ -156,7 +156,7 @@ class SleepHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final tr = _tr(context);
+    final lang = langOf(context);
     final key = (familyId, child.id);
     final history = ref.watch(sleepHistoryProvider(key));
     final locale = Localizations.localeOf(context).toLanguageTag();
@@ -179,7 +179,7 @@ class SleepHistoryScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.sm, HallySpace.md, 120),
             children: [
-              Text(l10n.sleepAverages(formatSleepMinutes(h.averageNightMinutes, turkish: tr), formatSleepMinutes(h.averageNapMinutes, turkish: tr)),
+              Text(l10n.sleepAverages(formatSleepMinutes(h.averageNightMinutes, lang: lang), formatSleepMinutes(h.averageNapMinutes, lang: lang)),
                   key: const Key('sleep.averages'), style: theme.textTheme.titleSmall),
               const SizedBox(height: HallySpace.md),
               SizedBox(
@@ -190,7 +190,7 @@ class SleepHistoryScreen extends ConsumerWidget {
                     for (final d in h.days)
                       Expanded(
                         child: Tooltip(
-                          message: '${formatSleepMinutes(d.nightMinutes, turkish: tr)} + ${formatSleepMinutes(d.napMinutes, turkish: tr)}',
+                          message: '${formatSleepMinutes(d.nightMinutes, lang: lang)} + ${formatSleepMinutes(d.napMinutes, lang: lang)}',
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
@@ -233,7 +233,7 @@ class SleepHistoryScreen extends ConsumerWidget {
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(e.isNight ? Icons.nights_stay_rounded : Icons.bedtime_outlined, color: e.isNight ? childColor(child.color) : HallyColors.apricot),
                   title: Text('${DateFormat.MMMd(locale).format(e.startedAt)} · ${_hm(context, e.startedAt)} – ${e.endedAt == null ? '…' : _hm(context, e.endedAt!)}'),
-                  subtitle: Text([formatSleepMinutes(e.minutes, turkish: tr), e.isNight ? l10n.sleepNight : l10n.sleepNap, if (e.note != null) e.note!].join(' · ')),
+                  subtitle: Text([formatSleepMinutes(e.minutes, lang: lang), e.isNight ? l10n.sleepNight : l10n.sleepNap, if (e.note != null) e.note!].join(' · ')),
                   trailing: IconButton(
                     key: Key('sleep.delete.${e.id}'),
                     tooltip: l10n.sleepDelete,
@@ -362,7 +362,7 @@ class _AddSleepSheetState extends ConsumerState<_AddSleepSheet> {
             trailing: Text(_end.format(context), style: theme.textTheme.titleMedium),
             onTap: () => _pick(false),
           ),
-          Text(formatSleepMinutes(end.difference(start).inMinutes, turkish: _tr(context)), style: theme.textTheme.bodySmall),
+          Text(formatSleepMinutes(end.difference(start).inMinutes, lang: langOf(context)), style: theme.textTheme.bodySmall),
           if (_error != null) Text(_error!, style: theme.textTheme.bodySmall?.copyWith(color: HallyColors.error)),
           const SizedBox(height: HallySpace.md),
           FilledButton(key: const Key('sleep.save'), onPressed: _busy ? null : _save, child: Text(l10n.eventSave)),

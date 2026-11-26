@@ -12,6 +12,7 @@ import '../screen_time/screen_time_repository.dart';
 import '../sleep/sleep_repository.dart';
 import '../sleep/sleep_screen.dart';
 import '../study/study_repository.dart';
+import '../../core/locale/units.dart';
 
 /// One running timer shown on Today.
 class LiveItem {
@@ -57,8 +58,8 @@ class _LiveNowStripState extends ConsumerState<LiveNowStrip> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final tr = Localizations.localeOf(context).languageCode == 'tr';
-    String dur(int seconds) => formatSleepMinutes(seconds ~/ 60, turkish: tr);
+    final lang = langOf(context);
+    String dur(int seconds) => formatSleepMinutes(seconds ~/ 60, lang: lang);
     final now = DateTime.now();
     final children = watchChildren(ref, widget.familyId);
     if (children.isEmpty) return const SizedBox.shrink();
@@ -83,7 +84,7 @@ class _LiveNowStripState extends ConsumerState<LiveNowStrip> {
             icon: Icons.phone_android_rounded,
             color: HallyModule.screenTime,
             label: l10n.liveScreen(c.firstName),
-            value: s.dailyGoalMinutes == null ? dur(s.secondsAt(now)) : '${s.secondsAt(now) ~/ 60} / ${s.dailyGoalMinutes} ${tr ? 'dk' : 'min'}',
+            value: s.dailyGoalMinutes == null ? dur(s.secondsAt(now)) : '${s.secondsAt(now) ~/ 60} / ${s.dailyGoalMinutes} ${durationUnits(lang).min}',
             progress: s.progressAt(now),
             route: '/screen-time',
           ),

@@ -7,4 +7,14 @@
     <string name="now_widget_title">Şu an</string>
     <string name="now_widget_empty">Çalışan sayaç yok</string>
     <string name="today_widget_voice">Hally\'ye söyle</string>
+    <string name="child_lock_title">Ekran süren doldu</string>
+    <string name="child_lock_used">Bugün %1$s kullandın.\nYarın tekrar açılır.</string>
+    <string name="child_lock_hint">Hally\'de kirazla süre alabilir ya da annenden/babandan isteyebilirsin.</string>
+    <string name="child_lock_open">Hally\'yi aç</string>
+    <string name="child_lock_emergency">Acil arama</string>
+    <string name="child_lock_hours_minutes">%1$d saat %2$d dakika</string>
+    <string name="child_lock_minutes">%1$d dakika</string>
+    <string name="child_lock_notice_title">Ekran süresi takip ediliyor</string>
+    <string name="child_lock_notice_body">Ailen için Hally çocuk modu açık</string>
+    <string name="child_lock_channel">Hally çocuk modu</string>
 </resources>

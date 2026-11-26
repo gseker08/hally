@@ -6,6 +6,7 @@ using Hally.Domain.Common;
 using Hally.Domain.Families;
 using Hally.Domain.Notifications;
 using Hally.Domain.Points;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -120,7 +121,7 @@ public class BedtimeService(HallyDbContext db, NotificationPublisher publisher, 
                 .Join(db.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => new { u.Id, u.Locale }).ToListAsync(ct);
             foreach (var p in parents)
             {
-                var tr = p.Locale != "en";
+                var tr = Locales.IsTurkish(p.Locale);
                 await publisher.AddAsync(p.Id, familyId, NotificationKind.BedtimeDone,
                     tr ? $"🌙 {name} yatağında" : $"🌙 {name} is in bed",
                     tr ? $"Uyku rutini bitti · {at}" : $"Bedtime routine done · {at}",

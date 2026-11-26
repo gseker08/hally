@@ -8,8 +8,9 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../child_mode/child_mode_repository.dart';
 import 'activities.dart';
+import '../../core/locale/units.dart';
 
-String _lang(BuildContext context) => Localizations.localeOf(context).languageCode == 'en' ? 'en' : 'tr';
+String _lang(BuildContext context) => langOf(context);
 
 /// The soft square behind an idea's emoji: green outside, warm colours inside.
 Color _ideaColor(ActivityIdea idea, int index) =>

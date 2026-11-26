@@ -111,7 +111,7 @@ public class SharedPageController(HallyDbContext db, IAnalytics analytics, IOpti
     [HttpGet]
     public async Task<IActionResult> Show(string token, CancellationToken ct)
     {
-        var tr = !Request.Headers.AcceptLanguage.ToString().StartsWith("en", StringComparison.OrdinalIgnoreCase);
+        var tr = Locales.IsTurkish(Request.Headers.AcceptLanguage.ToString());
         var link = await db.ShareLinks.FirstOrDefaultAsync(l => l.TokenHash == Crypto.Sha256(token), ct);
         var now = clock.GetUtcNow();
         if (link is null || !link.IsActive(now))
