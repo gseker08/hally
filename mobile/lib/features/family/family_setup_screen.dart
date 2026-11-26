@@ -48,7 +48,7 @@ class _FamilySetupScreenState extends ConsumerState<FamilySetupScreen> {
       ref.read(analyticsProvider).track(AnalyticsEvent.familyCreated, {'time_zone': timeZone});
       await _saveDemoItems(family.id);
       ref.invalidate(meProvider);
-      if (mounted) context.go('/family/${family.id}/invite');
+      if (mounted) context.go('/setup?familyId=${family.id}&next=${Uri.encodeComponent('/family/${family.id}/invite')}');
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context).errorGeneric)));

@@ -53,6 +53,8 @@ import 'features/planning/calendar_screen.dart';
 import 'features/planning/tasks_screen.dart';
 import 'features/onboarding/trust_screen.dart';
 import 'features/onboarding/welcome_screen.dart';
+import 'features/setup/focus_settings.dart';
+import 'features/setup/setup_wizard.dart';
 
 const _publicRoutes = {'/welcome', '/trust', '/demo', '/sign-in', '/join', '/kid/pair'};
 
@@ -119,6 +121,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/kid', builder: (_, __) => const KidShell()),
       GoRoute(path: '/i/:token', builder: (_, s) => JoinFamilyScreen(token: s.pathParameters['token']!)),
       GoRoute(path: '/family/new', builder: (_, __) => const FamilySetupScreen()),
+      GoRoute(
+          path: '/setup',
+          builder: (_, s) => SetupWizardScreen(familyId: s.uri.queryParameters['familyId'] ?? '', next: s.uri.queryParameters['next'])),
+      GoRoute(path: '/today-focus', builder: (_, __) => const TodayFocusScreen()),
+      GoRoute(path: '/features', builder: (_, __) => const AllFeaturesScreen()),
       GoRoute(path: '/family/:id/invite', builder: (_, s) => InvitePartnerScreen(familyId: s.pathParameters['id']!)),
       GoRoute(
         path: '/family/:id/caregiver/:userId',

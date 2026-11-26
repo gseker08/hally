@@ -1556,11 +1556,22 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("family_id");
 
+                    b.Property<List<string>>("FocusAreas")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("focus_areas")
+                        .HasDefaultValueSql("'{}'::text[]");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasColumnName("role");
+
+                    b.Property<DateTimeOffset?>("SetupCompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("setup_completed_at");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")

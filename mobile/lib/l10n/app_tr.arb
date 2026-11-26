@@ -2754,6 +2754,111 @@
       }
     }
   },
+  "setupSkip": "Atla",
+  "setupContinue": "Devam",
+  "setupContinueCount": "Devam · {count} seçili",
+  "@setupContinueCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "setupStart": "Başlayalım",
+  "setupKidsTitle": "Çocuklarını tanıyalım",
+  "setupKidsBody": "Sadece ad ve doğum yılı. Hally önerilerini yaşa göre ayarlar.",
+  "setupKidName": "Adı",
+  "setupKidYear": "Doğum yılı",
+  "setupKidYearAge": "{year} · {age} yaş",
+  "@setupKidYearAge": {
+    "placeholders": {
+      "year": {
+        "type": "int"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "setupKidAdd": "Bir çocuk daha",
+  "setupKidsNone": "Henüz çocuğun yok ya da bebek bekliyorsan atlayabilirsin.",
+  "setupFocusTitle": "Hally en çok neyde yardım etsin?",
+  "setupFocusBody": "En fazla {max} tane seç. Sonra Profil'den değiştirebilirsin.",
+  "@setupFocusBody": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "setupFocusMax": "En fazla {max} alan seçebilirsin. Diğerleri Aile sekmesinde duruyor.",
+  "@setupFocusMax": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "setupHint": "{children}: önerdiklerimizi seçtik, değiştirebilirsin.",
+  "@setupHint": {
+    "placeholders": {
+      "children": {
+        "type": "String"
+      }
+    }
+  },
+  "setupHintAge": "{name} {age} yaşında",
+  "@setupHintAge": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "age": {
+        "type": "int"
+      }
+    }
+  },
+  "setupPreviewTitle": "Bugün ekranın hazır",
+  "setupPreviewBody": "Seçtiklerin en üstte. Gerisi Aile sekmesinde \"Tüm özellikler\"de.",
+  "setupPreviewAll": "Hiçbir alan seçmedin, Bugün ekranı her şeyi gösterecek. İstediğin zaman Profil'den ayarlayabilirsin.",
+  "setupMorningTitle": "Sabah özeti bildirimi",
+  "setupMorningBody": "Her sabah 07:30, günün kısa özeti",
+  "setupPromptTitle": "Bugün ekranını sana göre ayarla",
+  "setupPromptBody": "30 saniye: en çok neyi takip ettiğini seç, kısayolların en üste gelsin.",
+  "setupPromptClose": "Kapat",
+  "focusSchool": "Okul, sınav, ödev",
+  "focusTasks": "Görevler ve ev işleri",
+  "focusScreen": "Ekran süresi",
+  "focusBaby": "Uyku ve beslenme",
+  "focusHealth": "İlaç ve sağlık",
+  "focusCherries": "Kiraz, ödül, harçlık",
+  "focusRoutines": "Uyku rutini, alışkanlık",
+  "focusShopping": "Alışveriş ve masraf",
+  "focusTeamwork": "İş bölümü, bakıcı",
+  "shortcutStudy": "Ödev, okuma",
+  "shortcutSchoolRun": "Okul servisi",
+  "shortcutTasks": "Görevler",
+  "shortcutScreenTime": "Ekran süresi",
+  "shortcutSleep": "Uyku",
+  "shortcutFeeding": "Beslenme",
+  "shortcutMedications": "İlaçlar",
+  "shortcutHealthCard": "Sağlık kartı",
+  "shortcutCherries": "Kirazlar",
+  "shortcutFamilyGoal": "Aile görevi",
+  "shortcutHabits": "Alışkanlıklar",
+  "shortcutActivities": "Ekransız aktivite",
+  "shortcutShopping": "Alışveriş",
+  "shortcutExpenses": "Masraflar",
+  "shortcutBalance": "Yük dengesi",
+  "shortcutHandoffs": "Devir teslim",
+  "focusShortcutsTitle": "Senin kısayolların",
+  "focusEdit": "Düzenle",
+  "focusSettingsTitle": "Bugün ekranım",
+  "focusSettingsSubtitle": "Kısayollar ve kartlar",
+  "focusSettingsBody": "Açık olanlar Bugün'de kısayol ve kart olarak görünür. Sırayı tutup sürükleyerek değiştir.",
+  "focusSettingsAll": "Hiçbiri açık değil: Bugün ekranı her şeyi gösteriyor.",
+  "focusRerunWizard": "Sihirbazı yeniden aç",
+  "allFeaturesTitle": "Tüm özellikler",
   "examsTitle": "Sınavlar",
   "examsEntry": "Sınav takvimi",
   "examsAdd": "Sınav",
@@ -2911,5 +3016,6 @@
       }
     }
   },
-  "examsHowQuestion": "Nasıl geçti?"
+  "examsHowQuestion": "Nasıl geçti?",
+  "shortcutExams": "Sınavlar"
 }

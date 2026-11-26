@@ -24,6 +24,8 @@ import '../handoff/handoff_cards.dart';
 import 'family_today.dart';
 import 'live_now.dart';
 import '../profile/profile_screen.dart';
+import '../setup/focus.dart';
+import '../setup/setup_wizard.dart';
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
@@ -34,6 +36,8 @@ class TodayScreen extends ConsumerWidget {
     final familyId = me?.primaryFamily?.id;
     if (me == null || familyId == null) return const Scaffold(body: HallyLoading());
     final today = ref.watch(todayProvider(familyId));
+    final caregiver = ref.watch(isCaregiverProvider);
+    final focus = caregiver ? null : ref.watch(focusProvider(familyId)).valueOrNull;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -47,6 +51,7 @@ class TodayScreen extends ConsumerWidget {
                 name: me.displayName,
                 data: today.valueOrNull,
                 caregiverFor: _caregiverFor(context, ref, familyId),
+                shortcuts: focus == null || focus.areas.isEmpty ? null : TodayFocusShortcuts(areas: focus.areas, familyId: familyId),
                 onTasks: () => context.push('/tasks'),
                 onEvents: () => context.go('/calendar'),
                 onSuggestions: () {
@@ -99,15 +104,20 @@ class TodayScreen extends ConsumerWidget {
       waiting: all.waiting,
     );
     var i = 0;
+    final caregiver = ref.watch(isCaregiverProvider);
+    final focus = caregiver ? null : ref.watch(focusProvider(familyId)).valueOrNull;
+    // Cards for areas this parent did not choose stay off Today; ones that wait for an approval always show.
+    final cherries = focus?.shows(FocusArea.cherries) ?? true;
     return [
+      if (focus != null && !focus.setupDone) _SetupPromptCard(familyId: familyId),
       FamilyTodayCard(familyId: familyId, data: all),
       LiveNowStrip(familyId: familyId),
       ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
       if (!ref.watch(isCaregiverProvider)) ParentAsksCard(familyId: familyId),
       if (!ref.watch(isCaregiverProvider)) ChildClaimsCard(familyId: familyId),
-      if (!ref.watch(isCaregiverProvider)) ParentAllowanceCard(familyId: familyId),
+      if (!caregiver && cherries) ParentAllowanceCard(familyId: familyId),
       if (ref.watch(isCaregiverProvider)) CaregiverHandoffCard(familyId: familyId) else ParentHandoffCards(familyId: familyId),
-      if (!ref.watch(isCaregiverProvider)) FamilyGoalCard(familyId: familyId),
+      if (!caregiver && cherries) FamilyGoalCard(familyId: familyId),
       if (d.waiting.isNotEmpty)
         HallyEntrance(
           index: i++,
@@ -150,7 +160,11 @@ class TodayScreen extends ConsumerWidget {
 
 /// Header: wordmark and shortcuts, date, greeting, the Hally assistant card and the day's counts as pastel tiles.
 class TodayHero extends StatelessWidget {
-  const TodayHero({super.key, required this.name, required this.data, this.caregiverFor, this.onTasks, this.onEvents, this.onSuggestions});
+  const TodayHero(
+      {super.key, required this.name, required this.data, this.caregiverFor, this.onTasks, this.onEvents, this.onSuggestions, this.shortcuts});
+
+  /// "Senin kısayolların" from the setup wizard, under the assistant bar; null when nothing was chosen.
+  final Widget? shortcuts;
 
   final String name;
   final TodayData? data;
@@ -228,6 +242,10 @@ class TodayHero extends StatelessWidget {
               )
             else
               const AskHallyBar(),
+            if (shortcuts case final row?) ...[
+              const SizedBox(height: HallySpace.md - 2),
+              row,
+            ],
             const SizedBox(height: HallySpace.md - 4),
             AnimatedOpacity(
               opacity: d == null ? 0 : 1,
@@ -727,6 +745,96 @@ class _EventTile extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// "Senin kısayolların" with an "Düzenle" link to Profile → Bugün ekranım.
+class TodayFocusShortcuts extends StatelessWidget {
+  const TodayFocusShortcuts({super.key, required this.areas, required this.familyId});
+
+  final List<FocusArea> areas;
+  final String familyId;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Column(
+      key: const Key('today.shortcuts'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(l10n.focusShortcutsTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            const Spacer(),
+            TextButton(
+              key: const Key('today.shortcuts.edit'),
+              style: TextButton.styleFrom(minimumSize: const Size(0, 36), visualDensity: VisualDensity.compact),
+              onPressed: () => context.push('/today-focus'),
+              child: Text(l10n.focusEdit),
+            ),
+          ],
+        ),
+        FocusShortcutRow(areas: areas, familyId: familyId),
+      ],
+    );
+  }
+}
+
+/// Once, for parents who were here before the wizard (or joined by invite): "Bugün ekranını sana göre ayarla".
+class _SetupPromptCard extends ConsumerWidget {
+  const _SetupPromptCard({required this.familyId});
+
+  final String familyId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final brightness = theme.brightness;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: HallySpace.md),
+      child: HallyPressable(
+        key: const Key('today.setupPrompt'),
+        onTap: () => context.push('/setup?familyId=$familyId'),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.md, HallySpace.xs, HallySpace.md),
+          decoration: BoxDecoration(
+            color: HallyColors.softOf(HallyColors.cherry, brightness),
+            borderRadius: BorderRadius.circular(HallyRadius.lg),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.auto_awesome_rounded, size: 26, color: HallyColors.readableOn(HallyColors.cherry, brightness)),
+              const SizedBox(width: HallySpace.sm + 4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.setupPromptTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(l10n.setupPromptBody, style: theme.textTheme.bodySmall),
+                  ],
+                ),
+              ),
+              IconButton(
+                key: const Key('today.setupPrompt.close'),
+                tooltip: l10n.setupPromptClose,
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () async {
+                  try {
+                    await ref.read(focusRepositoryProvider).set(familyId, const []);
+                  } catch (_) {
+                    return;
+                  }
+                  ref.invalidate(focusProvider(familyId));
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

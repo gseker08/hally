@@ -92,6 +92,9 @@ class ProfileScreen extends ConsumerWidget {
             margin: EdgeInsets.zero,
             child: Column(
               children: [
+                if (role != 'Caregiver')
+                  tile(const Key('profile.todayFocus'), Icons.dashboard_customize_rounded, HallyColors.cherry, l10n.focusSettingsTitle,
+                      l10n.focusSettingsSubtitle, () => context.push('/today-focus')),
                 tile(const Key('family.language'), Icons.translate_rounded, HallyColors.apricot, l10n.languageTitle,
                     languageLabel(l10n, ref.watch(languageProvider)), () => showLanguageSheet(context)),
                 tile(const Key('family.helperLinks'), Icons.volunteer_activism_rounded, HallyColors.mint, l10n.familyHelperLinks,
