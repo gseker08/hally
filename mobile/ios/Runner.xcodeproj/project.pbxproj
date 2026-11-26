@@ -95,6 +95,7 @@
 		3B41706D274479215E99E79A /* StopTimerIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StopTimerIntent.swift; sourceTree = "<group>"; };
 		3EB4C5DA209DD15230E91765 /* tr */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D3A1E5C20F7B4C8E9A6B0D01 /* de */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C0D32C3BE1D74EF8AD3B62E4 /* ja */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		410374D40CB71639728DF23A /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5212FFB362A2252A113840E8 /* HallyWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = HallyWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5833D1144857EB1FB1F2AACD /* NowWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NowWidget.swift; sourceTree = "<group>"; };
@@ -364,6 +365,7 @@
 				Base,
 				tr,
 				de,
+				ja,
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
@@ -562,6 +564,7 @@
 				097CD3BBCCEC506590D50B55 /* en */,
 				3EB4C5DA209DD15230E91765 /* tr */,
 				D3A1E5C20F7B4C8E9A6B0D01 /* de */,
+				C0D32C3BE1D74EF8AD3B62E4 /* ja */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";

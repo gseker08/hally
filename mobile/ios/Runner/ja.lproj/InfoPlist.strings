@@ -1,0 +1,5 @@
+/* iOSが日本語で表示する権限の説明。 */
+"NSCameraUsageDescription" = "Hallyはカメラを使って、学校のお知らせや書類を撮影し、予定に追加します。";
+"NSPhotoLibraryUsageDescription" = "Hallyは、あなたが選んだスクリーンショットや写真を予定に追加します。";
+"NSMicrophoneUsageDescription" = "Hallyは、マイクボタンをタップしている間だけマイクを使い、声で質問したり追加したりできるようにします。";
+"NSSpeechRecognitionUsageDescription" = "HallyはiPhoneの音声認識を使って、話した内容をHally用のテキストに変換します。";
