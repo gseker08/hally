@@ -3,3 +3,5 @@
 "NSPhotoLibraryUsageDescription" = "Hally는 선택한 스크린샷이나 사진을 계획에 추가해요.";
 "NSMicrophoneUsageDescription" = "Hally는 마이크 버튼을 누르는 동안에만 마이크를 사용해, 말로 묻거나 추가할 수 있게 해요.";
 "NSSpeechRecognitionUsageDescription" = "Hally는 iPhone의 음성 인식으로 말한 내용을 Hally용 글로 바꿔요.";
+"NSCalendarsUsageDescription" = "선택한 캘린더(Google·iCloud·Outlook)를 Hally에 보여 주고 가족 일정을 \"Hally\" 캘린더에 추가하는 데 사용해요.";
+"NSCalendarsFullAccessUsageDescription" = "선택한 캘린더(Google·iCloud·Outlook)를 Hally에 보여 주고 가족 일정을 \"Hally\" 캘린더에 추가하는 데 사용해요.";

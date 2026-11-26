@@ -3,3 +3,5 @@
 "NSPhotoLibraryUsageDescription" = "Hally 会把你选择的截图或照片添加到你的计划中。";
 "NSMicrophoneUsageDescription" = "Hally 只在你按住麦克风按钮时使用麦克风，让你用语音提问或添加内容。";
 "NSSpeechRecognitionUsageDescription" = "Hally 使用 iPhone 的语音识别，把你说的话转成文字交给 Hally。";
+"NSCalendarsUsageDescription" = "我们使用你的日历，在 Hally 中显示你选择的日历（Google、iCloud、Outlook），并将家庭活动添加到“Hally”日历。";
+"NSCalendarsFullAccessUsageDescription" = "我们使用你的日历，在 Hally 中显示你选择的日历（Google、iCloud、Outlook），并将家庭活动添加到“Hally”日历。";
