@@ -14,7 +14,7 @@ namespace Hally.Api.Features.Events;
 /// <summary>An event or, for a series, one occurrence of it (same <c>Id</c>; <c>SeriesStartsAt</c> is the first occurrence).</summary>
 /// <param name="ChildId">The first of <c>ChildIds</c>, kept for older clients.</param>
 public record EventDto(Guid Id, string Title, DateTimeOffset StartsAt, DateTimeOffset? EndsAt, bool AllDay, string? Location, Guid? ChildId, Guid? SourceProposalId,
-    EventRepeat Repeat, DateOnly? RepeatUntil, DateTimeOffset SeriesStartsAt, IReadOnlyList<Guid> ChildIds);
+    EventRepeat Repeat, DateOnly? RepeatUntil, DateTimeOffset SeriesStartsAt, IReadOnlyList<Guid> ChildIds, Guid? ExamId = null);
 /// <summary>For a series, <c>StartsAt</c> is the first occurrence. <c>Repeat</c> defaults to <c>None</c>.</summary>
 public record SaveEventRequest(string Title, DateTimeOffset StartsAt, DateTimeOffset? EndsAt, bool AllDay, string? Location, Guid? ChildId,
     EventRepeat Repeat = EventRepeat.None, DateOnly? RepeatUntil = null, IReadOnlyList<Guid>? ChildIds = null)
@@ -40,7 +40,7 @@ public class SaveEventRequestValidator : AbstractValidator<SaveEventRequest>
 [ApiController]
 [Authorize(Policy = Policies.FamilyMember)]
 [Route("api/v1/families/{familyId:guid}/events")]
-public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvider clock) : ControllerBase
+public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvider clock, Exams.ExamService exams) : ControllerBase
 {
     /// <summary>Events overlapping [from, to). Defaults to the next 31 days. <c>child</c> keeps only events tagged with that child.</summary>
     [CaregiverAllowed]
@@ -56,8 +56,11 @@ public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvi
         }
 
         var access = HttpContext.Access();
-        return (await InRange(familyId, start, end, ct)).Where(e => (child is not { } c || e.ChildIds.Contains(c)) && access.SeesTagged(e.ChildIds))
-            .Select(ToDto).ToList();
+        var events = (await InRange(familyId, start, end, ct)).Where(e => (child is not { } c || e.ChildIds.Contains(c)) && access.SeesTagged(e.ChildIds)).ToList();
+        var ids = events.Select(e => e.Id).Distinct().ToList();
+        var examIds = await db.Exams.AsNoTracking().Where(x => x.EventId != null && ids.Contains(x.EventId.Value))
+            .ToDictionaryAsync(x => x.EventId!.Value, x => x.Id, ct);
+        return events.Select(e => ToDto(e) with { ExamId = examIds.TryGetValue(e.Id, out var x) ? x : null }).ToList();
     }
 
     [HttpPost]
@@ -85,6 +88,7 @@ public class EventsController(HallyDbContext db, IAnalytics analytics, TimeProvi
                   ?? throw new NotFoundException("event.not_found", "Event not found.");
         evt.Update(request.Title, request.StartsAt, request.EndsAt, request.AllDay, request.Location, request.EffectiveChildIds);
         evt.SetRepeat(request.Repeat, request.RepeatUntil);
+        await exams.FollowEventAsync(evt, ct);
         db.AuditEntries.Add(new AuditEntry { FamilyId = familyId, ActorUserId = User.UserId(), Action = "event.updated", EntityType = "event", EntityId = evt.Id, At = clock.GetUtcNow() });
         await db.SaveChangesAsync(ct);
         return new SavedEventDto(ToDto(evt), await Conflicts(familyId, evt, ct));

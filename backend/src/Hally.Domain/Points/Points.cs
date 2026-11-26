@@ -77,6 +77,9 @@ public enum PointKind
     /// <summary>Harçlık: plus for the weekly allowance in cherries, minus for cherries turned into pocket money.
     /// Neither counts as "earned" (streak, week total, family goal).</summary>
     Allowance,
+
+    /// <summary>Exams: a parent's cherries for a result, or one cherry for an approved "Çalıştım" before an exam.</summary>
+    Exam,
 }
 
 /// <summary>
@@ -220,6 +223,18 @@ public class PointEntry : Entity
             CreatedAt = now,
         };
     }
+
+    public static PointEntry ForExam(Guid familyId, Guid childId, string title, int points, Guid? userId, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Exam,
+        Title = title,
+        Points = points,
+        Day = day,
+        ByUserId = userId,
+        CreatedAt = now,
+    };
 
     public static PointEntry ForMood(Guid familyId, Guid childId, DateOnly day, DateTimeOffset now) => new()
     {

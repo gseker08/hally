@@ -66,6 +66,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<Hally.Domain.Allowance.AllowanceRequest> AllowanceRequests => Set<Hally.Domain.Allowance.AllowanceRequest>();
     public DbSet<Hally.Domain.Care.HandoffReport> HandoffReports => Set<Hally.Domain.Care.HandoffReport>();
     public DbSet<StudySession> StudySessions => Set<StudySession>();
+    public DbSet<Hally.Domain.School.Exam> Exams => Set<Hally.Domain.School.Exam>();
     public DbSet<Chore> Chores => Set<Chore>();
     public DbSet<Reward> Rewards => Set<Reward>();
     public DbSet<PointEntry> PointEntries => Set<PointEntry>();
@@ -579,6 +580,8 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.Property(x => x.Kind).HasConversion<string>().HasMaxLength(10);
             e.Property(x => x.Note).HasMaxLength(120);
             e.HasIndex(x => new { x.ChildId, x.StartedAt });
+            e.HasIndex(x => x.ExamId);
+            e.HasOne<Hally.Domain.School.Exam>().WithMany().HasForeignKey(x => x.ExamId).OnDelete(DeleteBehavior.SetNull);
             // At most one running homework/reading timer per child.
             e.HasIndex(x => x.ChildId).IsUnique().HasFilter("ended_at IS NULL").HasDatabaseName("ix_study_sessions_running");
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
@@ -611,6 +614,24 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.ThankedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Hally.Domain.School.Exam>(e =>
+        {
+            e.Property(x => x.Subject).HasMaxLength(Hally.Domain.School.Exam.MaxSubject);
+            e.Property(x => x.Topics).HasMaxLength(Hally.Domain.School.Exam.MaxTopics);
+            e.Property(x => x.Slot).HasMaxLength(Hally.Domain.School.Exam.MaxSlot);
+            e.Property(x => x.Outcome).HasConversion<string>().HasMaxLength(10);
+            e.Ignore(x => x.HasResult);
+            e.Ignore(x => x.StudyWindow);
+            e.HasIndex(x => new { x.FamilyId, x.Date });
+            e.HasIndex(x => new { x.ChildId, x.Date });
+            e.HasIndex(x => x.EventId).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<CalendarEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.CreatedByUserId).OnDelete(DeleteBehavior.SetNull);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.ResultByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<Hally.Domain.Mood.MoodCheck>(e =>

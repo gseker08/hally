@@ -36,7 +36,7 @@ public class ConflictException(string code, string message) : Exception(message)
 /// task/event, the proposal decision and the audit entry in one SaveChanges (one transaction).
 /// The proposal row version and the unique SourceProposalId index stop double execution.
 /// </summary>
-public class ProposalEngine(HallyDbContext db, IAnalytics analytics, TimeProvider clock)
+public class ProposalEngine(HallyDbContext db, IAnalytics analytics, TimeProvider clock, Exams.ExamService exams)
 {
     public async Task<ApprovalResult> ApproveAsync(Guid familyId, Guid proposalId, Guid userId, ProposalEdits? edits, CancellationToken ct)
     {
@@ -79,6 +79,9 @@ public class ProposalEngine(HallyDbContext db, IAnalytics analytics, TimeProvide
 
             db.Events.Add(evt);
             entityId = evt.Id;
+
+            // "Matematik sınavı" for one child also becomes an exam (study notes, result).
+            await exams.FromEventAsync(evt, userId, ct);
         }
 
         var finalPayload = payload with { NeedsInfo = [] };

@@ -9,10 +9,12 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../family/family_repository.dart';
+import '../exams/exam_screens.dart';
 import '../family/children.dart';
 import '../notifications/reminder_sheet.dart';
 import '../sharing/helper_share_sheet.dart';
 import '../sharing/sharing_repository.dart';
+import '../exams/exams.dart';
 import 'event_editor.dart';
 import 'planning_repository.dart';
 
@@ -134,18 +136,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               error: (_, __) => HallyErrorState(onRetry: () => ref.invalidate(calendarEventsProvider(range))),
               data: (events) {
                 final today = events.where((e) => DateUtils.isSameDay(e.startsAt, _selected)).toList();
-                if (today.isEmpty) {
+                final studyRows = ExamStudyRows(familyId: familyId, day: _selected, childId: child);
+                if (today.isEmpty && !ref.watch(hasStudyRowsProvider((familyId, _selected, child)))) {
                   return HallyEmptyState(icon: Icons.event_available_outlined, title: l10n.calendarEmpty, body: l10n.calendarEmptyBody);
                 }
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(HallySpace.md, 0, HallySpace.md, 120),
                   children: [
+                    studyRows,
                     for (final e in today)
                       Card(
                         child: ListTile(
                           key: Key('event.${e.id}'),
                           onTap: ref.watch(isCaregiverProvider) ? null : () => _editEvent(familyId, e),
-                          leading: const HallyIconBadge(icon: Icons.event_rounded, color: HallyModule.calendar),
+                          leading: e.examId != null
+                              ? const HallyIconBadge(icon: Icons.edit_note_rounded, color: HallyModule.study)
+                              : const HallyIconBadge(icon: Icons.event_rounded, color: HallyModule.calendar),
                           title: Row(
                             children: [
                               Expanded(child: Text(e.title, style: theme.textTheme.titleSmall)),
@@ -182,6 +188,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Future<void> _editEvent(String familyId, EventItem event) async {
+    if (event.examId case final examId?) {
+      // An exam's event is edited as the exam (subject, topics, study reminder), which keeps the event in step.
+      final exams = await ref.read(examsProvider(familyId).future).catchError((_) => <Exam>[]);
+      final exam = exams.where((x) => x.id == examId).firstOrNull;
+      if (exam != null && mounted) {
+        final saved = await showExamEditor(context, ref, familyId: familyId, exam: exam);
+        if (saved != null && mounted) setState(() => _selected = DateUtils.dateOnly(saved.date));
+        return;
+      }
+    }
+    if (!mounted) return;
     final day = await showEventEditor(context, ref, familyId: familyId, event: event);
     if (day != null && mounted) setState(() => _selected = day);
   }

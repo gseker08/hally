@@ -97,6 +97,9 @@ public enum ClaimKind
 
     /// <summary>A screen-free idea from "Şimdi ne yapsam?" (built-in or the family's own).</summary>
     Activity,
+
+    /// <summary>"Çalıştım" for an upcoming exam (item = the exam), once a day.</summary>
+    Study,
 }
 
 public enum ClaimStatus

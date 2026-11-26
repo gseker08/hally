@@ -2936,6 +2936,99 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("rewards", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.School.Exam", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Cherries")
+                        .HasColumnType("integer")
+                        .HasColumnName("cherries");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<Guid?>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("outcome");
+
+                    b.Property<DateTimeOffset?>("ResultAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("result_at");
+
+                    b.Property<Guid?>("ResultByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("result_by_user_id");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("integer")
+                        .HasColumnName("score");
+
+                    b.Property<string>("Slot")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("slot");
+
+                    b.Property<int?>("StudyDaysBefore")
+                        .HasColumnType("integer")
+                        .HasColumnName("study_days_before");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("Topics")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("topics");
+
+                    b.HasKey("Id")
+                        .HasName("pk_exams");
+
+                    b.HasIndex("CreatedByUserId")
+                        .HasDatabaseName("ix_exams_created_by_user_id");
+
+                    b.HasIndex("EventId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_exams_event_id");
+
+                    b.HasIndex("ResultByUserId")
+                        .HasDatabaseName("ix_exams_result_by_user_id");
+
+                    b.HasIndex("ChildId", "Date")
+                        .HasDatabaseName("ix_exams_child_id_date");
+
+                    b.HasIndex("FamilyId", "Date")
+                        .HasDatabaseName("ix_exams_family_id_date");
+
+                    b.ToTable("exams", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.ScreenTime.ScreenTimeSession", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3206,6 +3299,10 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("ended_by_user_id");
 
+                    b.Property<Guid?>("ExamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("exam_id");
+
                     b.Property<Guid>("FamilyId")
                         .HasColumnType("uuid")
                         .HasColumnName("family_id");
@@ -3239,6 +3336,9 @@ namespace Hally.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("EndedByUserId")
                         .HasDatabaseName("ix_study_sessions_ended_by_user_id");
+
+                    b.HasIndex("ExamId")
+                        .HasDatabaseName("ix_study_sessions_exam_id");
 
                     b.HasIndex("FamilyId")
                         .HasDatabaseName("ix_study_sessions_family_id");
@@ -4305,6 +4405,41 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_rewards_families_family_id");
                 });
 
+            modelBuilder.Entity("Hally.Domain.School.Exam", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_exams_children_child_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_exams_users_created_by_user_id");
+
+                    b.HasOne("Hally.Domain.Planning.CalendarEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_exams_events_event_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_exams_families_family_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ResultByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_exams_users_result_by_user_id");
+                });
+
             modelBuilder.Entity("Hally.Domain.ScreenTime.ScreenTimeSession", b =>
                 {
                     b.HasOne("Hally.Domain.Families.Child", null)
@@ -4409,6 +4544,12 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasForeignKey("EndedByUserId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_study_sessions_users_ended_by_user_id");
+
+                    b.HasOne("Hally.Domain.School.Exam", null)
+                        .WithMany()
+                        .HasForeignKey("ExamId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_study_sessions_exams_exam_id");
 
                     b.HasOne("Hally.Domain.Families.Family", null)
                         .WithMany()

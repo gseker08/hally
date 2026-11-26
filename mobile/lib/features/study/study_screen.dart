@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/auth/auth_repository.dart';
@@ -61,7 +62,15 @@ class _StudyScreenState extends ConsumerState<StudyScreen> {
     final status = ref.watch(studyStatusProvider(familyId));
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.studyTitle)),
+      appBar: AppBar(title: Text(l10n.studyTitle), actions: [
+        TextButton.icon(
+          key: const Key('study.exams'),
+          style: TextButton.styleFrom(minimumSize: const Size(0, 40)),
+          onPressed: () => context.push('/exams'),
+          icon: const Icon(Icons.edit_note_rounded),
+          label: Text(l10n.examsTitle),
+        ),
+      ]),
       body: children.isEmpty
           ? HallyEmptyState(icon: Icons.menu_book_rounded, title: l10n.studyTitle, body: l10n.studyNoChildren)
           : status.when(

@@ -54,6 +54,7 @@ class EventItem {
     this.endsAt,
     this.location,
     this.repeatUntil,
+    this.examId,
     DateTime? seriesStartsAt,
   }) : seriesStartsAt = seriesStartsAt ?? startsAt;
 
@@ -69,6 +70,7 @@ class EventItem {
       endsAt: j['endsAt'] == null ? null : DateTime.parse(j['endsAt'] as String).toLocal(),
       location: j['location'] as String?,
       repeatUntil: j['repeatUntil'] as String?,
+      examId: j['examId'] as String?,
       seriesStartsAt: j['seriesStartsAt'] == null ? startsAt : DateTime.parse(j['seriesStartsAt'] as String).toLocal(),
     );
   }
@@ -87,6 +89,9 @@ class EventItem {
 
   /// Last day of a series as `yyyy-MM-dd`, or null for no end.
   final String? repeatUntil;
+
+  /// Set when this event is a child's exam (Sınav takvimi): tapping opens the exam, not the event editor.
+  final String? examId;
 
   /// First occurrence of the series; equals [startsAt] for a one-off event.
   final DateTime seriesStartsAt;

@@ -34,7 +34,8 @@ public record ChildStudyDto(
     string? StartedByName,
     int Streak,
     DateTimeOffset AsOf,
-    Guid? StartedByUserId = null);
+    Guid? StartedByUserId = null,
+    Guid? RunningExamId = null);
 
 public record StudyDayDto(DateOnly Date, int HomeworkSeconds, int ReadingSeconds, bool GoalMet);
 
@@ -43,11 +44,12 @@ public record StudyEntryDto(Guid Id, string Kind, DateTimeOffset StartedAt, Date
 /// <param name="Days">The last seven family-local days, oldest first.</param>
 public record ChildStudyHistoryDto(Guid ChildId, int? DailyGoalMinutes, IReadOnlyList<StudyDayDto> Days, IReadOnlyList<StudyEntryDto> Entries);
 
-public record StudyStartRequest(StudyKind Kind = StudyKind.Homework);
+/// <param name="ExamId">Started from an exam's "Çalışma zamanı": the minutes add up on that exam.</param>
+public record StudyStartRequest(StudyKind Kind = StudyKind.Homework, Guid? ExamId = null);
 
 public record StudyStopRequest(string? Note = null);
 
-public record StudyEntryRequest(StudyKind Kind, int Minutes, string? Note = null);
+public record StudyEntryRequest(StudyKind Kind, int Minutes, string? Note = null, Guid? ExamId = null);
 
 /// <param name="DailyMinutes">Null removes the goal.</param>
 public record StudyGoalRequest(int? DailyMinutes);
@@ -131,6 +133,7 @@ public class StudyController(
     public async Task<ChildStudyDto> Start(Guid familyId, Guid childId, StudyStartRequest request, CancellationToken ct)
     {
         await Load(familyId, childId, ct);
+        await EnsureExam(childId, request.ExamId, ct);
         var now = clock.GetUtcNow();
         var open = await db.StudySessions.FirstOrDefaultAsync(s => s.ChildId == childId && s.EndedAt == null, ct);
         if (open is not null && !open.IsCounting(now))
@@ -140,9 +143,17 @@ public class StudyController(
             open = null;
         }
 
+        if (open is not null && open.ExamId is null && request.ExamId is not null)
+        {
+            open.ForExam(request.ExamId);
+            await db.SaveChangesAsync(ct);
+        }
+
         if (open is null)
         {
-            db.StudySessions.Add(new StudySession(familyId, childId, User.UserId(), request.Kind, now));
+            var session = new StudySession(familyId, childId, User.UserId(), request.Kind, now);
+            session.ForExam(request.ExamId);
+            db.StudySessions.Add(session);
             try
             {
                 await db.SaveChangesAsync(ct);
@@ -178,8 +189,10 @@ public class StudyController(
     public async Task<ChildStudyDto> AddEntry(Guid familyId, Guid childId, StudyEntryRequest request, CancellationToken ct)
     {
         await Load(familyId, childId, ct);
-        db.StudySessions.Add(StudySession.Manual(familyId, childId, User.UserId(), request.Kind, TimeSpan.FromMinutes(request.Minutes), request.Note,
-            clock.GetUtcNow()));
+        await EnsureExam(childId, request.ExamId, ct);
+        var entry = StudySession.Manual(familyId, childId, User.UserId(), request.Kind, TimeSpan.FromMinutes(request.Minutes), request.Note, clock.GetUtcNow());
+        entry.ForExam(request.ExamId);
+        db.StudySessions.Add(entry);
         await db.SaveChangesAsync(ct);
         return await Changed(familyId, childId, ct);
     }
@@ -224,7 +237,7 @@ public class StudyController(
         var streak = child.DailyStudyMinutes is null ? 0 : StudySession.Streak(days.Select(d => d.GoalMet).ToList());
         return new ChildStudyDto(child.Id, child.DailyStudyMinutes, todayDay.HomeworkSeconds + todayDay.ReadingSeconds, todayDay.HomeworkSeconds,
             todayDay.ReadingSeconds, running?.Kind.ToString(), running?.StartedAt, running is null ? null : running.StartedAt + StudySession.MaxLength,
-            startedBy, streak, now, running?.StartedByUserId);
+            startedBy, streak, now, running?.StartedByUserId, running?.ExamId);
     }
 
     private static StudyDayDto Day(DateOnly date, List<StudySession> sessions, DateTimeOffset from, DateTimeOffset to, int? goal, DateTimeOffset now)
@@ -240,6 +253,14 @@ public class StudyController(
     {
         var earliest = from - StudySession.MaxLength;
         return db.StudySessions.AsNoTracking().Where(s => s.ChildId == childId && s.StartedAt >= earliest && s.StartedAt < to).ToListAsync(ct);
+    }
+
+    private async Task EnsureExam(Guid childId, Guid? examId, CancellationToken ct)
+    {
+        if (examId is { } id && !await db.Exams.AnyAsync(e => e.Id == id && e.ChildId == childId, ct))
+        {
+            throw new NotFoundException("exam.not_found", "Exam not found.");
+        }
     }
 
     private async Task<(string Tz, Child Child)> Load(Guid familyId, Guid childId, CancellationToken ct)

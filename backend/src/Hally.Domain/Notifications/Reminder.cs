@@ -156,6 +156,12 @@ public enum NotificationKind
 
     /// <summary>The daily "Sabah özeti" at the time the user chose; opens the spoken summary.</summary>
     MorningBriefing,
+
+    /// <summary>"Çalışma zamanı": evenings before a child's exam (target = the exam).</summary>
+    ExamStudy,
+
+    /// <summary>Exam day evening: "Nasıl geçti?" (target = the exam).</summary>
+    ExamResult,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

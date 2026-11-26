@@ -45,6 +45,9 @@ public interface IChatClient
     Task ExpensesChanged(Expenses.ExpensesEvent e);
 
     Task HealthChanged(Health.HealthEvent e);
+
+    /// <summary>Exams were added, changed or got a result; apps reload.</summary>
+    Task ExamsChanged(Exams.ExamsEvent e);
 }
 
 /// <summary>

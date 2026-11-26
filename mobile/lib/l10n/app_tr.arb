@@ -2577,13 +2577,25 @@
   "kidExitBody": "Bu telefon çocuk modundan çıkar, ekran kilidi durur. Tekrar bağlamak için yeni kod gerekir.",
   "kidExitHelp": "PIN yok mu? Ebeveyn kendi telefonundan Aile → çocuk → Telefon ekranında bağlantıyı kaldırabilir.",
   "kidExitWrong": "PIN yanlış · {left} deneme kaldı",
-  "@kidExitWrong": {"placeholders": {"left": {"type": "int"}}},
+  "@kidExitWrong": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      }
+    }
+  },
   "kidExitBlocked": "Çok fazla yanlış deneme. 15 dakika sonra tekrar dene.",
   "kidExitNoPin": "Henüz ebeveyn PIN'i yok. Ebeveyn telefonundan Aile → çocuk → Telefon ekranında belirleyin.",
   "exitPinSection": "Çıkış PIN'i",
   "exitPinTitle": "Ebeveyn PIN'i",
   "exitPinBody": "Çocuğun telefonunda çocuk modundan çıkmak için 4 haneli PIN. {name} bilmemeli.",
-  "@exitPinBody": {"placeholders": {"name": {"type": "String"}}},
+  "@exitPinBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "exitPinSet": "PIN ayarlı",
   "exitPinNotSet": "PIN yok",
   "exitPinChange": "PIN'i değiştir",
@@ -2741,5 +2753,163 @@
         "type": "String"
       }
     }
-  }
+  },
+  "examsTitle": "Sınavlar",
+  "examsEntry": "Sınav takvimi",
+  "examsAdd": "Sınav",
+  "examsUpcoming": "Yaklaşan",
+  "examsAwaiting": "Sonuç bekleyen",
+  "examsResults": "Sonuçlar",
+  "examsEmpty": "Yaklaşan sınav yok",
+  "examsEmptyBody": "Sınavı ekle; takvime düşsün, çalışma zamanı hatırlatılsın.",
+  "examsToday": "Bugün",
+  "examsTomorrow": "Yarın",
+  "examsDaysLeft": "{count} gün",
+  "@examsDaysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "examsNoTopics": "Konu eklenmedi",
+  "examsHowDidItGo": "{child} · Nasıl geçti?",
+  "@examsHowDidItGo": {
+    "placeholders": {
+      "child": {
+        "type": "String"
+      }
+    }
+  },
+  "examsEnterResult": "Not gir",
+  "examsNew": "Yeni sınav",
+  "examsEdit": "Sınavı düzenle",
+  "examsWho": "Kimin?",
+  "examsSubject": "Ders",
+  "examsSubjectOther": "Yaz",
+  "examsSubjectHint": "Ders adı",
+  "examsSubjects": "Matematik|Türkçe|Fen|Sosyal|İngilizce",
+  "examsDate": "Tarih ve saat",
+  "examsSlotHint": "2. ders ya da 10:30",
+  "examsTopics": "Konular (isteğe bağlı)",
+  "examsTopicsHint": "Kesirler, ondalık sayılar",
+  "examsStudyReminder": "Çalışma hatırlatması",
+  "examsStudyReminderBody": "{days} gün önce, akşam 18:00",
+  "@examsStudyReminderBody": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "examsStudyReminderWeek": "1 hafta önce, akşam 18:00",
+  "examsStudyReminderOff": "Kapalı",
+  "examsStudyWeek": "1 hafta",
+  "examsSave": "Kaydet ve takvime ekle",
+  "examsSaveEdit": "Kaydet",
+  "examsDelete": "Sınavı sil",
+  "examsDeleted": "Sınav silindi",
+  "examsScan": "Duyuru fotoğrafından ekle",
+  "examsStudyRow": "Çalışma zamanı · {subject}",
+  "@examsStudyRow": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "examsStudyRowSub": "{child} · 18:00 · sınava {days} gün",
+  "@examsStudyRowSub": {
+    "placeholders": {
+      "child": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "examsStart": "Başlat",
+  "examsStudyStarted": "{child} için ödev zamanlayıcısı başladı",
+  "@examsStudyStarted": {
+    "placeholders": {
+      "child": {
+        "type": "String"
+      }
+    }
+  },
+  "examsStudied": "toplam {minutes} dk çalıştı",
+  "@examsStudied": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "examsResultTitle": "Sınav sonucu",
+  "examsOutcomeHard": "Zor",
+  "examsOutcomeGood": "İyi",
+  "examsOutcomeGreat": "Çok iyi",
+  "examsScore": "Not (isteğe bağlı)",
+  "examsCherries": "Kiraz ver",
+  "examsCherriesBody": "Emeği için, notu için değil",
+  "examsCherriesGiven": "{count} kiraz verildi",
+  "@examsCherriesGiven": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "examsCherriesOther": "Diğer",
+  "examsPrivate": "Notlar sadece ebeveynlere görünür, bakıcı ve çocuk ekranında yer almaz.",
+  "examsSaved": "Kaydedildi",
+  "examsPickOutcome": "Önce nasıl geçtiğini seç",
+  "kidExamOn": "{weekday} {subject} sınavın var",
+  "@kidExamOn": {
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "kidExamToday": "Bugün {subject} sınavın var",
+  "@kidExamToday": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "kidExamTomorrow": "Yarın {subject} sınavın var",
+  "@kidExamTomorrow": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "kidExamStudied": "Bu sınav için {minutes} dk çalıştın 💪",
+  "@kidExamStudied": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "kidExamStudyPrompt": "Bugün çalıştın mı?",
+  "kidExamStudyButton": "Çalıştım",
+  "kidExamStudyDone": "Bugün çalıştın ✓",
+  "savingsLineExam": "📝 {subject}",
+  "@savingsLineExam": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "examsHowQuestion": "Nasıl geçti?"
 }

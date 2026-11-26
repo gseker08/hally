@@ -47,6 +47,7 @@ import 'features/screen_time/screen_time_screen.dart';
 import 'features/shopping/shopping_screen.dart';
 import 'features/sleep/sleep_screen.dart';
 import 'features/study/study_screen.dart';
+import 'features/exams/exam_screens.dart';
 import 'features/sharing/weekly_card_screen.dart';
 import 'features/planning/calendar_screen.dart';
 import 'features/planning/tasks_screen.dart';
@@ -134,6 +135,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/sleep', builder: (_, __) => const SleepScreen()),
       GoRoute(path: '/feeding', builder: (_, __) => const FeedingScreen()),
       GoRoute(path: '/study', builder: (_, __) => const StudyScreen()),
+      GoRoute(path: '/exams', builder: (_, s) => ExamsScreen(childId: s.uri.queryParameters['child'])),
+      GoRoute(path: '/exams/:id/result', builder: (_, s) => ExamResultScreen(examId: s.pathParameters['id']!)),
       GoRoute(path: '/stars', builder: (_, __) => const PointsScreen()),
       GoRoute(path: '/habits', builder: (_, __) => const HabitsScreen()),
       GoRoute(path: '/school-run', builder: (_, __) => const DutiesScreen()),
