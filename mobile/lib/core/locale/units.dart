@@ -10,5 +10,8 @@ String langOf(BuildContext context) => Localizations.localeOf(context).languageC
       'ja' => (h: '時間', min: '分'),
       'ko' => (h: '시간', min: '분'),
       'zh' => (h: '小时', min: '分钟'),
+      'pt' => (h: 'h', min: 'min'),
+      'hi' => (h: 'घं', min: 'मि'),
+      'id' => (h: 'j', min: 'mnt'),
       _ => (h: 'h', min: 'min'),
     };

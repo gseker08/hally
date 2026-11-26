@@ -171,7 +171,7 @@ BedtimeStory storyFor(DateTime evening, String language) {
   return list[day % list.length];
 }
 
-const _stories = {'tr': _storiesTr, 'en': _storiesEn, 'de': _storiesDe, 'ja': _storiesJa, 'ko': _storiesKo, 'zh': _storiesZh};
+const _stories = {'tr': _storiesTr, 'en': _storiesEn, 'de': _storiesDe, 'ja': _storiesJa, 'ko': _storiesKo, 'zh': _storiesZh, 'pt': _storiesPt, 'hi': _storiesHi, 'id': _storiesId};
 
 const _storiesTr = [
   BedtimeStory(
@@ -295,4 +295,61 @@ const _storiesZh = [
       '小乌龟在海边慢慢地走了一整天。它看到了一个贝壳、一只螃蟹和一块亮晶晶的石头。'
           '傍晚，海浪开始给它唱摇篮曲：哗——哗——。小乌龟在沙子里做了一个暖暖的窝。'
           '它把头缩进壳里，想着今天看到的美好的东西。海浪声越来越慢，越来越轻。像小乌龟一样深深地吸一口气，慢慢睡着吧。晚安。'),
+];
+
+const _storiesPt = [
+  BedtimeStory(
+      'O ursinho e a lanterna da lua',
+      'Numa casinha na beira da floresta, o ursinho acendia sua lanterna toda noite e contava as estrelas, uma por uma. Uma noite, faltava uma estrela. '
+          'Ele levou a lanterna para o quintal e encontrou uma luzinha brilhando na grama: era uma estrelinha descansando depois de um dia longo. '
+          'O ursinho a segurou com carinho e cantarolou uma canção de ninar. Quando a estrela descansou, ela voltou devagarinho para o céu. '
+          'O ursinho bocejou e voltou para a cama. Naquela noite, todas as estrelas brilharam um pouquinho mais para ele. Boa noite.'),
+  BedtimeStory(
+      'Algodão, a nuvenzinha',
+      'Uma nuvem fofinha chamada Algodão passou o dia todo passeando pelo céu e fazendo sombra para as crianças que brincavam. Quando a noite chegou, o vento sussurrou: hora de descansar. '
+          'Algodão se deitou sobre os morros, e o sol a cobriu com um cobertor laranja. Os passarinhos voltaram para casa, os coelhinhos também. '
+          'Quando a lua subiu, Algodão ficou prateada e fechou os olhos bem devagar. Amanhã vão brincar de novo. Agora está tudo calmo e tranquilo. Boa noite.'),
+  BedtimeStory(
+      'O passeio da tartaruguinha',
+      'A tartaruguinha passeou devagar pela praia o dia inteiro. Viu uma concha, um caranguejo e uma pedra brilhante. '
+          'À noite, as ondas começaram a cantar uma canção de ninar: xiii, xiii. A tartaruguinha fez um ninho quentinho na areia. '
+          'Ela guardou a cabeça no casco e pensou em todas as coisas bonitas que viu. As ondas foram ficando mais lentas e mais baixinhas. Respire fundo, como a tartaruguinha, e durma devagar. Boa noite.'),
+];
+
+const _storiesHi = [
+  BedtimeStory(
+      'छोटा भालू और चाँद की लालटेन',
+      'जंगल के किनारे एक छोटे से घर में, छोटा भालू हर रात अपनी लालटेन जलाकर तारे एक-एक करके गिनता था। एक रात एक तारा कम था। '
+          'वह लालटेन लेकर आँगन में गया और घास में एक नन्ही रोशनी चमकती देखी: एक छोटा तारा लंबे दिन के बाद आराम कर रहा था। '
+          'छोटे भालू ने उसे प्यार से हथेली पर रखा और धीरे-धीरे लोरी गुनगुनाई। जब तारे की थकान उतर गई, तो वह धीरे से आसमान में लौट गया। '
+          'छोटे भालू ने जम्हाई ली और बिस्तर में चला गया। उस रात सारे तारे उसके लिए थोड़ा और चमके। शुभ रात्रि।'),
+  BedtimeStory(
+      'रुई, छोटा बादल',
+      'रुई नाम का एक नरम-सा बादल पूरे दिन आसमान में घूमता रहा और खेलते बच्चों पर छाया करता रहा। जब शाम हुई, हवा ने धीरे से कहा: अब आराम का समय है। '
+          'रुई पहाड़ियों पर लेट गया, और सूरज ने उसे नारंगी कंबल ओढ़ा दिया। चिड़ियाँ घोंसलों में लौट गईं, खरगोश भी अपने बिलों में। '
+          'जब चाँद निकला, रुई चाँदी जैसा हो गया और उसने धीरे-धीरे आँखें बंद कर लीं। कल फिर खेलेंगे। अब सब कुछ शांत है। शुभ रात्रि।'),
+  BedtimeStory(
+      'नन्हे कछुए की सैर',
+      'नन्हा कछुआ पूरे दिन समुद्र किनारे धीरे-धीरे घूमता रहा। उसने एक सीप, एक केकड़ा और एक चमकता पत्थर देखा। '
+          'शाम को लहरों ने लोरी गाना शुरू किया: छप, छप। नन्हे कछुए ने रेत में एक गरम-सा घोंसला बनाया। '
+          'उसने अपना सिर खोल में छिपा लिया और दिन की सारी सुंदर चीज़ों के बारे में सोचा। लहरें धीमी और धीमी होती गईं। नन्हे कछुए की तरह गहरी साँस लो और धीरे से सो जाओ। शुभ रात्रि।'),
+];
+
+const _storiesId = [
+  BedtimeStory(
+      'Beruang kecil dan lentera bulan',
+      'Di sebuah rumah kecil di pinggir hutan, beruang kecil menyalakan lenteranya setiap malam dan menghitung bintang satu per satu. Suatu malam, satu bintang hilang. '
+          'Ia membawa lenteranya ke halaman dan melihat cahaya kecil berkelip di rumput: ternyata bintang mungil sedang beristirahat setelah hari yang panjang. '
+          'Beruang kecil memegangnya dengan lembut dan menyenandungkan lagu nina bobo. Setelah bintang itu tidak lelah lagi, ia pelan-pelan kembali ke langit. '
+          'Beruang kecil menguap lalu naik ke tempat tidur. Malam itu semua bintang bersinar sedikit lebih terang untuknya. Selamat tidur.'),
+  BedtimeStory(
+      'Kapas, si awan kecil',
+      'Awan lembut bernama Kapas seharian berjalan-jalan di langit dan meneduhi anak-anak yang sedang bermain. Saat malam tiba, angin berbisik: waktunya istirahat. '
+          'Kapas berbaring di atas bukit, dan matahari menyelimutinya dengan selimut jingga. Burung-burung pulang ke sarang, kelinci pun pulang ke liangnya. '
+          'Saat bulan naik, Kapas berubah keperakan dan pelan-pelan menutup matanya. Besok mereka bermain lagi. Sekarang semuanya tenang dan damai. Selamat tidur.'),
+  BedtimeStory(
+      'Jalan-jalan kura-kura kecil',
+      'Kura-kura kecil berjalan pelan-pelan di pantai sepanjang hari. Ia melihat kerang, kepiting, dan batu yang berkilau. '
+          'Saat senja, ombak mulai menyanyikan lagu nina bobo: syuuu, syuuu. Kura-kura kecil membuat sarang hangat di pasir. '
+          'Ia memasukkan kepalanya ke dalam tempurung dan memikirkan semua hal indah yang ia lihat hari ini. Ombak makin pelan, makin lembut. Tarik napas dalam-dalam seperti kura-kura kecil, lalu tidurlah perlahan. Selamat tidur.'),
 ];

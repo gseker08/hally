@@ -95,6 +95,9 @@
 		3B41706D274479215E99E79A /* StopTimerIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StopTimerIntent.swift; sourceTree = "<group>"; };
 		3EB4C5DA209DD15230E91765 /* tr */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		D3A1E5C20F7B4C8E9A6B0D01 /* de */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		2268118C09EE483882A377E2 /* id */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = id; path = id.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		1489280E4D9F4E45A9C7EC18 /* hi */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = hi; path = hi.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		0995AA2191434E7196E316B1 /* pt-BR */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = "pt-BR"; path = "pt-BR.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		EB12A96DB5BF4EC0BC85BC0C /* zh-Hans */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		9DCFB8A8D7934CB7940C2145 /* ko */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = ko; path = ko.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C0D32C3BE1D74EF8AD3B62E4 /* ja */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -369,6 +372,9 @@
 				de,
 				ja,
 				ko,
+				hi,
+				id,
+				"pt-BR",
 				"zh-Hans",
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
@@ -568,6 +574,9 @@
 				097CD3BBCCEC506590D50B55 /* en */,
 				3EB4C5DA209DD15230E91765 /* tr */,
 				D3A1E5C20F7B4C8E9A6B0D01 /* de */,
+				2268118C09EE483882A377E2 /* id */,
+				1489280E4D9F4E45A9C7EC18 /* hi */,
+				0995AA2191434E7196E316B1 /* pt-BR */,
 				EB12A96DB5BF4EC0BC85BC0C /* zh-Hans */,
 				9DCFB8A8D7934CB7940C2145 /* ko */,
 				C0D32C3BE1D74EF8AD3B62E4 /* ja */,

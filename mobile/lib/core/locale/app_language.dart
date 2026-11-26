@@ -14,7 +14,10 @@ enum AppLanguage {
   de('de'),
   ja('ja'),
   ko('ko'),
-  zh('zh');
+  zh('zh'),
+  pt('pt'),
+  hi('hi'),
+  id('id');
 
   const AppLanguage(this.code);
 
@@ -27,11 +30,14 @@ enum AppLanguage {
       AppLanguage.values.firstWhere((l) => l.code != null && l.code == code, orElse: () => AppLanguage.system);
 }
 
-const supportedLanguageCodes = ['tr', 'en', 'de', 'ja', 'ko', 'zh'];
+const supportedLanguageCodes = ['tr', 'en', 'de', 'ja', 'ko', 'zh', 'pt', 'hi', 'id'];
 
 /// Picks a supported language for a device locale. A phone in a language Hally does not speak gets English.
-Locale resolveDeviceLocale(Locale? device) =>
-    supportedLanguageCodes.contains(device?.languageCode) ? Locale(device!.languageCode) : const Locale('en');
+Locale resolveDeviceLocale(Locale? device) {
+  // Older Android reports Indonesian with the legacy code "in".
+  final code = device?.languageCode == 'in' ? 'id' : device?.languageCode;
+  return supportedLanguageCodes.contains(code) ? Locale(code!) : const Locale('en');
+}
 
 /// The speech recognizer / text-to-speech locale for an app language, e.g. tr_TR.
 String speechLocaleFor(String languageCode) => switch (languageCode) {
@@ -40,6 +46,9 @@ String speechLocaleFor(String languageCode) => switch (languageCode) {
       'ja' => 'ja_JP',
       'ko' => 'ko_KR',
       'zh' => 'zh_CN',
+      'pt' => 'pt_BR',
+      'hi' => 'hi_IN',
+      'id' => 'id_ID',
       _ => 'en_US',
     };
 
@@ -50,6 +59,9 @@ String defaultTimeZoneFor(String languageCode) => switch (languageCode) {
       'ja' => 'Asia/Tokyo',
       'ko' => 'Asia/Seoul',
       'zh' => 'Asia/Shanghai',
+      'pt' => 'America/Sao_Paulo',
+      'hi' => 'Asia/Kolkata',
+      'id' => 'Asia/Jakarta',
       _ => 'Europe/London',
     };
 

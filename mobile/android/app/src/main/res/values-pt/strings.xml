@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="child_lock_title">O tempo de tela acabou</string>
+    <string name="child_lock_used">Você usou %1$s hoje.\nLibera de novo amanhã.</string>
+    <string name="child_lock_hint">No Hally você pode comprar tempo com cerejas ou pedir para seus pais.</string>
+    <string name="child_lock_open">Abrir o Hally</string>
+    <string name="child_lock_emergency">Emergência</string>
+    <string name="child_lock_hours_minutes">%1$d h %2$d min</string>
+    <string name="child_lock_minutes">%1$d min</string>
+    <string name="child_lock_notice_title">Tempo de tela sendo registrado</string>
+    <string name="child_lock_notice_body">O modo criança do Hally está ativo para sua família</string>
+    <string name="child_lock_channel">Modo criança do Hally</string>
+    <string name="today_widget_description">Os próximos eventos e tarefas de hoje</string>
+    <string name="today_widget_title">Hoje</string>
+    <string name="today_widget_stale">Abra o Hally para ver o dia</string>
+    <string name="now_widget_description">Cronômetros rodando, ao vivo</string>
+    <string name="now_widget_title">Agora</string>
+    <string name="now_widget_empty">Nenhum cronômetro rodando</string>
+    <string name="today_widget_voice">Falar com o Hally</string>
+</resources>

@@ -62,6 +62,7 @@ void main() {
     expect(resolveDeviceLocale(const Locale('en', 'GB')), const Locale('en'));
     expect(resolveDeviceLocale(const Locale('tr', 'TR')), const Locale('tr'));
     expect(resolveDeviceLocale(const Locale('de', 'AT')), const Locale('de'));
+    expect(resolveDeviceLocale(const Locale('in', 'ID')), const Locale('id'));
     expect(resolveDeviceLocale(const Locale('xx')), const Locale('en'));
     expect(resolveDeviceLocale(null), const Locale('en'));
   });

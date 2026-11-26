@@ -82,9 +82,12 @@ public static class Locales
     public const string Japanese = "ja";
     public const string Korean = "ko";
     public const string Chinese = "zh";
+    public const string Portuguese = "pt";
+    public const string Hindi = "hi";
+    public const string Indonesian = "id";
 
     /// <summary>The languages the app and the server texts speak.</summary>
-    public static readonly IReadOnlyList<string> Supported = [Turkish, English, German, Japanese, Korean, Chinese];
+    public static readonly IReadOnlyList<string> Supported = [Turkish, English, German, Japanese, Korean, Chinese, Portuguese, Hindi, Indonesian];
 
     /// <summary>Two-letter code of a supported language. Missing means Turkish (the launch market); any other
     /// language gets English.</summary>
@@ -92,6 +95,11 @@ public static class Locales
     {
         var two = (locale ?? string.Empty).Trim().ToLowerInvariant();
         two = two.Length >= 2 ? two[..2] : two;
+        if (two == "in")
+        {
+            two = "id"; // Older Android reports Indonesian with the legacy code "in".
+        }
+
         if (two.Length == 0)
         {
             return Turkish;
@@ -110,6 +118,9 @@ public static class Locales
         Japanese => "Japanese",
         Korean => "Korean",
         Chinese => "Chinese",
+        Portuguese => "Portuguese",
+        Hindi => "Hindi",
+        Indonesian => "Indonesian",
         _ => "English",
     };
 }

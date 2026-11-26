@@ -361,7 +361,7 @@ public class ExamService(HallyDbContext db, NotificationPublisher publisher, IHu
 
 public static class ExamTexts
 {
-    private static readonly Regex ExamWord = new(@"\b(sınavı|sınavları|sınav|yazılısı|yazılı|quiz|exam|test|klassenarbeit|prüfung|schulaufgabe|lernkontrolle)\b|小テスト|テスト|試験|시험|考试|测验|测试", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex ExamWord = new(@"\b(sınavı|sınavları|sınav|yazılısı|yazılı|quiz|exam|test|klassenarbeit|prüfung|schulaufgabe|lernkontrolle|prova de|prova|avaliação de|avaliação|teste de|teste|ujian|ulangan harian|ulangan)\b|小テスト|テスト|試験|시험|考试|测验|测试|की परीक्षा|परीक्षा|टेस्ट", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
     public static (string Title, string Body) Study(string lang, string child, string subject, string? topics, int daysLeft)
     {
