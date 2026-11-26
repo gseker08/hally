@@ -45,11 +45,14 @@ public class CalendarSyncTests(HallyApiFactory api)
         var (ayse, mehmet, zeynep, f, _) = await FamilyAsync();
         var day = Tomorrow(0);
 
-        var res = await ayse.PutAsJsonAsync($"{f}/external-events", new { events = new[]
+        var res = await ayse.PutAsJsonAsync($"{f}/external-events", new
+        {
+            events = new[]
         {
             Ev("cal1|a|1", "Diş hekimi", day.AddHours(14)),
             Ev("cal2|b|1", "Bütçe toplantısı", day.AddHours(7), busy: true, provider: "Outlook", calendar: "İş"),
-        } });
+        }
+        });
         res.StatusCode.Should().Be(HttpStatusCode.OK);
         (await res.Content.ReadFromJsonAsync<SyncResultBody>())!.Should().Be(new SyncResultBody(2, 0));
 
