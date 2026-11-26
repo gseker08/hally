@@ -162,7 +162,12 @@ public class ExamService(HallyDbContext db, NotificationPublisher publisher, IHu
 
         db.AuditEntries.Add(new AuditEntry
         {
-            FamilyId = familyId, ActorUserId = userId, Action = examId is null ? "exam.created" : "exam.updated", EntityType = "exam", EntityId = exam.Id, At = now,
+            FamilyId = familyId,
+            ActorUserId = userId,
+            Action = examId is null ? "exam.created" : "exam.updated",
+            EntityType = "exam",
+            EntityId = exam.Id,
+            At = now,
         });
         await db.SaveChangesAsync(ct);
         await AnnounceAsync(familyId, ct);
