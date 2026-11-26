@@ -236,6 +236,25 @@ public class FamilyMember : Entity
         BriefingTime = time is { } v ? new TimeOnly(v.Hour, v.Minute) : null;
     }
 
+    /// <summary>"Bugün ekranım": the areas this member wants first on Today, in order. Empty means everything, as before.</summary>
+    public List<string> FocusAreas { get; private set; } = [];
+
+    /// <summary>When this member finished or skipped the setup wizard; null shows the one-time "set up Today" card.</summary>
+    public DateTimeOffset? SetupCompletedAt { get; private set; }
+
+    /// <summary>Saves the chosen areas (unknown ones are rejected, duplicates dropped, order kept) and marks setup done.</summary>
+    public void SetFocus(IEnumerable<string> areas, DateTimeOffset now)
+    {
+        var list = areas.Select(a => a.Trim()).Where(a => a.Length > 0).Distinct().ToList();
+        if (list.FirstOrDefault(a => !FocusArea.All.Contains(a)) is { } unknown)
+        {
+            throw new DomainException("focus.unknown_area", $"Unknown focus area '{unknown}'.");
+        }
+
+        FocusAreas = list;
+        SetupCompletedAt ??= now;
+    }
+
     /// <summary>True when the summary is due at <paramref name="local"/> and was not sent today; marks it sent.</summary>
     public bool TakeBriefing(DateTime local)
     {
@@ -383,4 +402,23 @@ public static class ChildColors
     public static readonly IReadOnlyList<string> All = ["sky", "mint", "lavender", "sun", "teal", "indigo"];
 
     public static bool IsValid(string? color) => color is not null && All.Contains(color);
+}
+
+/// <summary>The setup wizard's areas; each one groups existing features ("Okul, sınav, ödev" = study, school run…).</summary>
+public static class FocusArea
+{
+    public const string School = "school";
+    public const string Tasks = "tasks";
+    public const string ScreenTime = "screen";
+    public const string Baby = "baby";
+    public const string Health = "health";
+    public const string Cherries = "cherries";
+    public const string Routines = "routines";
+    public const string Shopping = "shopping";
+    public const string Teamwork = "teamwork";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>
+    {
+        School, Tasks, ScreenTime, Baby, Health, Cherries, Routines, Shopping, Teamwork,
+    };
 }

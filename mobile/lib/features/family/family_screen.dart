@@ -143,6 +143,15 @@ class FamilyScreen extends ConsumerWidget {
                         title: l10n.goalTitle, body: l10n.goalTileBody, route: '/family-goal?familyId=${f.id}'),
                   ],
                 ),
+                const SizedBox(height: HallySpace.sm),
+                Center(
+                  child: TextButton.icon(
+                    key: const Key('family.allFeatures'),
+                    onPressed: () => context.push('/features'),
+                    icon: const Icon(Icons.apps_rounded),
+                    label: Text(l10n.allFeaturesTitle),
+                  ),
+                ),
               ],
             ),
           );
