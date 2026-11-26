@@ -2,12 +2,15 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/auth/auth_repository.dart';
 import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../calendar_sync/calendar_sync.dart';
+import '../calendar_sync/calendar_sync_screens.dart';
 import '../family/family_repository.dart';
 import '../exams/exam_screens.dart';
 import '../family/children.dart';
@@ -32,6 +35,30 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _selected = DateUtils.dateOnly(DateTime.now());
   _CalendarView _view = _CalendarView.week;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeInvite());
+  }
+
+  /// Offers calendar sync once, the first time a parent opens the Calendar tab on a phone that has calendars.
+  Future<void> _maybeInvite() async {
+    if (ref.read(isCaregiverProvider)) return;
+    final settings = await ref.read(calendarSyncSettingsProvider.future).catchError((_) => null);
+    if (settings == null || settings.inviteDone || !settings.isEmpty) return;
+    if (!await ref.read(phoneCalendarAvailableProvider.future).catchError((_) => false)) return;
+    if (mounted) await showCalendarConnectSheet(context, ref);
+  }
+
+  void _openCalendarSync() {
+    final settings = ref.read(calendarSyncSettingsProvider).valueOrNull;
+    if (settings == null || settings.isEmpty) {
+      showCalendarConnectSheet(context, ref);
+    } else {
+      context.push('/calendar-sync');
+    }
+  }
+
   CalendarRange _range(String familyId) =>
       _view == _CalendarView.week ? CalendarRange.week(familyId, _selected) : CalendarRange.month(familyId, _selected);
 
@@ -53,7 +80,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final range = _range(familyId);
     final child = ref.watch(childFilterProvider);
     final events = ref.watch(calendarEventsProvider(range)).whenData((all) => filterByChild(all, (e) => e.childIds, child));
-    bool hasEvents(DateTime d) => events.valueOrNull?.any((e) => DateUtils.isSameDay(e.startsAt, d)) ?? false;
+    final caregiver = ref.watch(isCaregiverProvider);
+    // Phone and shared calendars belong to the whole family view: a child filter hides them, like untagged events.
+    final outside = caregiver || child != null ? const <OutsideEvent>[] : ref.watch(outsideEventsProvider(range)).valueOrNull ?? const <OutsideEvent>[];
+    bool hasEvents(DateTime d) =>
+        (events.valueOrNull?.any((e) => DateUtils.isSameDay(e.startsAt, d)) ?? false) || outside.any((e) => _onDay(e, d));
 
     return Scaffold(
       appBar: AppBar(
@@ -74,7 +105,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           ),
         ],
       ),
-      floatingActionButton: ref.watch(isCaregiverProvider) ? null : Padding(
+      floatingActionButton: caregiver ? null : Padding(
         padding: const EdgeInsets.only(bottom: 88),
         child: FloatingActionButton.extended(
           key: const Key('calendar.add'),
@@ -87,8 +118,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(HallySpace.md, 0, HallySpace.md, HallySpace.sm),
-            child: SizedBox(
-              width: double.infinity,
+            child: Row(children: [
+              Expanded(
               child: SegmentedButton<_CalendarView>(
                 key: const Key('calendar.view'),
                 showSelectedIcon: false,
@@ -99,7 +130,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 selected: {_view},
                 onSelectionChanged: (v) => setState(() => _view = v.first),
               ),
-            ),
+              ),
+              if (!caregiver) ...[
+                const SizedBox(width: HallySpace.xs),
+                IconButton.filledTonal(
+                  key: const Key('calendar.sync'),
+                  tooltip: l10n.calSyncTooltip,
+                  icon: const Icon(Icons.event_repeat_rounded),
+                  onPressed: _openCalendarSync,
+                ),
+              ],
+            ]),
           ),
           ChildFilterBar(familyId: familyId),
           if (_view == _CalendarView.week)
@@ -136,16 +177,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               error: (_, __) => HallyErrorState(onRetry: () => ref.invalidate(calendarEventsProvider(range))),
               data: (events) {
                 final today = events.where((e) => DateUtils.isSameDay(e.startsAt, _selected)).toList();
+                final outsideToday = outside.where((e) => _onDay(e, _selected)).toList();
                 final studyRows = ExamStudyRows(familyId: familyId, day: _selected, childId: child);
-                if (today.isEmpty && !ref.watch(hasStudyRowsProvider((familyId, _selected, child)))) {
+                if (today.isEmpty && outsideToday.isEmpty && !ref.watch(hasStudyRowsProvider((familyId, _selected, child)))) {
                   return HallyEmptyState(icon: Icons.event_available_outlined, title: l10n.calendarEmpty, body: l10n.calendarEmptyBody);
                 }
-                return ListView(
-                  padding: const EdgeInsets.fromLTRB(HallySpace.md, 0, HallySpace.md, 120),
-                  children: [
-                    studyRows,
-                    for (final e in today)
-                      Card(
+                final rows = <(DateTime, bool, Widget)>[
+                  for (final e in outsideToday) (e.start, e.allDay, _OutsideEventCard(event: e)),
+                  for (final e in today)
+                    (e.startsAt, e.allDay, Card(
                         child: ListTile(
                           key: Key('event.${e.id}'),
                           onTap: ref.watch(isCaregiverProvider) ? null : () => _editEvent(familyId, e),
@@ -170,8 +210,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                                 familyId: familyId, target: 'Event', targetId: e.id, title: e.title, at: e.startsAt, allDay: e.allDay),
                           ),
                         ),
-                      ),
-                  ],
+                      )),
+                ];
+                // All-day first, then by time; Hally and outside events interleave.
+                rows.sort((a, b) => a.$2 != b.$2 ? (a.$2 ? -1 : 1) : a.$1.compareTo(b.$1));
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(HallySpace.md, 0, HallySpace.md, 120),
+                  children: [studyRows, for (final r in rows) r.$3],
                 );
               },
             ),
@@ -201,6 +246,48 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (!mounted) return;
     final day = await showEventEditor(context, ref, familyId: familyId, event: event);
     if (day != null && mounted) setState(() => _selected = day);
+  }
+}
+
+/// Whether an outside event touches [day] (multi-day and all-day events count on each day they cover).
+bool _onDay(OutsideEvent e, DateTime day) {
+  final start = DateTime(day.year, day.month, day.day);
+  final end = DateTime(day.year, day.month, day.day + 1);
+  final eventEnd = e.end.isAfter(e.start) ? e.end : e.start.add(const Duration(minutes: 1));
+  return e.start.isBefore(end) && eventEnd.isAfter(start);
+}
+
+/// A phone or shared calendar event: read-only, with where it comes from and who sees it.
+class _OutsideEventCard extends ConsumerWidget {
+  const _OutsideEventCard({required this.event});
+
+  final OutsideEvent event;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final e = event;
+    final color = colorFromHex(e.colorHex) ?? theme.colorScheme.outline;
+    final time = e.allDay
+        ? l10n.reviewAllDay
+        : '${TimeOfDay.fromDateTime(e.start).format(context)}–${TimeOfDay.fromDateTime(e.end).format(context)}';
+    final who = e.mine ? (e.mode == ShareMode.onlyMe ? l10n.calSyncOnlyYou : l10n.calSyncFamilySees) : e.ownerName;
+    final muted = e.busyOnly || (e.title?.trim().isEmpty ?? true);
+    return Card(
+      child: ListTile(
+        key: Key('outside.${e.provider.name}.${e.start.millisecondsSinceEpoch}.${e.title}'),
+        onTap: () => showOutsideEventSheet(context, ref, e),
+        leading: Container(width: 5, height: 40, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+        minLeadingWidth: 8,
+        title: Text(outsideTitle(l10n, e), style: theme.textTheme.titleSmall?.copyWith(color: muted ? theme.colorScheme.onSurfaceVariant : null)),
+        subtitle: Row(children: [
+          if (e.mine && e.mode == ShareMode.onlyMe) ...[Icon(Icons.lock_outline_rounded, size: 13, color: theme.colorScheme.onSurfaceVariant), const SizedBox(width: 3)],
+          Flexible(child: Text([time, e.calendarName, if (who != null && who.isNotEmpty) who].join(' · '), maxLines: 1, overflow: TextOverflow.ellipsis)),
+        ]),
+        trailing: Tooltip(message: providerName(l10n, e.provider), child: ProviderMark(provider: e.provider, size: 28)),
+      ),
+    );
   }
 }
 

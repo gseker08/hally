@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design/tokens.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../calendar_sync/calendar_sync_screens.dart';
 import '../capture/capture_sheet.dart';
 import '../family/family_repository.dart';
 import '../share/share_listener.dart';
@@ -28,7 +29,7 @@ class HomeShell extends ConsumerWidget {
 
     return Scaffold(
       extendBody: true,
-      body: ShareListener(child: shell),
+      body: ShareListener(child: CalendarSyncListener(child: shell)),
       bottomNavigationBar: HallyNavBar(
         currentIndex: shell.currentIndex,
         items: [

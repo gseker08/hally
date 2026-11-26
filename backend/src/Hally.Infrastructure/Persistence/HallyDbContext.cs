@@ -43,6 +43,8 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ShareLink> ShareLinks => Set<ShareLink>();
+    public DbSet<ExternalEvent> ExternalEvents => Set<ExternalEvent>();
+    public DbSet<CalendarFeed> CalendarFeeds => Set<CalendarFeed>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
@@ -266,6 +268,28 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasIndex(x => new { x.UserId, x.CreatedAt });
             e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<ExternalEvent>(e =>
+        {
+            e.Property(x => x.SourceKey).HasMaxLength(ExternalEvent.MaxSourceKey).IsRequired();
+            e.Property(x => x.CalendarName).HasMaxLength(ExternalEvent.MaxCalendarName).IsRequired();
+            e.Property(x => x.Title).HasMaxLength(ExternalEvent.MaxTitle);
+            e.Property(x => x.ColorHex).HasMaxLength(7);
+            e.Property(x => x.Provider).HasConversion<string>().HasMaxLength(10);
+            e.HasIndex(x => new { x.FamilyId, x.OwnerUserId, x.SourceKey }).IsUnique();
+            e.HasIndex(x => new { x.FamilyId, x.StartsAt });
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<CalendarFeed>(e =>
+        {
+            e.Property(x => x.TokenHash).HasMaxLength(64).IsRequired();
+            e.HasIndex(x => x.TokenHash).IsUnique();
+            e.HasIndex(x => new { x.FamilyId, x.UserId }).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<ShareLink>(e =>

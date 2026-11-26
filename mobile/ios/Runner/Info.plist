@@ -77,6 +77,10 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Seçtiğin takvimleri (Google, iCloud, Outlook) Hally takviminde göstermek ve aile etkinliklerini &quot;Hally&quot; takvimine eklemek için kullanırız.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Seçtiğin takvimleri (Google, iCloud, Outlook) Hally takviminde göstermek ve aile etkinliklerini &quot;Hally&quot; takvimine eklemek için kullanırız.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Okul duyurusunu ya da belgeyi çekip planına eklemek için kamerayı kullanırız.</string>
 	<key>NSMicrophoneUsageDescription</key>

@@ -108,6 +108,11 @@ public class PrivacyController(
                 HelperLinks = await db.ShareLinks.AsNoTracking().Where(l => l.FamilyId == familyId).OrderBy(l => l.CreatedAt)
                     .Select(l => new { l.Kind, l.Day, l.CreatedAt, l.ExpiresAt, l.RevokedAt, l.OpenCount })
                     .ToListAsync(ct),
+                MySharedCalendarEvents = await db.ExternalEvents.AsNoTracking().Where(x => x.FamilyId == familyId && x.OwnerUserId == userId).OrderBy(x => x.StartsAt)
+                    .Select(x => new { x.Provider, x.CalendarName, x.Title, x.BusyOnly, x.StartsAt, x.EndsAt, x.AllDay, x.SyncedAt })
+                    .ToListAsync(ct),
+                MyCalendarFeed = await db.CalendarFeeds.AsNoTracking().Where(x => x.FamilyId == familyId && x.UserId == userId)
+                    .Select(x => new { x.CreatedAt, x.LastFetchedAt, x.FetchCount }).FirstOrDefaultAsync(ct),
                 Subscription = await db.Subscriptions.AsNoTracking().Where(s => s.FamilyId == familyId)
                     .Select(s => new { s.Source, s.ProductId, s.StartedAt, s.ExpiresAt, s.WillRenew })
                     .FirstOrDefaultAsync(ct),

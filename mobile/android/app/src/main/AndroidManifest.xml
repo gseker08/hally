@@ -4,6 +4,9 @@
     <!-- "Hally'ye söyle": speech to text only while the parent holds the mic button (never in the background). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Calendar sync: read the calendars the parent picks and write the separate "Hally" calendar. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR"/>
+    <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
     <!-- Re-arms the widgets' scheduled redraws after a reboot (home_widget). -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Android 16: running timers as "live updates" (a chip in the status bar). -->
