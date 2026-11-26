@@ -22,6 +22,8 @@
 		<string>en</string>
 		<string>de</string>
 		<string>ja</string>
+		<string>ko</string>
+		<string>zh-Hans</string>
 	</array>
 	<key>CFBundleName</key>
 	<string>Hally</string>
