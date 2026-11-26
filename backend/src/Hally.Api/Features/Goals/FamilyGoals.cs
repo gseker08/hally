@@ -191,10 +191,9 @@ public class FamilyGoalService(HallyDbContext db, NotificationPublisher publishe
                 .Join(db.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => new { u.Id, u.Locale }).ToListAsync(ct);
             foreach (var p in parents)
             {
-                var tr = Locales.IsTurkish(p.Locale);
                 await publisher.AddAsync(p.Id, goal.FamilyId, NotificationKind.FamilyGoalReached,
-                    tr ? "🎉 Aile görevi tamam!" : "🎉 Family goal reached!",
-                    tr ? $"{total} kiraz toplandı: {goal.RewardEmoji} {goal.RewardTitle}" : $"{total} cherries together: {goal.RewardEmoji} {goal.RewardTitle}",
+                    "🎉 " + Texts.Get(p.Locale, "goal.reached.title"),
+                    Texts.Get(p.Locale, "goal.reached.body", ("count", total), ("reward", $"{goal.RewardEmoji} {goal.RewardTitle}")),
                     null, goal.Id, $"goal:{goal.Id:N}:{p.Id:N}", ct);
             }
 

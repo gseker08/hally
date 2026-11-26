@@ -376,7 +376,7 @@ public class SchoolService(
             {
                 foreach (var p in parents)
                 {
-                    var (title, body) = SchoolTexts.Bag(Locales.IsTurkish(p.Locale), bag, lessons.Where(l => l.ChildId == bag.ChildId).OrderBy(l => l.Period).ToList(), plan.DailyItems);
+                    var (title, body) = SchoolTexts.Bag(p.Locale, bag, lessons.Where(l => l.ChildId == bag.ChildId).OrderBy(l => l.Period).ToList(), plan.DailyItems);
                     if (await publisher.AddAsync(p.Id, familyId, NotificationKind.SchoolBag, title, body, null, bag.ChildId, $"school-bag:{bag.ChildId:N}:{bag.Day:yyyyMMdd}:{p.Id:N}", ct))
                     {
                         added++;
@@ -456,29 +456,29 @@ public class SchoolService(
 public static class SchoolTexts
 {
     /// <summary>"🎒 Yarın çantaya · Ela" / "Beden Eğitimi: 👟 Eşofman. Resim: 🎨 Boya kalemi. Her gün: 🍎 Beslenme."</summary>
-    public static (string Title, string Body) Bag(bool tr, BagDto bag, IReadOnlyList<Lesson> lessons, IReadOnlyList<string> daily)
+    public static (string Title, string Body) Bag(string? lang, BagDto bag, IReadOnlyList<Lesson> lessons, IReadOnlyList<string> daily)
     {
         var parts = lessons.Where(l => l.Items.Count > 0).GroupBy(l => l.Subject)
             .Select(g => $"{g.Key}: {string.Join(", ", g.SelectMany(l => l.Items).Distinct())}").ToList();
         if (daily.Count > 0)
         {
-            parts.Add((tr ? "Her gün: " : "Every day: ") + string.Join(", ", daily));
+            parts.Add(Texts.Get(lang, "bag.everyDay", ("items", string.Join(", ", daily))));
         }
 
         foreach (var exam in bag.Items.Where(i => i.Kind == "Exam"))
         {
             var days = exam.ExamDate!.Value.DayNumber - bag.Day.DayNumber;
-            parts.Add(tr
-                ? days == 0 ? $"📝 {exam.Text} sınavı yarın" : $"📝 {exam.Text} sınavına {days + 1} gün var"
-                : days == 0 ? $"📝 {exam.Text} exam tomorrow" : $"📝 {exam.Text} exam in {days + 1} days");
+            parts.Add("📝 " + (days == 0
+                ? Texts.Get(lang, "bag.examTomorrow", ("subject", exam.Text))
+                : Texts.Get(lang, "bag.examInDays", ("subject", exam.Text), ("days", days + 1))));
         }
 
         if (parts.Count == 0)
         {
-            parts.Add((tr ? "Yarınki dersler: " : "Tomorrow's lessons: ") + string.Join(", ", bag.Subjects));
+            parts.Add(Texts.Get(lang, "bag.lessons", ("subjects", string.Join(", ", bag.Subjects))));
         }
 
-        return (tr ? $"🎒 Yarın çantaya · {bag.ChildName}" : $"🎒 Pack for tomorrow · {bag.ChildName}", string.Join(". ", parts) + ".");
+        return ("🎒 " + Texts.Get(lang, "bag.title", ("name", bag.ChildName)), string.Join(". ", parts) + ".");
     }
 }
 

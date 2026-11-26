@@ -40,7 +40,7 @@ public class WeeklySummaryController(HallyDbContext db, TimeProvider clock) : Co
         var locale = await db.Users.AsNoTracking().Where(u => u.Id == User.UserId()).Select(u => u.Locale).FirstAsync(ct);
         var family = await db.Families.AsNoTracking().Where(f => f.Id == familyId).Select(f => f.Name).FirstAsync(ct);
         Response.Headers.CacheControl = "private, no-store";
-        return File(SummaryCard.Render(summary, family, locale == Locales.English), "image/png");
+        return File(SummaryCard.Render(summary, family, locale), "image/png");
     }
 
     private async Task<WeeklySummaryDto> Build(Guid familyId, int offset, bool includeChildNames, CancellationToken ct)

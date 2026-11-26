@@ -107,9 +107,11 @@ public class ChildModeService(
 
     /// <summary>The child says "Yaptım!". With approval on it waits for a parent, otherwise the cherries land at once.
     /// Doing it twice, or something already ticked by a parent, changes nothing.</summary>
-    /// <param name="turkish">For a built-in screen-free idea: which language its title is saved in.</param>
-    public async Task MarkDoneAsync(Guid familyId, Guid childId, ClaimKind kind, Guid itemId, CancellationToken ct, bool turkish = true)
+    /// <param name="lang">For a built-in title (a screen-free idea, the packed bag): which language it is saved in.
+    /// Null uses the parents' language.</param>
+    public async Task MarkDoneAsync(Guid familyId, Guid childId, ClaimKind kind, Guid itemId, CancellationToken ct, string? lang = null)
     {
+        lang ??= await ParentsLanguageAsync(familyId, ct);
         var family = await db.Families.AsNoTracking().FirstAsync(f => f.Id == familyId, ct);
         var now = clock.GetUtcNow();
         var today = FamilyTimeZone.LocalDate(now, family.TimeZoneId);
@@ -139,13 +141,13 @@ public class ChildModeService(
         }
         else if (kind == ClaimKind.Bag)
         {
-            (title, points) = (turkish ? "🎒 Çantam hazır" : "🎒 Bag packed", BagCherries);
+            (title, points) = ("🎒 " + Texts.Get(lang, "child.bagPacked"), BagCherries);
         }
         else if (kind == ClaimKind.Activity)
         {
             if (ActivityCatalog.Find(itemId) is { } idea)
             {
-                (title, points) = (idea.Title(turkish), idea.Cherries);
+                (title, points) = (idea.Title(lang), idea.Cherries);
             }
             else
             {
@@ -205,7 +207,7 @@ public class ChildModeService(
         if (family.RequireChildApproval)
         {
             await NotifyParentsAsync(familyId, NotificationKind.ChildClaim, childId,
-                (tr, name) => tr ? ($"{name}: {title} ✓", $"Onaylarsan {points} kiraz kazanacak.") : ($"{name}: {title} ✓", $"Approve it to give {points} cherries."),
+                (lang, name) => ($"{name}: {title} ✓", Texts.Get(lang, "child.claim.body", ("count", points))),
                 $"claim:{claim.Id:N}", ct);
         }
 
@@ -291,9 +293,9 @@ public class ChildModeService(
         }
 
         await NotifyParentsAsync(familyId, NotificationKind.ChildReward, childId,
-            (tr, name) => reward.ScreenMinutes is { } m
-                ? tr ? ($"{name}: +{m} dk ekran", $"{reward.Cost} kirazla \"{reward.Title}\" aldı.") : ($"{name}: +{m} min screen time", $"Spent {reward.Cost} cherries on \"{reward.Title}\".")
-                : tr ? ($"{name}: {reward.Title}", $"{reward.Cost} kiraz harcadı. Ödülünü vermeyi unutma.") : ($"{name}: {reward.Title}", $"Spent {reward.Cost} cherries. Don't forget to hand it over."),
+            (lang, name) => reward.ScreenMinutes is { } m
+                ? (Texts.Get(lang, "child.reward.screenTitle", ("name", name), ("minutes", m)), Texts.Get(lang, "child.reward.screenBody", ("count", reward.Cost), ("reward", reward.Title)))
+                : ($"{name}: {reward.Title}", Texts.Get(lang, "child.reward.body", ("count", reward.Cost))),
             $"redeem:{Guid.NewGuid():N}", ct);
         await AnnounceAsync(familyId, ct);
     }
@@ -328,8 +330,7 @@ public class ChildModeService(
         if (screen.Locked)
         {
             await NotifyParentsAsync(familyId, NotificationKind.ScreenTimeGoal, childId,
-                (tr, name) => tr ? ($"{name}: ekran süresi doldu", "Telefonu kilitlendi. Ek süre vermek istersen Hally'den verebilirsin.")
-                    : ($"{name}: screen time is up", "Their phone is locked. You can give extra time in Hally."),
+                (lang, name) => (Texts.Get(lang, "child.locked.title", ("name", name)), Texts.Get(lang, "child.locked.body")),
                 $"lock:{childId:N}:{today:yyyyMMdd}:{screen.LimitMinutes}", ct);
         }
 
@@ -427,17 +428,20 @@ public class ChildModeService(
     private static HashSet<DateOnly> ActiveDays(IEnumerable<(PointKind Kind, int Points, DateOnly Day)> entries) =>
         entries.Where(e => e.Points > 0 && e.Kind is PointKind.Chore or PointKind.Habit or PointKind.Activity).Select(e => e.Day).ToHashSet();
 
+    /// <summary>The language of the family's first parent, for texts saved once for everyone (claim titles).</summary>
+    private async Task<string> ParentsLanguageAsync(Guid familyId, CancellationToken ct) =>
+        Locales.Normalize(await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver)
+            .OrderBy(m => m.CreatedAt).Join(db.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => u.Locale).FirstOrDefaultAsync(ct));
+
     /// <summary>Tells the parents that a child's phone left child mode with their PIN.</summary>
     public Task DeviceExitedAsync(ChildDevice device, CancellationToken ct) =>
         NotifyParentsAsync(device.FamilyId, NotificationKind.ChildDeviceExited, device.ChildId,
-            (tr, name) => tr
-                ? ($"{name}: telefon çocuk modundan çıktı", "Ebeveyn PIN'i girildi ve telefonun bağlantısı kaldırıldı. Tekrar bağlamak için Aile → Telefon ekranından yeni kod alın.")
-                : ($"{name}: phone left child mode", "The parent PIN was entered and the phone was unpaired. To pair it again, get a new code from Family → Phone."),
+            (lang, name) => (Texts.Get(lang, "child.exited.title", ("name", name)), Texts.Get(lang, "child.exited.body")),
             $"child-exit:{device.Id:N}", ct);
 
     /// <summary>One inbox entry (and push) per parent; caregivers are not asked. Best effort.</summary>
     private async Task NotifyParentsAsync(Guid familyId, NotificationKind kind, Guid childId,
-        Func<bool, string, (string Title, string Body)> text, string dedup, CancellationToken ct)
+        Func<string, string, (string Title, string Body)> text, string dedup, CancellationToken ct)
     {
         try
         {
@@ -447,7 +451,7 @@ public class ChildModeService(
             var added = false;
             foreach (var p in parents)
             {
-                var (title, body) = text(Locales.IsTurkish(p.Locale), name);
+                var (title, body) = text(Locales.Normalize(p.Locale), name);
                 added |= await publisher.AddAsync(p.Id, familyId, kind, title, body, null, childId, $"{dedup}:{p.Id:N}", ct);
             }
 

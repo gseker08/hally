@@ -173,24 +173,22 @@ public static class ScreenTimeTexts
 {
     public static string Duration(string locale, int minutes)
     {
-        var tr = Locales.IsTurkish(locale);
         var h = minutes / 60;
         var m = minutes % 60;
+        var (hu, mu) = (Texts.Get(locale, "unit.hours"), Texts.Get(locale, "unit.minutes"));
         return (h, m) switch
         {
-            (0, _) => tr ? $"{m} dk" : $"{m} min",
-            (_, 0) => tr ? $"{h} sa" : $"{h} h",
-            _ => tr ? $"{h} sa {m} dk" : $"{h} h {m} min",
+            (0, _) => $"{m} {mu}",
+            (_, 0) => $"{h} {hu}",
+            _ => $"{h} {hu} {m} {mu}",
         };
     }
 
     public static (string Title, string Body) GoalReached(string locale, string childName, int goalMinutes, bool stillRunning)
     {
-        var tr = Locales.IsTurkish(locale);
         var goal = Duration(locale, goalMinutes);
-        return tr
-            ? ($"{childName}: ekran süresi hedefi doldu", stillRunning ? $"Bugünkü {goal} hedefe ulaşıldı, sayaç hâlâ çalışıyor." : $"Bugünkü {goal} hedefe ulaşıldı.")
-            : ($"{childName}: screen time goal reached", stillRunning ? $"Today's {goal} goal is reached and the timer is still running." : $"Today's {goal} goal is reached.");
+        return (Texts.Get(locale, "screen.goal.title", ("name", childName)),
+            Texts.Get(locale, stillRunning ? "screen.goal.bodyRunning" : "screen.goal.body", ("goal", goal)));
     }
 }
 

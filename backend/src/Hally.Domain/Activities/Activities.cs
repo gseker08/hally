@@ -17,10 +17,6 @@ public enum ActivityPlace
 public sealed record CatalogActivity(
     string Key,
     string Emoji,
-    string TitleTr,
-    string TitleEn,
-    string HintTr,
-    string HintEn,
     ActivityPlace Place,
     int MinAge,
     int MaxAge,
@@ -29,9 +25,10 @@ public sealed record CatalogActivity(
 {
     public Guid Id { get; } = ActivityCatalog.IdOf(Key);
 
-    public string Title(bool turkish) => turkish ? TitleTr : TitleEn;
+    /// <summary>The title in <paramref name="lang"/>; the texts are in Hally.Domain/Localization.</summary>
+    public string Title(string? lang) => Texts.Get(lang, $"activity.{Key}.title");
 
-    public string Hint(bool turkish) => turkish ? HintTr : HintEn;
+    public string Hint(string? lang) => Texts.Get(lang, $"activity.{Key}.hint");
 
     public bool Suits(int? age) => age is not { } a || (a >= MinAge && a <= MaxAge);
 }
@@ -46,32 +43,32 @@ public static class ActivityCatalog
 
     public static readonly IReadOnlyList<CatalogActivity> All =
     [
-        new("leaf-hunt", "🌳", "Bahçede yaprak avı", "Leaf hunt outside", "5 farklı yaprak bul", "Find 5 different leaves", ActivityPlace.Outdoor, 3, 10, 20, 3),
-        new("lego-bridge", "🧱", "Legodan köprü yap", "Build a Lego bridge", "Fotoğrafını ailene göster", "Show your family a photo", ActivityPlace.Indoor, 4, 12, 30, 3),
-        new("read-15", "📚", "15 dk kitap oku", "Read a book for 15 minutes", "Sevdiğin bir kitap seç", "Pick a book you like", ActivityPlace.Indoor, 6, 15, 15, 5),
-        new("picture-book", "📖", "Resimli kitaba bak", "Look at a picture book", "Gördüklerini anlat", "Tell what you see", ActivityPlace.Indoor, 2, 6, 15, 3),
-        new("draw-family", "🎨", "Ailene bir resim çiz", "Draw a picture for your family", "Kâğıt ve boya", "Paper and crayons", ActivityPlace.Indoor, 3, 12, 20, 2),
-        new("animal-yoga", "🧘", "Hayvan yogası", "Animal yoga", "5 hareket: kedi, köpek, kurbağa…", "5 poses: cat, dog, frog…", ActivityPlace.Indoor, 3, 10, 10, 2),
-        new("dance", "💃", "3 şarkıda dans et", "Dance to 3 songs", "Müziği ailen açsın", "Ask a parent to play music", ActivityPlace.Indoor, 3, 14, 10, 2),
-        new("puzzle", "🧩", "Yapboz tamamla", "Finish a puzzle", "Yaşına uygun bir yapboz", "One that fits your age", ActivityPlace.Indoor, 3, 14, 30, 3),
-        new("tidy-toys", "🧸", "Oyuncaklarını yerleştir", "Put your toys away", "Her şey kendi kutusuna", "Everything back in its box", ActivityPlace.Indoor, 3, 10, 10, 2),
-        new("help-cook", "🥪", "Mutfakta yardım et", "Help in the kitchen", "Salata ya da sandviç hazırla", "Make a salad or a sandwich", ActivityPlace.Indoor, 5, 15, 20, 3),
-        new("paper-plane", "✈️", "Kâğıttan uçak yap", "Make a paper plane", "En uzağa hangisi uçacak?", "Which one flies the farthest?", ActivityPlace.Indoor, 5, 14, 15, 2),
-        new("play-dough", "🟣", "Oyun hamuruyla hayvan yap", "Make an animal from play dough", "Sonra adını koy", "Then give it a name", ActivityPlace.Indoor, 3, 9, 20, 2),
-        new("board-game", "🎲", "Ailenle kutu oyunu", "A board game with your family", "Birini davet et", "Invite someone to play", ActivityPlace.Indoor, 4, 15, 30, 3),
-        new("letter", "✉️", "Büyükannene mektup yaz", "Write a letter to grandma", "Resimle de süsle", "Decorate it with a drawing", ActivityPlace.Indoor, 6, 14, 20, 3),
-        new("instrument", "🎵", "Enstrüman çal", "Play an instrument", "10 dakika pratik", "Practise for 10 minutes", ActivityPlace.Indoor, 6, 17, 15, 3),
-        new("plant", "🪴", "Çiçekleri sula", "Water the plants", "Hangisi susamış bak", "Check which one is thirsty", ActivityPlace.Indoor, 3, 12, 10, 2),
-        new("fort", "🏰", "Yastıklardan kale kur", "Build a pillow fort", "Sonra birlikte toplayın", "Tidy it up together after", ActivityPlace.Indoor, 3, 10, 30, 2),
-        new("journal", "📝", "Günlüğüne yaz", "Write in your journal", "Bugün ne güzeldi?", "What was nice today?", ActivityPlace.Indoor, 8, 17, 15, 3),
-        new("origami", "🦢", "Origami yap", "Try origami", "Bir kuş ya da tekne", "A bird or a boat", ActivityPlace.Indoor, 8, 17, 20, 3),
-        new("stretch", "🤸", "10 dk egzersiz", "10 minutes of exercise", "Zıpla, esne, mekik çek", "Jump, stretch, sit-ups", ActivityPlace.Indoor, 8, 17, 10, 2),
-        new("park", "🛝", "Parka git", "Go to the park", "Bir büyüğünle", "With a grown-up", ActivityPlace.Outdoor, 2, 12, 45, 3),
-        new("bike", "🚲", "Bisiklete bin", "Ride your bike", "Kaskını unutma", "Wear your helmet", ActivityPlace.Outdoor, 5, 15, 30, 3),
-        new("ball", "⚽", "Top oyna", "Play ball", "Pas, şut ya da basket", "Pass, shoot or shoot hoops", ActivityPlace.Outdoor, 4, 15, 30, 3),
-        new("chalk", "🖍️", "Tebeşirle yere çiz", "Chalk drawing outside", "Seksek de çizebilirsin", "Draw a hopscotch too", ActivityPlace.Outdoor, 3, 10, 20, 2),
-        new("walk", "🚶", "Ailenle yürüyüş", "A walk with your family", "Yolda 3 kuş say", "Count 3 birds on the way", ActivityPlace.Outdoor, 3, 17, 30, 3),
-        new("jump-rope", "🪢", "İp atla", "Jump rope", "Kaç kere atlayabilirsin?", "How many jumps in a row?", ActivityPlace.Outdoor, 6, 14, 15, 2),
+        new("leaf-hunt", "🌳", ActivityPlace.Outdoor, 3, 10, 20, 3),
+        new("lego-bridge", "🧱", ActivityPlace.Indoor, 4, 12, 30, 3),
+        new("read-15", "📚", ActivityPlace.Indoor, 6, 15, 15, 5),
+        new("picture-book", "📖", ActivityPlace.Indoor, 2, 6, 15, 3),
+        new("draw-family", "🎨", ActivityPlace.Indoor, 3, 12, 20, 2),
+        new("animal-yoga", "🧘", ActivityPlace.Indoor, 3, 10, 10, 2),
+        new("dance", "💃", ActivityPlace.Indoor, 3, 14, 10, 2),
+        new("puzzle", "🧩", ActivityPlace.Indoor, 3, 14, 30, 3),
+        new("tidy-toys", "🧸", ActivityPlace.Indoor, 3, 10, 10, 2),
+        new("help-cook", "🥪", ActivityPlace.Indoor, 5, 15, 20, 3),
+        new("paper-plane", "✈️", ActivityPlace.Indoor, 5, 14, 15, 2),
+        new("play-dough", "🟣", ActivityPlace.Indoor, 3, 9, 20, 2),
+        new("board-game", "🎲", ActivityPlace.Indoor, 4, 15, 30, 3),
+        new("letter", "✉️", ActivityPlace.Indoor, 6, 14, 20, 3),
+        new("instrument", "🎵", ActivityPlace.Indoor, 6, 17, 15, 3),
+        new("plant", "🪴", ActivityPlace.Indoor, 3, 12, 10, 2),
+        new("fort", "🏰", ActivityPlace.Indoor, 3, 10, 30, 2),
+        new("journal", "📝", ActivityPlace.Indoor, 8, 17, 15, 3),
+        new("origami", "🦢", ActivityPlace.Indoor, 8, 17, 20, 3),
+        new("stretch", "🤸", ActivityPlace.Indoor, 8, 17, 10, 2),
+        new("park", "🛝", ActivityPlace.Outdoor, 2, 12, 45, 3),
+        new("bike", "🚲", ActivityPlace.Outdoor, 5, 15, 30, 3),
+        new("ball", "⚽", ActivityPlace.Outdoor, 4, 15, 30, 3),
+        new("chalk", "🖍️", ActivityPlace.Outdoor, 3, 10, 20, 2),
+        new("walk", "🚶", ActivityPlace.Outdoor, 3, 17, 30, 3),
+        new("jump-rope", "🪢", ActivityPlace.Outdoor, 6, 14, 15, 2),
     ];
 
     public static CatalogActivity? Find(Guid id) => All.FirstOrDefault(a => a.Id == id);

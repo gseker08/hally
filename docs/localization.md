@@ -18,8 +18,14 @@ App (mobile/):
 7. iOS `Runner/<code>.lproj/InfoPlist.strings` (permission texts), `CFBundleLocalizations` in `Info.plist`
    and the language in `knownRegions` of `Runner.xcodeproj`.
 
-Server (backend/): add the code to `Locales.Supported` (`Hally.Domain/Users/User.cs`). Until the server texts
-have the language, pushes, the morning summary and built-in ideas for it are in English.
+Server (backend/):
+
+1. Add the code to `Locales.Supported` and `Locales.EnglishName` (`Hally.Domain/Users/User.cs`).
+2. `Hally.Domain/Localization/<code>.json`: every key of `en.json`. These are the pushes, the morning summary, the
+   helper page, the weekly card, built-in screen-free ideas and "Bir şey iste" requests. `Texts.Get(locale, key,
+   ("name", value))` fills `{name}`; `Texts.Plural` picks `key.one` / `key.other`. `format.*` keys are .NET date
+   patterns. A missing key falls back to English, and a test checks every language has every key and placeholder.
+3. If the language has its own words for "exam", add them to `ExamTexts.ExamWord` so scanned notes become exams.
 
 Translations are machine-made and should be read by a native speaker before a store release.
 

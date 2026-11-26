@@ -136,11 +136,6 @@ public class InvitationsController(
 
     public static string RoleName(FamilyRole role) => role == FamilyRole.Caregiver ? "caregiver" : "parent";
 
-    private static string ShareText(User inviter, string appName, string url, FamilyRole role) => (inviter.Locale == Locales.English, role) switch
-    {
-        (true, FamilyRole.Caregiver) => $"{inviter.DisplayName} invited you to {appName} as a caregiver, to help with the children's day. Join here: {url}",
-        (true, _) => $"{inviter.DisplayName} invited you to share family planning on {appName}. Join here: {url}",
-        (false, FamilyRole.Caregiver) => $"{inviter.DisplayName} seni {appName}'ye bakıcı olarak davet etti: çocukların gününü birlikte takip edelim. Buradan katıl: {url}",
-        _ => $"{inviter.DisplayName} seni {appName}'de aile planlamasını paylaşmaya davet etti. Buradan katıl: {url}",
-    };
+    private static string ShareText(User inviter, string appName, string url, FamilyRole role) =>
+        Texts.Get(inviter.Locale, role == FamilyRole.Caregiver ? "invite.caregiver" : "invite.parent", ("name", inviter.DisplayName), ("app", appName), ("url", url));
 }

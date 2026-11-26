@@ -121,10 +121,9 @@ public class BedtimeService(HallyDbContext db, NotificationPublisher publisher, 
                 .Join(db.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => new { u.Id, u.Locale }).ToListAsync(ct);
             foreach (var p in parents)
             {
-                var tr = Locales.IsTurkish(p.Locale);
                 await publisher.AddAsync(p.Id, familyId, NotificationKind.BedtimeDone,
-                    tr ? $"🌙 {name} yatağında" : $"🌙 {name} is in bed",
-                    tr ? $"Uyku rutini bitti · {at}" : $"Bedtime routine done · {at}",
+                    "🌙 " + Texts.Get(p.Locale, "bedtime.done.title", ("name", name)),
+                    Texts.Get(p.Locale, "bedtime.done.body", ("time", at)),
                     null, run.Id, $"bedtime:{run.Id:N}:{p.Id:N}", ct);
             }
 

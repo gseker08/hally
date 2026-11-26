@@ -35,7 +35,7 @@ public record BriefingSettingsDto(string? Time);
 public class BriefingService(HallyDbContext db, IWeatherService weather, Medications.MedicationService medications, NotificationPublisher publisher,
     TimeProvider clock, ILogger<BriefingService> logger)
 {
-    public async Task<BriefingDto> BuildAsync(Guid familyId, Guid userId, bool tomorrow, bool turkish, FamilyAccessInfo? access, CancellationToken ct)
+    public async Task<BriefingDto> BuildAsync(Guid familyId, Guid userId, bool tomorrow, string? lang, FamilyAccessInfo? access, CancellationToken ct)
     {
         var family = await db.Families.AsNoTracking().FirstAsync(f => f.Id == familyId, ct);
         var tz = family.TimeZoneId;
@@ -43,7 +43,9 @@ public class BriefingService(HallyDbContext db, IWeatherService weather, Medicat
         var local = FamilyTimeZone.ToFamilyTime(now, tz);
         var day = DateOnly.FromDateTime(local.DateTime).AddDays(tomorrow ? 1 : 0);
         var (start, end) = (FamilyTimeZone.StartOfDay(day, tz), FamilyTimeZone.StartOfDay(day.AddDays(1), tz));
-        var culture = CultureInfo.GetCultureInfo(turkish ? "tr-TR" : "en-US");
+        lang = Locales.Normalize(lang);
+        var culture = Texts.Culture(lang);
+        string T(string key, params (string Name, object? Value)[] args) => Texts.Get(lang, key, args);
         var children = await db.Children.AsNoTracking().Where(c => c.FamilyId == familyId).ToDictionaryAsync(c => c.Id, c => c.FirstName, ct);
         var lines = new List<BriefingLineDto>();
 
@@ -55,7 +57,7 @@ public class BriefingService(HallyDbContext db, IWeatherService weather, Medicat
         {
             var who = e.ChildIds.Select(children.GetValueOrDefault).OfType<string>().ToList();
             var title = who.Count == 0 ? e.Title : $"{e.Title} ({string.Join(", ", who)})";
-            lines.Add(new BriefingLineDto("Event", "📅", e.AllDay ? (turkish ? $"Tüm gün: {title}" : $"All day: {title}") : $"{Clock(e.StartsAt, tz)} {title}"));
+            lines.Add(new BriefingLineDto("Event", "📅", e.AllDay ? T("brief.allDay", ("title", title)) : $"{Clock(e.StartsAt, tz)} {title}"));
         }
 
         // The school run: the day's override, else the weekday rule.
@@ -71,13 +73,7 @@ public class BriefingService(HallyDbContext db, IWeatherService weather, Medicat
             }
 
             var who = plan.AssigneeName ?? FirstName(await db.Users.AsNoTracking().Where(u => u.Id == plan.AssigneeUserId).Select(u => u.DisplayName).FirstOrDefaultAsync(ct));
-            var label = (kind, turkish) switch
-            {
-                (DutyKind.DropOff, true) => "Okula bırakma",
-                (DutyKind.PickUp, true) => "Okuldan alma",
-                (DutyKind.DropOff, false) => "School drop-off",
-                _ => "School pick-up",
-            };
+            var label = T(kind == DutyKind.DropOff ? "brief.dropOff" : "brief.pickUp");
             lines.Add(new BriefingLineDto(kind.ToString(), "🚗", plan.Time is { } t ? $"{label}: {who}, {t:HH\\:mm}" : $"{label}: {who}"));
         }
 
@@ -89,12 +85,10 @@ public class BriefingService(HallyDbContext db, IWeatherService weather, Medicat
         var overdue = tasks.Where(t => t.DueAt < start && !tomorrow).ToList();
         if (tasks.Count > 0)
         {
-            var text = turkish ? $"{tasks.Count} iş var" : $"{tasks.Count} task{(tasks.Count > 1 ? "s" : "")}";
+            var text = Texts.Plural(lang, "brief.tasks", tasks.Count);
             if (overdue.Count > 0)
             {
-                text += turkish
-                    ? (overdue.Count == 1 ? $", biri gecikmiş: {overdue[0].Title}" : $", {overdue.Count} tanesi gecikmiş")
-                    : (overdue.Count == 1 ? $", one overdue: {overdue[0].Title}" : $", {overdue.Count} overdue");
+                text += overdue.Count == 1 ? T("brief.overdueOne", ("title", overdue[0].Title)) : T("brief.overdueMany", ("count", overdue.Count));
             }
             else if (tasks.Count <= 2)
             {
@@ -114,7 +108,7 @@ public class BriefingService(HallyDbContext db, IWeatherService weather, Medicat
                     var child = children.GetValueOrDefault(med.ChildId);
                     var at = Clock(next, tz);
                     lines.Add(new BriefingLineDto("Medication", "💊",
-                        turkish ? $"{med.Name} {at}'de{(child is null ? "" : $" ({child})")}" : $"{med.Name} at {at}{(child is null ? "" : $" ({child})")}"));
+                        T("brief.medication", ("name", med.Name), ("time", at)) + (child is null ? "" : $" ({child})")));
                 }
             }
         }
@@ -122,52 +116,47 @@ public class BriefingService(HallyDbContext db, IWeatherService weather, Medicat
         // Weather now (today only; the free service gives the current sky).
         if (!tomorrow && family.WeatherLatitude is { } lat && family.WeatherLongitude is { } lon && await weather.CurrentAsync(lat, lon, ct) is { } w)
         {
-            var (emoji, sky) = (w.Sky, turkish) switch
+            var (emoji, sky) = w.Sky switch
             {
-                ("Clear", true) => ("☀️", "güneşli"),
-                ("Cloudy", true) => ("⛅", "bulutlu"),
-                ("Rain", true) => ("🌧️", "yağmurlu"),
-                ("Snow", true) => ("❄️", "karlı"),
-                ("Storm", true) => ("⛈️", "fırtınalı"),
-                ("Clear", false) => ("☀️", "sunny"),
-                ("Cloudy", false) => ("⛅", "cloudy"),
-                ("Rain", false) => ("🌧️", "rainy"),
-                ("Snow", false) => ("❄️", "snowy"),
-                _ => ("⛈️", "stormy"),
+                "Clear" => ("☀️", T("weather.clear")),
+                "Cloudy" => ("⛅", T("weather.cloudy")),
+                "Rain" => ("🌧️", T("weather.rain")),
+                "Snow" => ("❄️", T("weather.snow")),
+                _ => ("⛈️", T("weather.storm")),
             };
-            lines.Add(new BriefingLineDto("Weather", emoji, turkish ? $"Hava {w.TemperatureC}°, {sky}" : $"Weather {w.TemperatureC}°, {sky}"));
+            lines.Add(new BriefingLineDto("Weather", emoji, T("brief.weather", ("temp", w.TemperatureC), ("sky", sky))));
         }
 
         var name = FirstName(await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.DisplayName).FirstOrDefaultAsync(ct));
         var hello = local.Hour switch
         {
-            < 12 => turkish ? "Günaydın" : "Good morning",
-            < 18 => turkish ? "İyi günler" : "Good afternoon",
-            _ => turkish ? "İyi akşamlar" : "Good evening",
+            < 12 => T("greeting.morning"),
+            < 18 => T("greeting.afternoon"),
+            _ => T("greeting.evening"),
         };
         var dayName = culture.DateTimeFormat.GetDayName(day.DayOfWeek);
         var greeting = name is null ? $"{hello}!" : $"{hello} {name}!";
-        greeting += tomorrow ? (turkish ? $" Yarın {dayName}." : $" Tomorrow is {dayName}.") : (turkish ? $" Bugün {dayName}." : $" Today is {dayName}.");
+        greeting += " " + T(tomorrow ? "brief.tomorrowIs" : "brief.todayIs", ("day", dayName));
 
         if (lines.Count == 0)
         {
             lines.Add(new BriefingLineDto("Empty", "🙂", tomorrow
-                ? (turkish ? "Yarın için kayıtlı bir şey yok." : "Nothing planned for tomorrow.")
-                : (turkish ? "Bugün takvim boş, rahat bir gün." : "Nothing planned today. An easy day.")));
+                ? T("brief.emptyTomorrow")
+                : T("brief.emptyToday")));
         }
 
         var counts = new List<string>();
         if (events.Count > 0)
         {
-            counts.Add(turkish ? $"{events.Count} etkinlik" : $"{events.Count} event{(events.Count > 1 ? "s" : "")}");
+            counts.Add(Texts.Plural(lang, "count.events", events.Count));
         }
 
         if (tasks.Count > 0)
         {
-            counts.Add(turkish ? $"{tasks.Count} iş" : $"{tasks.Count} task{(tasks.Count > 1 ? "s" : "")}");
+            counts.Add(Texts.Plural(lang, "brief.jobs", tasks.Count));
         }
 
-        var shortSpeech = counts.Count == 0 ? $"{greeting} {lines[0].Text}" : $"{greeting} {string.Join(turkish ? " ve " : " and ", counts)}{(turkish ? " var." : ".")}";
+        var shortSpeech = counts.Count == 0 ? $"{greeting} {lines[0].Text}" : $"{greeting} {T("brief.short", ("counts", string.Join(T("list.and"), counts)))}";
         var speech = $"{greeting} {string.Join(". ", lines.Select(l => l.Text))}.";
         return new BriefingDto(tomorrow ? "tomorrow" : "today", day, greeting, lines, Speakable(speech), Speakable(shortSpeech));
     }
@@ -190,10 +179,10 @@ public class BriefingService(HallyDbContext db, IWeatherService weather, Medicat
         {
             try
             {
-                var turkish = Locales.IsTurkish(await db.Users.AsNoTracking().Where(u => u.Id == m.UserId).Select(u => u.Locale).FirstAsync(ct));
-                var brief = await BuildAsync(m.FamilyId, m.UserId, false, turkish, m.IsParent ? null : new FamilyAccessInfo(m.Role, m.ChildIds.Count == 0 ? null : m.ChildIds.ToHashSet(), m.CanSeeHealth), ct);
+                var lang = await db.Users.AsNoTracking().Where(u => u.Id == m.UserId).Select(u => u.Locale).FirstAsync(ct);
+                var brief = await BuildAsync(m.FamilyId, m.UserId, false, lang, m.IsParent ? null : new FamilyAccessInfo(m.Role, m.ChildIds.Count == 0 ? null : m.ChildIds.ToHashSet(), m.CanSeeHealth), ct);
                 var body = string.Join(" · ", brief.Lines.Where(l => l.Kind != "Weather").Take(2).Select(l => $"{l.Emoji} {l.Text}"));
-                await publisher.AddAsync(m.UserId, m.FamilyId, NotificationKind.MorningBriefing, turkish ? "☀️ Günaydın! Bugünün özeti" : "☀️ Good morning! Today's summary",
+                await publisher.AddAsync(m.UserId, m.FamilyId, NotificationKind.MorningBriefing, "☀️ " + Texts.Get(lang, "brief.push.title"),
                     body, null, null, $"brief:{m.UserId:N}:{m.FamilyId:N}:{brief.Date:yyyyMMdd}", ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -226,7 +215,7 @@ public class BriefingController(HallyDbContext db, BriefingService briefing) : C
     public Task<BriefingDto> Get(Guid familyId, [FromQuery] string? day, [FromQuery] string? lang, CancellationToken ct)
     {
         var access = HttpContext.Access();
-        return briefing.BuildAsync(familyId, User.UserId(), day == "tomorrow", Locales.IsTurkish(lang), access.IsParent ? null : access, ct);
+        return briefing.BuildAsync(familyId, User.UserId(), day == "tomorrow", lang, access.IsParent ? null : access, ct);
     }
 
     [HttpGet("settings")]

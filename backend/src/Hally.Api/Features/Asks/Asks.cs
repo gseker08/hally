@@ -50,7 +50,7 @@ public record AskPresetsRequest(IReadOnlyList<AskPresetDto> Presets);
 public class AskService(HallyDbContext db, NotificationPublisher publisher, IHubContext<ChatHub, IChatClient> hub, TimeProvider clock, ILogger<AskService> logger)
 {
     /// <summary>The family's ready-made requests, created from the defaults on first use.</summary>
-    public async Task<IReadOnlyList<AskPreset>> PresetsAsync(Guid familyId, bool turkish, CancellationToken ct)
+    public async Task<IReadOnlyList<AskPreset>> PresetsAsync(Guid familyId, string? lang, CancellationToken ct)
     {
         var presets = await db.AskPresets.AsNoTracking().Where(p => p.FamilyId == familyId).OrderBy(p => p.Order).ToListAsync(ct);
         if (presets.Count > 0 || await db.Families.AsNoTracking().Where(f => f.Id == familyId).Select(f => f.AskPresetsEdited).FirstAsync(ct))
@@ -59,7 +59,7 @@ public class AskService(HallyDbContext db, NotificationPublisher publisher, IHub
         }
 
         var now = clock.GetUtcNow();
-        presets = AskPreset.Defaults(turkish).Select((d, i) => new AskPreset(familyId, i, d.Emoji, d.Title, d.Question, d.Options, d.Minutes, now)).ToList();
+        presets = AskPreset.Defaults(lang).Select((d, i) => new AskPreset(familyId, i, d.Emoji, d.Title, d.Question, d.Options, d.Minutes, now)).ToList();
         db.AskPresets.AddRange(presets);
         try
         {
@@ -149,8 +149,7 @@ public class AskService(HallyDbContext db, NotificationPublisher publisher, IHub
             return;
         }
 
-        var turkish = await ParentsSpeakTurkishAsync(familyId, ct);
-        var title = turkish ? $"{minutes} dk daha ekran" : $"{minutes} more minutes of screen time";
+        var title = Texts.Get(await ParentsLanguageAsync(familyId, ct), "ask.moreScreen", ("minutes", minutes));
         try
         {
             await AddAsync(new ChildAsk(familyId, childId, null, "⏱️", title, null, minutes, today, now), ct);
@@ -249,8 +248,8 @@ public class AskService(HallyDbContext db, NotificationPublisher publisher, IHub
         return FirstName(await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.DisplayName).FirstOrDefaultAsync(ct));
     }
 
-    private async Task<bool> ParentsSpeakTurkishAsync(Guid familyId, CancellationToken ct) =>
-        Locales.IsTurkish(await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver)
+    private async Task<string> ParentsLanguageAsync(Guid familyId, CancellationToken ct) =>
+        Locales.Normalize(await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver)
             .Join(db.Users.AsNoTracking(), m => m.UserId, u => u.Id, (m, u) => u.Locale).FirstOrDefaultAsync(ct));
 
     private static string Line(ChildAsk ask) => ask.Detail is null ? $"{ask.Emoji} {ask.Title}" : $"{ask.Emoji} {ask.Title} · {ask.Detail}";
@@ -263,7 +262,7 @@ public class AskService(HallyDbContext db, NotificationPublisher publisher, IHub
             var parents = await ParentsAsync(ask.FamilyId, ct);
             foreach (var p in parents)
             {
-                var title = Locales.IsTurkish(p.Locale) ? $"{name} bir şey istiyor" : $"{name} is asking for something";
+                var title = Texts.Get(p.Locale, "ask.new.title", ("name", name));
                 await publisher.AddAsync(p.Id, ask.FamilyId, NotificationKind.ChildAsk, title, Line(ask), null, ask.Id, $"ask:{ask.Id:N}:{p.Id:N}", ct);
             }
 
@@ -285,8 +284,7 @@ public class AskService(HallyDbContext db, NotificationPublisher publisher, IHub
             var name = await db.Children.AsNoTracking().Where(c => c.Id == ask.ChildId).Select(c => c.FirstName).FirstAsync(ct);
             foreach (var p in (await ParentsAsync(ask.FamilyId, ct)).Where(p => p.Id != userId))
             {
-                var tr = Locales.IsTurkish(p.Locale);
-                var title = tr ? (yes ? $"{by} onayladı" : $"{by} hayır dedi") : (yes ? $"{by} said yes" : $"{by} said no");
+                var title = Texts.Get(p.Locale, yes ? "ask.answered.yes" : "ask.answered.no", ("name", by));
                 await publisher.AddAsync(p.Id, ask.FamilyId, NotificationKind.ChildAskAnswered, title, $"{name}: {Line(ask)}", null, ask.Id,
                     $"asked:{ask.Id:N}:{p.Id:N}", ct);
             }
@@ -335,7 +333,7 @@ public class AsksController(AskService asks) : ControllerBase
 
     [HttpGet("ask-presets")]
     public async Task<IReadOnlyList<AskPresetDto>> Presets(Guid familyId, [FromQuery] string? lang, CancellationToken ct) =>
-        (await asks.PresetsAsync(familyId, Locales.IsTurkish(lang), ct)).Select(AskService.ToDto).ToList();
+        (await asks.PresetsAsync(familyId, lang, ct)).Select(AskService.ToDto).ToList();
 
     [HttpPut("ask-presets")]
     public async Task<IReadOnlyList<AskPresetDto>> SetPresets(Guid familyId, AskPresetsRequest request, CancellationToken ct) =>
@@ -351,7 +349,7 @@ public class ChildAsksController(AskService asks) : ControllerBase
     [HttpGet]
     public async Task<ChildAsksDto> Get([FromQuery] string? lang, CancellationToken ct)
     {
-        var presets = await asks.PresetsAsync(User.ChildFamilyId(), Locales.IsTurkish(lang), ct);
+        var presets = await asks.PresetsAsync(User.ChildFamilyId(), lang, ct);
         return new ChildAsksDto(presets.Select(AskService.ToDto).ToList(), await asks.ListAsync(User.ChildFamilyId(), User.ChildId(), null, ct));
     }
 

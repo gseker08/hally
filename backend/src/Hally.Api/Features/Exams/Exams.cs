@@ -146,18 +146,18 @@ public class ExamService(HallyDbContext db, NotificationPublisher publisher, IHu
         }
 
         exam.Update(request.ChildId, request.Subject, request.Topics, request.Date, request.Slot, request.StudyDaysBefore);
-        var turkish = Locales.IsTurkish(await db.Users.AsNoTracking().Where(u => u.Id == (exam.CreatedByUserId ?? userId)).Select(u => u.Locale).FirstOrDefaultAsync(ct));
+        var lang = Locales.Normalize(await db.Users.AsNoTracking().Where(u => u.Id == (exam.CreatedByUserId ?? userId)).Select(u => u.Locale).FirstOrDefaultAsync(ct));
         var (start, end, allDay) = EventTimes(exam, family.TimeZoneId);
         var evt = exam.EventId is { } eventId ? await db.Events.FirstOrDefaultAsync(e => e.Id == eventId, ct) : null;
         if (evt is null)
         {
-            evt = new CalendarEvent(familyId, userId, exam.EventTitle(turkish), start, end, allDay, null, [exam.ChildId]);
+            evt = new CalendarEvent(familyId, userId, exam.EventTitle(lang), start, end, allDay, null, [exam.ChildId]);
             db.Events.Add(evt);
             exam.LinkEvent(evt.Id);
         }
         else
         {
-            evt.Update(exam.EventTitle(turkish), start, end, allDay, evt.Location, [exam.ChildId]);
+            evt.Update(exam.EventTitle(lang), start, end, allDay, evt.Location, [exam.ChildId]);
             evt.SetRepeat(EventRepeat.None, null);
         }
 
@@ -245,10 +245,10 @@ public class ExamService(HallyDbContext db, NotificationPublisher publisher, IHu
             var name = names.GetValueOrDefault(exam.ChildId, "");
             foreach (var p in parents[exam.FamilyId])
             {
-                var tr = Locales.IsTurkish(p.Locale);
+                var lang = Locales.Normalize(p.Locale);
                 if (exam.IsStudyDay(today))
                 {
-                    var (title, body) = ExamTexts.Study(tr, name, exam.Subject, exam.Topics, exam.Date.DayNumber - today.DayNumber);
+                    var (title, body) = ExamTexts.Study(lang, name, exam.Subject, exam.Topics, exam.Date.DayNumber - today.DayNumber);
                     if (await publisher.AddAsync(p.Id, exam.FamilyId, NotificationKind.ExamStudy, title, body, null, exam.Id, $"exam-study:{exam.Id:N}:{today:yyyyMMdd}:{p.Id:N}", ct))
                     {
                         added++;
@@ -256,7 +256,7 @@ public class ExamService(HallyDbContext db, NotificationPublisher publisher, IHu
                 }
                 else if (exam.Date == today && !exam.HasResult)
                 {
-                    var (title, body) = ExamTexts.HowDidItGo(tr, name, exam.Subject);
+                    var (title, body) = ExamTexts.HowDidItGo(lang, name, exam.Subject);
                     if (await publisher.AddAsync(p.Id, exam.FamilyId, NotificationKind.ExamResult, title, body, null, exam.Id, $"exam-result:{exam.Id:N}:{p.Id:N}", ct))
                     {
                         added++;
@@ -361,19 +361,19 @@ public class ExamService(HallyDbContext db, NotificationPublisher publisher, IHu
 
 public static class ExamTexts
 {
-    private static readonly Regex ExamWord = new(@"\b(sınavı|sınavları|sınav|yazılısı|yazılı|quiz|exam|test)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex ExamWord = new(@"\b(sınavı|sınavları|sınav|yazılısı|yazılı|quiz|exam|test|klassenarbeit|prüfung|schulaufgabe|lernkontrolle)\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-    public static (string Title, string Body) Study(bool tr, string child, string subject, string? topics, int daysLeft)
+    public static (string Title, string Body) Study(string lang, string child, string subject, string? topics, int daysLeft)
     {
-        var topic = string.IsNullOrWhiteSpace(topics) ? "" : tr ? $" Konular: {topics}." : $" Topics: {topics}.";
-        return tr
-            ? ($"📚 Çalışma zamanı · {child}", (daysLeft == 1 ? $"{subject} sınavı yarın." : $"{subject} sınavına {daysLeft} gün kaldı.") + topic + " 20 dk göz atalım mı?")
-            : ($"📚 Study time · {child}", (daysLeft == 1 ? $"{subject} exam is tomorrow." : $"{subject} exam in {daysLeft} days.") + topic + " A quick 20 minutes?");
+        var when = daysLeft == 1
+            ? Texts.Get(lang, "exam.study.tomorrow", ("subject", subject))
+            : Texts.Get(lang, "exam.study.inDays", ("subject", subject), ("days", daysLeft));
+        var topic = string.IsNullOrWhiteSpace(topics) ? "" : " " + Texts.Get(lang, "exam.study.topics", ("topics", topics));
+        return (Texts.Get(lang, "exam.study.title", ("name", child)), when + topic + " " + Texts.Get(lang, "exam.study.nudge"));
     }
 
-    public static (string Title, string Body) HowDidItGo(bool tr, string child, string subject) => tr
-        ? ($"{child}: {subject} sınavı nasıl geçti?", "Nasıl geçtiğini ve istersen notu yaz. Dilersen kiraz da verebilirsin.")
-        : ($"{child}: how did the {subject} exam go?", "Note how it went and the score if you like. You can give cherries too.");
+    public static (string Title, string Body) HowDidItGo(string lang, string child, string subject) =>
+        (Texts.Get(lang, "exam.result.title", ("name", child), ("subject", subject)), Texts.Get(lang, "exam.result.body"));
 
     /// <summary>"Matematik sınavı" → "Matematik"; null when the title is not about an exam.</summary>
     public static string? SubjectOf(string title)

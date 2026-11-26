@@ -315,8 +315,12 @@ public static class StudyTexts
     public static (string Title, string Body) GoalMet(string locale, string childName, int goalMinutes, int streak)
     {
         var goal = ScreenTimeTexts.Duration(locale, goalMinutes);
-        return Locales.IsTurkish(locale)
-            ? ($"{childName}: günlük hedef tamam", streak > 1 ? $"Bugünkü {goal} ödev/okuma tamamlandı. Seri: {streak} gün." : $"Bugünkü {goal} ödev/okuma tamamlandı.")
-            : ($"{childName}: daily goal done", streak > 1 ? $"Today's {goal} of homework/reading is done. Streak: {streak} days." : $"Today's {goal} of homework/reading is done.");
+        var body = Texts.Get(locale, "study.goalMet.body", ("goal", goal));
+        if (streak > 1)
+        {
+            body += " " + Texts.Get(locale, "study.goalMet.streak", ("days", streak));
+        }
+
+        return (Texts.Get(locale, "study.goalMet.title", ("name", childName)), body);
     }
 }

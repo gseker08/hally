@@ -1,4 +1,5 @@
 using System.Globalization;
+using Hally.Domain.Common;
 using SkiaSharp;
 
 namespace Hally.Api.Features.Summary;
@@ -19,13 +20,14 @@ public static class SummaryCard
         return File.Exists(path) ? SKTypeface.FromFile(path) : SKTypeface.Default;
     }
 
-    public static byte[] Render(WeeklySummaryDto s, string familyName, bool english)
+    public static byte[] Render(WeeklySummaryDto s, string familyName, string? locale)
     {
-        string T(string tr, string en) => english ? en : tr;
-        var culture = english ? CultureInfo.InvariantCulture : new CultureInfo("tr-TR");
+        string T(string key) => Texts.Get(locale, key);
+        var culture = Texts.Culture(locale);
+        var dayMonth = T("format.dayMonth");
         var start = DateOnly.ParseExact(s.WeekStart, "yyyy-MM-dd", CultureInfo.InvariantCulture);
         var end = DateOnly.ParseExact(s.WeekEnd, "yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var range = $"{start.ToString(english ? "MMM d" : "d MMM", culture)} – {end.ToString(english ? "MMM d" : "d MMM", culture)}";
+        var range = $"{start.ToString(dayMonth, culture)} – {end.ToString(dayMonth, culture)}";
 
         using var surface = SKSurface.Create(new SKImageInfo(W, H));
         var c = surface.Canvas;
@@ -40,14 +42,14 @@ public static class SummaryCard
         Glow(c, 120, 1240, 360, new SKColor(0x6F, 0xD3, 0xB4, 80));
 
         Text(c, "Hally", 80, 130, Display.Value, 44, SKColors.White.WithAlpha(230));
-        Text(c, T("Haftanın özeti", "Our week"), 80, 250, Display.Value, 88, SKColors.White);
+        Text(c, T("card.title"), 80, 250, Display.Value, 88, SKColors.White);
         Text(c, $"{familyName} · {range}", 80, 320, Regular.Value, 38, SKColors.White.WithAlpha(200), maxWidth: W - 160);
 
         var stats = new (string Value, string Label)[]
         {
-            ($"{s.TasksCompleted}", T("görev tamamlandı", "tasks done")),
-            ($"{s.EventsCount}", T("etkinlik", "events")),
-            ($"{s.AiActionsApproved}", T("Hally önerisi onaylandı", "Hally suggestions approved")),
+            ($"{s.TasksCompleted}", T("card.tasksDone")),
+            ($"{s.EventsCount}", T("card.events")),
+            ($"{s.AiActionsApproved}", T("card.approved")),
         };
         var y = 400f;
         foreach (var (value, label) in stats)
@@ -60,12 +62,12 @@ public static class SummaryCard
 
         // Who did what: a simple bar per adult (first names only).
         var total = Math.Max(1, s.Adults.Sum(a => a.Completed) + s.HelperCompleted);
-        Text(c, T("Kim ne yaptı", "Who did what"), 80, y + 50, Bold.Value, 40, SKColors.White);
+        Text(c, T("card.who"), 80, y + 50, Bold.Value, 40, SKColors.White);
         y += 80;
         var rows = s.Adults.Take(3).Select(a => (a.FirstName, a.Completed)).ToList();
         if (s.HelperCompleted > 0)
         {
-            rows.Add((T("Yardımcı", "Helper"), s.HelperCompleted));
+            rows.Add((T("card.helper"), s.HelperCompleted));
         }
 
         foreach (var (name, count) in rows)
@@ -85,7 +87,7 @@ public static class SummaryCard
             Text(c, kids, 80, y + 40, Regular.Value, 32, SKColors.White.WithAlpha(220), maxWidth: W - 160);
         }
 
-        Text(c, T("Çek, söyle, Hally halletsin.", "Snap it. Say it. Hally handles it."), 80, H - 70, Regular.Value, 32, SKColors.White.WithAlpha(200));
+        Text(c, T("card.slogan"), 80, H - 70, Regular.Value, 32, SKColors.White.WithAlpha(200));
 
         using var image = surface.Snapshot();
         using var data = image.Encode(SKEncodedImageFormat.Png, 90);

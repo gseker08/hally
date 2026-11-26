@@ -248,11 +248,9 @@ public class DutiesController(
 
 public static class DutyTexts
 {
-    public static (string Title, string Body) Done(string locale, DutyKind kind, string who) => (Locales.IsTurkish(locale), kind) switch
+    public static (string Title, string Body) Done(string locale, DutyKind kind, string who)
     {
-        (true, DutyKind.DropOff) => ("Okula bırakıldı", $"{who} çocukları okula bıraktı."),
-        (true, _) => ("Okuldan alındı", $"{who} çocukları okuldan aldı."),
-        (false, DutyKind.DropOff) => ("Dropped off at school", $"{who} dropped the children off."),
-        _ => ("Picked up from school", $"{who} picked the children up."),
-    };
+        var key = kind == DutyKind.DropOff ? "duty.droppedOff" : "duty.pickedUp";
+        return (Texts.Get(locale, $"{key}.title"), Texts.Get(locale, $"{key}.body", ("name", who)));
+    }
 }

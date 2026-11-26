@@ -12,7 +12,7 @@ public static class SharedPage
 {
     public record Item(Guid Id, string Title, DateTimeOffset? At, bool AllDay, bool Done, string? Location = null);
 
-    public record Model(string AppName, string SharerFirstName, ShareLinkKind Kind, bool Turkish, string TimeZoneId, DateOnly? Day,
+    public record Model(string AppName, string SharerFirstName, ShareLinkKind Kind, string Lang, string TimeZoneId, DateOnly? Day,
         IReadOnlyList<Item> Tasks, IReadOnlyList<Item> Events, DateTimeOffset ExpiresAt);
 
     // Encodes markup characters but keeps Turkish letters readable in the page source.
@@ -20,8 +20,9 @@ public static class SharedPage
 
     public static string Render(Model m, string basePath)
     {
-        var culture = m.Turkish ? new CultureInfo("tr-TR") : CultureInfo.InvariantCulture;
-        string T(string tr, string en) => m.Turkish ? tr : en;
+        var culture = Texts.Culture(m.Lang);
+        string T(string key) => Texts.Get(m.Lang, key);
+        var longDay = T("format.longDay");
         string When(Item i)
         {
             if (i.At is not { } at)
@@ -30,20 +31,20 @@ public static class SharedPage
             }
 
             var local = FamilyTimeZone.ToFamilyTime(at, m.TimeZoneId);
-            var date = local.ToString(m.Turkish ? "d MMMM dddd" : "dddd, MMM d", culture);
-            return m.Kind == ShareLinkKind.Day ? (i.AllDay ? T("Tüm gün", "All day") : local.ToString("HH:mm")) : i.AllDay ? date : $"{date} · {local:HH:mm}";
+            var date = local.ToString(longDay, culture);
+            return m.Kind == ShareLinkKind.Day ? (i.AllDay ? T("page.allDay") : local.ToString("HH:mm")) : i.AllDay ? date : $"{date} · {local:HH:mm}";
         }
 
         var title = m.Kind == ShareLinkKind.Day && m.Day is { } d
-            ? d.ToString(m.Turkish ? "d MMMM dddd" : "dddd, MMM d", culture)
-            : T("Paylaşılan görev", "Shared task");
+            ? d.ToString(longDay, culture)
+            : T("page.sharedTask");
         var sb = new StringBuilder();
-        sb.Append($"<p class=\"from\">{Html.Encode(T($"{m.SharerFirstName} seninle paylaştı", $"{m.SharerFirstName} shared this with you"))}</p>");
+        sb.Append($"<p class=\"from\">{Html.Encode(Texts.Get(m.Lang, "page.sharedBy", ("name", m.SharerFirstName)))}</p>");
         sb.Append($"<h1>{Html.Encode(title)}</h1>");
 
         if (m.Events.Count > 0)
         {
-            sb.Append($"<h2>{T("Etkinlikler", "Events")}</h2><ul>");
+            sb.Append($"<h2>{T("page.events")}</h2><ul>");
             foreach (var e in m.Events)
             {
                 sb.Append($"<li><span class=\"t\">{Html.Encode(e.Title)}</span><span class=\"w\">{Html.Encode(When(e))}{(e.Location is null ? "" : " · " + Html.Encode(e.Location))}</span></li>");
@@ -54,13 +55,13 @@ public static class SharedPage
 
         if (m.Tasks.Count > 0)
         {
-            sb.Append($"<h2>{T("Yapılacaklar", "To do")}</h2><ul>");
+            sb.Append($"<h2>{T("page.todo")}</h2><ul>");
             foreach (var t in m.Tasks)
             {
                 sb.Append($"<li class=\"{(t.Done ? "done" : "")}\"><span class=\"t\">{Html.Encode(t.Title)}</span><span class=\"w\">{Html.Encode(When(t))}</span>");
                 sb.Append(t.Done
-                    ? $"<span class=\"ok\">✓ {T("Tamamlandı", "Done")}</span>"
-                    : $"<form method=\"post\" action=\"{Html.Encode($"{basePath}/tasks/{t.Id}/done")}\"><button type=\"submit\">{T("Tamamlandı olarak işaretle", "Mark as done")}</button></form>");
+                    ? $"<span class=\"ok\">✓ {T("page.done")}</span>"
+                    : $"<form method=\"post\" action=\"{Html.Encode($"{basePath}/tasks/{t.Id}/done")}\"><button type=\"submit\">{T("page.markDone")}</button></form>");
                 sb.Append("</li>");
             }
 
@@ -69,21 +70,21 @@ public static class SharedPage
 
         if (m.Tasks.Count == 0 && m.Events.Count == 0)
         {
-            sb.Append($"<p class=\"empty\">{T("Burada şu an bir şey yok.", "Nothing here right now.")}</p>");
+            sb.Append($"<p class=\"empty\">{T("page.empty")}</p>");
         }
 
-        var expires = FamilyTimeZone.ToFamilyTime(m.ExpiresAt, m.TimeZoneId).ToString(m.Turkish ? "d MMMM HH:mm" : "MMM d, HH:mm", culture);
-        sb.Append($"<p class=\"foot\">{Html.Encode(T($"Bu link {expires} tarihine kadar geçerli.", $"This link works until {expires}."))}</p>");
-        return Layout(m.AppName, Html.Encode(title), sb.ToString(), m.Turkish);
+        var expires = FamilyTimeZone.ToFamilyTime(m.ExpiresAt, m.TimeZoneId).ToString(T("format.expires"), culture);
+        sb.Append($"<p class=\"foot\">{Html.Encode(Texts.Get(m.Lang, "page.expires", ("date", expires)))}</p>");
+        return Layout(m.AppName, Html.Encode(title), sb.ToString(), m.Lang);
     }
 
-    public static string Gone(string appName, bool turkish) => Layout(appName, turkish ? "Link geçersiz" : "Link not available",
-        $"<h1>{(turkish ? "Bu link artık geçerli değil" : "This link is no longer available")}</h1><p class=\"empty\">{(turkish ? "Süresi dolmuş ya da paylaşan kişi kapatmış olabilir." : "It may have expired or been turned off by the person who shared it.")}</p>",
-        turkish);
+    public static string Gone(string appName, string lang) => Layout(appName, Texts.Get(lang, "page.gone.title"),
+        $"<h1>{Texts.Get(lang, "page.gone.heading")}</h1><p class=\"empty\">{Texts.Get(lang, "page.gone.body")}</p>",
+        lang);
 
-    private static string Layout(string appName, string title, string body, bool turkish) => $$$"""
+    private static string Layout(string appName, string title, string body, string lang) => $$$"""
         <!doctype html>
-        <html lang="{{{(turkish ? "tr" : "en")}}}">
+        <html lang="{{{lang}}}">
         <head>
         <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
         <title>{{{title}}} · {{{Html.Encode(appName)}}}</title>

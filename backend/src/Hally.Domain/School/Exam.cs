@@ -147,5 +147,5 @@ public class Exam : Entity
     }
 
     /// <summary>The calendar title, in the creator's language.</summary>
-    public string EventTitle(bool turkish) => turkish ? $"📝 {Subject} sınavı" : $"📝 {Subject} exam";
+    public string EventTitle(string lang) => "📝 " + Texts.Get(lang, "exam.eventTitle", ("subject", Subject));
 }

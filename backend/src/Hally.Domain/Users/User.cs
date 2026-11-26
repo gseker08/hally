@@ -98,4 +98,12 @@ public static class Locales
     }
 
     public static bool IsTurkish(string? locale) => Normalize(locale) == Turkish;
+
+    /// <summary>The language's English name, for AI prompts ("Reply in German").</summary>
+    public static string EnglishName(string? locale) => Normalize(locale) switch
+    {
+        Turkish => "Turkish",
+        German => "German",
+        _ => "English",
+    };
 }

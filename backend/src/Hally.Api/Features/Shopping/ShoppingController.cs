@@ -3,6 +3,7 @@ using Hally.Api.Auth;
 using Hally.Api.Common;
 using Hally.Api.Features.Messages;
 using Hally.Api.Features.Notifications;
+using Hally.Domain.Common;
 using Hally.Domain.Shopping;
 using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
@@ -187,9 +188,8 @@ public class ShoppingController(HallyDbContext db, IHubContext<ChatHub, IChatCli
                     continue;
                 }
 
-                var tr = Locales.IsTurkish(user.Locale);
-                var title = tr ? $"{first} alışverişe çıkıyor" : $"{first} is going shopping";
-                var body = tr ? $"Listede {openCount} ürün var. Eklemek istediğin bir şey var mı?" : $"{openCount} items on the list. Anything to add?";
+                var title = Texts.Get(user.Locale, "shopping.headingOut.title", ("name", first));
+                var body = Texts.Plural(user.Locale, "shopping.headingOut.body", openCount);
                 var data = new Dictionary<string, string> { ["kind"] = "ShoppingHeadingOut", ["familyId"] = familyId.ToString() };
                 invalid.AddRange(await push.SendAsync(tokens, new PushMessage(title, body, data), ct));
             }
