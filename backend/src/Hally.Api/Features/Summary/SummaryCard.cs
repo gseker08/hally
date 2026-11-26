@@ -1,5 +1,6 @@
 using System.Globalization;
 using Hally.Domain.Common;
+using Hally.Domain.Users;
 using SkiaSharp;
 
 namespace Hally.Api.Features.Summary;
@@ -20,8 +21,16 @@ public static class SummaryCard
         return File.Exists(path) ? SKTypeface.FromFile(path) : SKTypeface.Default;
     }
 
+    /// <summary>Languages whose letters the bundled fonts can draw. Others (Japanese, Korean, Chinese, Hindi) get
+    /// the card in English until fonts for those scripts are bundled.</summary>
+    private static readonly string[] LatinScript = ["tr", "en", "de", "pt", "id"];
+
+    public static string CardLocale(string? locale) =>
+        LatinScript.Contains(Locales.Normalize(locale)) ? Locales.Normalize(locale) : Locales.English;
+
     public static byte[] Render(WeeklySummaryDto s, string familyName, string? locale)
     {
+        locale = CardLocale(locale);
         string T(string key) => Texts.Get(locale, key);
         var culture = Texts.Culture(locale);
         var dayMonth = T("format.dayMonth");

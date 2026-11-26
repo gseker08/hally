@@ -53,7 +53,7 @@ public class WeeklyReportService(HallyDbContext db, NotificationPublisher publis
     /// <summary>The week a report opened today shows by default: on Monday the one that just ended.</summary>
     public int DefaultOffset(DateOnly today) => today.DayOfWeek == DayOfWeek.Monday ? -1 : 0;
 
-    public async Task<WeeklyReportDto> BuildAsync(Guid familyId, int? offset, bool turkish, CancellationToken ct)
+    public async Task<WeeklyReportDto> BuildAsync(Guid familyId, int? offset, string? lang, CancellationToken ct)
     {
         var now = clock.GetUtcNow();
         var family = await db.Families.AsNoTracking().Include(f => f.Members).Include(f => f.Children).FirstAsync(f => f.Id == familyId, ct);
@@ -119,21 +119,17 @@ public class WeeklyReportService(HallyDbContext db, NotificationPublisher publis
         var next = new ReportNextWeekDto(nextMonday, nextExams, nextEvents.Count,
             busiest is { } b && b.Count() >= 2 ? b.Key : null, busiest is { } bb && bb.Count() >= 2 ? bb.Count() : 0);
 
-        var culture = CultureInfo.GetCultureInfo(turkish ? "tr-TR" : "en-US");
+        var culture = Texts.Culture(lang);
         string? tip = null;
         if (nextExams.GroupBy(e => e.ChildId).FirstOrDefault(g => g.Count() >= 2) is { } heavy)
         {
             var who = heavy.First().ChildName;
-            tip = turkish
-                ? $"{who} gelecek hafta {heavy.Count()} sınava giriyor. Çalışma saatlerini şimdiden planlamak iyi olabilir."
-                : $"{who} has {heavy.Count()} exams next week. Planning study time now could help.";
+            tip = Texts.Get(lang, "report.tip.exams", ("name", who), ("count", heavy.Count()));
         }
         else if (next.BusiestDay is { } day && next.BusiestCount >= 3)
         {
             var name = culture.DateTimeFormat.GetDayName(day.DayOfWeek);
-            tip = turkish
-                ? $"{name} çok dolu ({next.BusiestCount} etkinlik). Kim neyi üstlenecek, şimdiden konuşmak iyi olabilir."
-                : $"{name} is busy ({next.BusiestCount} events). Worth agreeing who does what now.";
+            tip = Texts.Get(lang, "report.tip.busy", ("day", name), ("count", next.BusiestCount));
         }
 
         var weekExams = exams.Count(e => e.Date <= sunday);
@@ -144,31 +140,31 @@ public class WeeklyReportService(HallyDbContext db, NotificationPublisher publis
     }
 
     /// <summary>The notification body: a few counts, most telling first.</summary>
-    public static string Body(WeeklyReportDto r, bool turkish)
+    public static string Body(WeeklyReportDto r, string? lang)
     {
         var parts = new List<string>();
         if (r.TasksDone > 0 || r.Events > 0)
         {
-            parts.Add(turkish ? $"{r.TasksDone} iş bitti, {r.Events} etkinlik geçti." : $"{r.TasksDone} tasks done, {r.Events} events.");
+            parts.Add(Texts.Get(lang, "report.body.week", ("tasks", r.TasksDone), ("events", r.Events)));
         }
 
         foreach (var c in r.Children.Where(c => c.Exams.Count > 0).Take(2))
         {
-            parts.Add(turkish ? $"{c.FirstName} {c.Exams.Count} sınava girdi." : $"{c.FirstName} had {c.Exams.Count} exam{(c.Exams.Count > 1 ? "s" : "")}.");
+            parts.Add(Texts.Plural(lang, "report.body.childExams", c.Exams.Count, ("name", c.FirstName)));
         }
 
         var cherries = r.Children.Sum(c => c.Cherries);
         if (cherries > 0)
         {
-            parts.Add(turkish ? $"{cherries} kiraz kazanıldı." : $"{cherries} cherries earned.");
+            parts.Add(Texts.Get(lang, "report.body.cherries", ("count", cherries)));
         }
 
         if (r.NextWeek.Exams.Count > 0)
         {
-            parts.Add(turkish ? $"Gelecek hafta {r.NextWeek.Exams.Count} sınav var." : $"{r.NextWeek.Exams.Count} exam{(r.NextWeek.Exams.Count > 1 ? "s" : "")} next week.");
+            parts.Add(Texts.Plural(lang, "report.body.nextExams", r.NextWeek.Exams.Count));
         }
 
-        return parts.Count == 0 ? (turkish ? "Haftanın kısa özetine göz at." : "Take a look at your week.") : string.Join(" ", parts);
+        return parts.Count == 0 ? Texts.Get(lang, "report.body.empty") : string.Join(" ", parts);
     }
 
     /// <summary>Hangfire, every 15 minutes: the weekly report for each parent whose day and time has come.</summary>
@@ -190,15 +186,15 @@ public class WeeklyReportService(HallyDbContext db, NotificationPublisher publis
         {
             try
             {
-                var turkish = await db.Users.AsNoTracking().Where(u => u.Id == m.UserId).Select(u => u.Locale).FirstAsync(ct) != Locales.English;
-                var report = await BuildAsync(m.FamilyId, null, turkish, ct);
+                var lang = Locales.Normalize(await db.Users.AsNoTracking().Where(u => u.Id == m.UserId).Select(u => u.Locale).FirstAsync(ct));
+                var report = await BuildAsync(m.FamilyId, null, lang, ct);
                 if (report.Quiet)
                 {
                     continue;
                 }
 
                 if (await publisher.AddAsync(m.UserId, m.FamilyId, NotificationKind.WeeklyReport,
-                        turkish ? "📊 Haftanın özeti hazır" : "📊 Your week in Hally", Body(report, turkish), null, null,
+                        Texts.Get(lang, "report.push.title"), Body(report, lang), null, null,
                         $"weekly:{m.UserId:N}:{m.FamilyId:N}:{report.WeekStart:yyyyMMdd}", ct))
                 {
                     sent++;
@@ -229,6 +225,6 @@ public class WeeklyReportController(HallyDbContext db, WeeklyReportService repor
     {
         var userId = User.UserId();
         var locale = await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Locale).FirstAsync(ct);
-        return await reports.BuildAsync(familyId, offset, locale != Locales.English, ct);
+        return await reports.BuildAsync(familyId, offset, Locales.Normalize(locale), ct);
     }
 }

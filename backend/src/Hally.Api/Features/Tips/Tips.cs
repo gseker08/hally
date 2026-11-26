@@ -82,10 +82,10 @@ public class TipsService(HallyDbContext db, TimeProvider clock)
         var family = await db.Families.AsNoTracking().Include(f => f.Children).Include(f => f.Members).FirstAsync(f => f.Id == familyId, ct);
         var tz = family.TimeZoneId;
         var today = FamilyTimeZone.LocalDate(now, tz);
-        var turkish = await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Locale).FirstAsync(ct) != Locales.English;
-        var culture = CultureInfo.GetCultureInfo(turkish ? "tr-TR" : "en-US");
-        string T(string tr, string en) => turkish ? tr : en;
-        string Day(DateOnly d) => d == today.AddDays(1) ? T("yarın", "tomorrow") : culture.DateTimeFormat.GetDayName(d.DayOfWeek);
+        var lang = Locales.Normalize(await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Locale).FirstAsync(ct));
+        var culture = Texts.Culture(lang);
+        string T(string key, params (string Name, object? Value)[] args) => Texts.Get(lang, key, args);
+        string When(DateOnly d) => d == today.AddDays(1) ? T("tip.tomorrow") : T("tip.onDay", ("day", culture.DateTimeFormat.GetDayName(d.DayOfWeek)));
 
         var parent = member.IsParent;
         var scope = parent || member.ChildIds.Count == 0 ? null : member.ChildIds.ToHashSet();
@@ -112,9 +112,8 @@ public class TipsService(HallyDbContext db, TimeProvider clock)
                 {
                     var child = children.First(c => c.Id == exam.ChildId);
                     tips.Add(new TipDto($"exam-study:{exam.Id:N}", "ExamStudy", "📚",
-                        T($"{child.FirstName} {Day(exam.Date)} {exam.Subject} sınavına giriyor, henüz çalışma kaydı yok.",
-                            $"{child.FirstName} has a {exam.Subject} exam {(exam.Date == today.AddDays(1) ? "tomorrow" : "on " + Day(exam.Date))} and no study time yet."),
-                        T("Çalışmayı başlat", "Start studying"), "startStudy", child.Id, exam.Id));
+                        T("tip.examStudy.text", ("name", child.FirstName), ("when", When(exam.Date)), ("subject", exam.Subject)),
+                        T("tip.examStudy.action"), "startStudy", child.Id, exam.Id));
                 }
             }
 
@@ -130,12 +129,11 @@ public class TipsService(HallyDbContext db, TimeProvider clock)
 
                     var list = group.ToList();
                     var sunday = today.AddDays(6 - ((int)today.DayOfWeek + 6) % 7);
-                    var when = list[^1].Date <= sunday ? T("bu hafta", "this week") : T("önümüzdeki günlerde", "in the coming days");
-                    var detail = T("Sınavlar: ", "Exams: ") + string.Join(", ", list.Select(e => $"{culture.DateTimeFormat.GetDayName(e.Date.DayOfWeek)} {e.Subject}"));
+                    var when = list[^1].Date <= sunday ? T("tip.thisWeek") : T("tip.comingDays");
+                    var detail = T("tip.examScreen.detail", ("exams", string.Join(", ", list.Select(e => $"{culture.DateTimeFormat.GetDayName(e.Date.DayOfWeek)} {e.Subject}"))));
                     tips.Add(new TipDto($"exam-screen:{child.Id:N}:{list[0].Date:yyyyMMdd}", "ExamScreen", "📝",
-                        T($"{child.FirstName} {when} {list.Count} sınava giriyor. Ekran süresini biraz azaltmak ister misin?",
-                            $"{child.FirstName} has {list.Count} exams {when}. Cut screen time a little?"),
-                        T($"Limiti {ExamWeekScreenMinutes} dk yap", $"Set {ExamWeekScreenMinutes} min a day"), "screenLimit", child.Id,
+                        T("tip.examScreen.text", ("name", child.FirstName), ("count", list.Count), ("when", when)),
+                        T("tip.examScreen.action", ("minutes", ExamWeekScreenMinutes)), "screenLimit", child.Id,
                         Minutes: ExamWeekScreenMinutes, CurrentMinutes: child.DailyScreenMinutes, RestoreOn: list[^1].Date.AddDays(1), Detail: detail));
                 }
             }
@@ -160,13 +158,13 @@ public class TipsService(HallyDbContext db, TimeProvider clock)
                 var days = day.DayNumber - today.DayNumber;
                 var whenText = days switch
                 {
-                    0 => T("bugün", "today"),
-                    1 => T("yarın", "tomorrow"),
-                    _ => T($"{days} gün sonra", $"in {days} days"),
+                    0 => T("tip.today"),
+                    1 => T("tip.tomorrow"),
+                    _ => T("tip.inDays", ("days", days)),
                 };
                 tips.Add(new TipDto($"vaccine:{v.Id:N}", "Vaccine", "💉",
-                    T($"{child.FirstName} için {v.Name} aşısı {whenText}, takvimde yok.", $"{child.FirstName}'s {v.Name} vaccine is due {whenText} and isn't on the calendar."),
-                    T("Sağlık kartını aç", "Open health card"), "route", child.Id, Route: "/health"));
+                    T("tip.vaccine.text", ("name", child.FirstName), ("vaccine", v.Name), ("when", whenText)),
+                    T("tip.vaccine.action"), "route", child.Id, Route: "/health"));
             }
         }
 
@@ -193,12 +191,11 @@ public class TipsService(HallyDbContext db, TimeProvider clock)
                 }
 
                 var routine = parent ? await db.BedtimeRoutines.AsNoTracking().FirstOrDefaultAsync(r => r.ChildId == child.Id && r.Enabled, ct) : null;
-                var text = T($"{child.FirstName} son 3 gece ortalama {Duration(avg, true)} uyudu, yaşına göre önerilen {Duration(need, true)}.",
-                    $"{child.FirstName} slept {Duration(avg, false)} on average over the last 3 nights; about {Duration(need, false)} is advised.");
+                var text = T("tip.sleep.text", ("name", child.FirstName), ("average", Duration(avg, lang)), ("need", Duration(need, lang)));
                 var key = $"sleep:{child.Id:N}:{today.AddDays(-((int)today.DayOfWeek + 6) % 7):yyyyMMdd}";
                 tips.Add(routine is null
-                    ? new TipDto(key, "Sleep", "😴", text, T("Uyku kaydını aç", "Open sleep log"), "route", child.Id, Route: "/sleep")
-                    : new TipDto(key, "Sleep", "😴", text, T($"Uyku rutinini {BedtimeShiftMinutes} dk öne al", $"Bedtime {BedtimeShiftMinutes} min earlier"),
+                    ? new TipDto(key, "Sleep", "😴", text, T("tip.sleep.action"), "route", child.Id, Route: "/sleep")
+                    : new TipDto(key, "Sleep", "😴", text, T("tip.sleep.earlier", ("minutes", BedtimeShiftMinutes)),
                         "bedtimeEarlier", child.Id, Minutes: BedtimeShiftMinutes, Detail: routine.Time.ToString("HH:mm", CultureInfo.InvariantCulture)));
             }
         }
@@ -218,9 +215,9 @@ public class TipsService(HallyDbContext db, TimeProvider clock)
                     : null;
                 tips.Add(new TipDto($"overdue:{today.AddDays(-((int)today.DayOfWeek + 6) % 7):yyyyMMdd}", "Overdue", "✅",
                     other is null
-                        ? T($"{overdue.Count} iş gecikti. Birlikte bakalım mı?", $"{overdue.Count} tasks are overdue. Take a look?")
-                        : T($"{overdue.Count} iş gecikti. Birini {other} üstlenebilir mi?", $"{overdue.Count} tasks are overdue. Could {other} take one?"),
-                    T("Görevlere git", "Open tasks"), "route", Route: "/tasks"));
+                        ? T("tip.overdue.text", ("count", overdue.Count))
+                        : T("tip.overdue.other", ("count", overdue.Count), ("name", other)),
+                    T("tip.overdue.action"), "route", Route: "/tasks"));
             }
         }
 
@@ -233,8 +230,8 @@ public class TipsService(HallyDbContext db, TimeProvider clock)
             if (events.Count == 0)
             {
                 tips.Add(new TipDto($"weekend:{saturday:yyyyMMdd}", "Weekend", "🌳",
-                    T("Hafta sonu takvim boş. Ekransız bir aktivite planlayalım mı?", "The weekend is free. Plan a screen-free activity?"),
-                    T("Aktivite öner", "Suggest one"), "route", Route: $"/activities?familyId={familyId}"));
+                    T("tip.weekend.text"),
+                    T("tip.weekend.action"), "route", Route: $"/activities?familyId={familyId}"));
             }
         }
 
@@ -292,7 +289,7 @@ public class TipsService(HallyDbContext db, TimeProvider clock)
         _ => 8 * 60 + 30,
     };
 
-    private static string Duration(int minutes, bool turkish) => Hally.Api.Features.ScreenTime.ScreenTimeTexts.Duration(turkish ? "tr" : "en", minutes);
+    private static string Duration(int minutes, string lang) => Hally.Api.Features.ScreenTime.ScreenTimeTexts.Duration(lang, minutes);
 }
 
 [ApiController]
