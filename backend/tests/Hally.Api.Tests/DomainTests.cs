@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Hally.Domain.Common;
 using Hally.Domain.Families;
+using Hally.Domain.Users;
 
 namespace Hally.Api.Tests;
 
@@ -90,5 +91,49 @@ public class DomainTests
         var family = new Family("Aile", "Europe/Istanbul", Guid.NewGuid());
         var act = () => family.AddChild(name, null);
         act.Should().Throw<DomainException>();
+    }
+
+    [Theory]
+    [InlineData(null, "tr")]
+    [InlineData("", "tr")]
+    [InlineData("tr-TR", "tr")]
+    [InlineData("en-GB", "en")]
+    [InlineData("de", "de")]
+    [InlineData("DE-at", "de")]
+    [InlineData("fr", "en")]
+    public void Locales_keep_supported_languages_and_send_the_rest_to_English(string? input, string expected)
+    {
+        Locales.Normalize(input).Should().Be(expected);
+        Locales.IsTurkish(input).Should().Be(expected == "tr");
+    }
+
+    [Fact]
+    public void Every_language_has_every_server_text_with_the_same_placeholders()
+    {
+        var english = Texts.All(Locales.English);
+        english.Should().NotBeEmpty();
+        foreach (var lang in Locales.Supported)
+        {
+            var texts = Texts.All(lang);
+            texts.Keys.Should().BeEquivalentTo(english.Keys, $"{lang}.json should have the same keys as en.json");
+            foreach (var (key, text) in english.Where(e => !e.Key.StartsWith("format.", StringComparison.Ordinal)))
+            {
+                Placeholders(texts[key]).Should().BeEquivalentTo(Placeholders(text), $"{lang}: {key}");
+            }
+        }
+
+        static IEnumerable<string> Placeholders(string text) =>
+            System.Text.RegularExpressions.Regex.Matches(text, @"\{(\w+)\}").Select(m => m.Groups[1].Value).Distinct();
+    }
+
+    [Fact]
+    public void Server_texts_follow_the_language_and_fall_back_to_English()
+    {
+        Texts.Get("de", "bedtime.done.title", ("name", "Ela")).Should().Be("Ela liegt im Bett");
+        Texts.Get("tr", "bedtime.done.title", ("name", "Ela")).Should().Be("Ela yatağında");
+        Texts.Get("fr", "bedtime.done.title", ("name", "Ela")).Should().Be("Ela is in bed");
+        Texts.Plural("en", "count.tasks", 1).Should().Be("1 task");
+        Texts.Plural("en", "count.tasks", 3).Should().Be("3 tasks");
+        Texts.Plural("de", "count.events", 2).Should().Be("2 Termine");
     }
 }

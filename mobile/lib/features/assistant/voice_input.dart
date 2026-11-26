@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import '../../core/locale/app_language.dart';
 
 /// Speech to text for "Hally'ye söyle". The phone's own recognizer turns speech into text (Google on Android,
 /// Apple on the iPhone); only the text goes on to the assistant, like a typed message.
@@ -22,8 +23,8 @@ abstract interface class VoiceInput {
   Future<void> cancel();
 }
 
-/// Picks the recognizer's language for the app's: tr_TR for Turkish, en_US otherwise.
-String voiceLocaleFor(String languageCode) => languageCode == 'tr' ? 'tr_TR' : 'en_US';
+/// Picks the recognizer's language for the app's, e.g. tr_TR for Turkish.
+String voiceLocaleFor(String languageCode) => speechLocaleFor(languageCode);
 
 final voiceInputProvider = Provider<VoiceInput>((ref) => SpeechToTextVoiceInput());
 

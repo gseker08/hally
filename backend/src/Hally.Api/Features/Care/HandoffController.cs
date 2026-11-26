@@ -9,6 +9,7 @@ using Hally.Domain.Families;
 using Hally.Domain.Feeding;
 using Hally.Domain.Notifications;
 using Hally.Domain.Sleep;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Hally.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authorization;
@@ -197,10 +198,10 @@ public class HandoffController(
         if (first)
         {
             await Notify(familyId, [report.ByUserId], NotificationKind.HandoffThanks, report,
-                async (tr, _) =>
+                async (lang, _) =>
                 {
                     var who = await FirstName(me, ct);
-                    return tr ? ($"{who} teşekkür etti 💛", "Günün raporu için teşekkürler.") : ($"{who} said thanks 💛", "Thanks for today's report.");
+                    return (Texts.Get(lang, "handoff.thanks.title", ("name", who)) + " 💛", Texts.Get(lang, "handoff.thanks.body"));
                 }, $"handoff-thanks:{report.Id:N}", ct);
         }
 
@@ -268,13 +269,13 @@ public class HandoffController(
             .Select(m => m.UserId).ToListAsync(ct);
         var child = await db.Children.AsNoTracking().Where(c => c.Id == report.ChildId).Select(c => c.FirstName).FirstAsync(ct);
         var who = await FirstName(report.ByUserId, ct);
-        await Notify(familyId, parents, NotificationKind.HandoffReport, report, (tr, _) => Task.FromResult(HandoffTexts.Sent(tr, who, child, report.Incidents, again)),
+        await Notify(familyId, parents, NotificationKind.HandoffReport, report, (lang, _) => Task.FromResult(HandoffTexts.Sent(lang, who, child, report.Incidents, again)),
             $"handoff:{report.Id:N}:{report.SentAt.ToUnixTimeSeconds()}", ct);
     }
 
     /// <summary>Inbox entry + push per recipient. Best effort: the report is saved either way.</summary>
     private async Task Notify(Guid familyId, IReadOnlyList<Guid> recipients, NotificationKind kind, HandoffReport report,
-        Func<bool, Guid, Task<(string Title, string Body)>> text, string dedup, CancellationToken ct)
+        Func<string, Guid, Task<(string Title, string Body)>> text, string dedup, CancellationToken ct)
     {
         try
         {
@@ -282,7 +283,7 @@ public class HandoffController(
             var added = false;
             foreach (var r in locales)
             {
-                var (title, body) = await text(r.Locale != "en", r.Id);
+                var (title, body) = await text(Locales.Normalize(r.Locale), r.Id);
                 added |= await publisher.AddAsync(r.Id, familyId, kind, title, body, null, report.Id, $"{dedup}:{r.Id:N}", ct);
             }
 
@@ -321,20 +322,17 @@ public class HandoffController(
 
 public static class HandoffTexts
 {
-    public static (string Title, string Body) Sent(bool turkish, string who, string child, IReadOnlyList<HandoffIncident> incidents, bool again)
+    public static (string Title, string Body) Sent(string lang, string who, string child, IReadOnlyList<HandoffIncident> incidents, bool again)
     {
-        if (turkish)
-        {
-            var title = again ? $"{who} günün raporunu güncelledi" : $"{who} günü bitirdi";
-            var body = incidents.Count == 0
-                ? $"{child} için günün özeti hazır."
-                : $"{child} · Olay: {string.Join(", ", incidents.Select(i => i switch { HandoffIncident.Fall => "küçük düşme", HandoffIncident.Fever => "ateş", _ => "diğer" }))}";
-            return (title, body);
-        }
-
-        return (again ? $"{who} updated the day's report" : $"{who} finished the day",
-            incidents.Count == 0
-                ? $"{child}'s summary is ready."
-                : $"{child} · Incident: {string.Join(", ", incidents.Select(i => i switch { HandoffIncident.Fall => "small fall", HandoffIncident.Fever => "fever", _ => "other" }))}");
+        var title = Texts.Get(lang, again ? "handoff.updated.title" : "handoff.sent.title", ("name", who));
+        var body = incidents.Count == 0
+            ? Texts.Get(lang, "handoff.sent.body", ("name", child))
+            : Texts.Get(lang, "handoff.sent.incidents", ("name", child), ("incidents", string.Join(", ", incidents.Select(i => Texts.Get(lang, i switch
+            {
+                HandoffIncident.Fall => "handoff.incident.fall",
+                HandoffIncident.Fever => "handoff.incident.fever",
+                _ => "handoff.incident.other",
+            })))));
+        return (title, body);
     }
 }

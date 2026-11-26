@@ -64,7 +64,7 @@ public class ShareLinksController(HallyDbContext db, IAnalytics analytics, IOpti
         {
             var day = DateOnly.ParseExact(request.Date!, "yyyy-MM-dd", CultureInfo.InvariantCulture);
             link = ShareLink.ForDay(familyId, userId, day, Crypto.Sha256(token), now, lifetime);
-            subject = user.Locale == Locales.English ? day.ToString("dddd, MMM d", CultureInfo.InvariantCulture) : day.ToString("d MMMM dddd", new CultureInfo("tr-TR"));
+            subject = day.ToString(Texts.Get(user.Locale, "format.longDay"), Texts.Culture(user.Locale));
         }
 
         db.ShareLinks.Add(link);
@@ -73,9 +73,7 @@ public class ShareLinksController(HallyDbContext db, IAnalytics analytics, IOpti
 
         var url = $"{app.Value.PublicBaseUrl.TrimEnd('/')}/s/{token}";
         var first = user.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? user.DisplayName;
-        var text = user.Locale == Locales.English
-            ? $"{first} shared \"{subject}\" with you on {app.Value.Name}: {url}"
-            : $"{first} seninle \"{subject}\" paylaştı ({app.Value.Name}): {url}";
+        var text = Texts.Get(user.Locale, "share.text", ("name", first), ("subject", subject), ("app", app.Value.Name), ("url", url));
         return StatusCode(201, new ShareLinkCreatedDto(link.Id, url, text, $"https://wa.me/?text={Uri.EscapeDataString(text)}", link.ExpiresAt));
     }
 
@@ -111,12 +109,12 @@ public class SharedPageController(HallyDbContext db, IAnalytics analytics, IOpti
     [HttpGet]
     public async Task<IActionResult> Show(string token, CancellationToken ct)
     {
-        var tr = !Request.Headers.AcceptLanguage.ToString().StartsWith("en", StringComparison.OrdinalIgnoreCase);
+        var lang = Locales.Normalize(Request.Headers.AcceptLanguage.ToString());
         var link = await db.ShareLinks.FirstOrDefaultAsync(l => l.TokenHash == Crypto.Sha256(token), ct);
         var now = clock.GetUtcNow();
         if (link is null || !link.IsActive(now))
         {
-            return Page(SharedPage.Gone(app.Value.Name, tr), link is null ? 404 : 410);
+            return Page(SharedPage.Gone(app.Value.Name, lang), link is null ? 404 : 410);
         }
 
         link.Opened(now);
@@ -126,7 +124,7 @@ public class SharedPageController(HallyDbContext db, IAnalytics analytics, IOpti
         var family = await db.Families.AsNoTracking().FirstAsync(f => f.Id == link.FamilyId, ct);
         var sharer = await db.Users.AsNoTracking().Where(u => u.Id == link.CreatedByUserId).Select(u => u.DisplayName).FirstOrDefaultAsync(ct) ?? "";
         var (tasks, events) = await Items(link, family.TimeZoneId, ct);
-        var model = new SharedPage.Model(app.Value.Name, sharer.Split(' ').FirstOrDefault() ?? "", link.Kind, tr, family.TimeZoneId, link.Day,
+        var model = new SharedPage.Model(app.Value.Name, sharer.Split(' ').FirstOrDefault() ?? "", link.Kind, lang, family.TimeZoneId, link.Day,
             tasks.Select(t => new SharedPage.Item(t.Id, t.Title, t.DueAt, t.AllDay, t.State == TaskState.Done)).ToList(),
             events.Select(e => new SharedPage.Item(e.Id, e.Title, e.StartsAt, e.AllDay, false, e.Location)).ToList(),
             link.ExpiresAt);

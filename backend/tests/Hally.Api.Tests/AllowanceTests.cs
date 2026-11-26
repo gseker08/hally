@@ -166,8 +166,8 @@ public class AllowanceTests(HallyApiFactory api)
         var plan = new AllowancePlan(Guid.NewGuid(), Guid.NewGuid(), DateTimeOffset.UtcNow);
         plan.AmountFor(40).Should().Be(20m);
         plan.Invoking(p => p.AmountFor(5)).Should().Throw<Hally.Domain.Common.DomainException>();
-        AllowanceService.Money(20m, "TRY", true).Should().Be("20 ₺");
-        AllowanceService.Money(2.5m, "TRY", true).Should().Be("2,50 ₺");
+        AllowanceService.Money(20m, "TRY", "tr").Should().Be("20 ₺");
+        AllowanceService.Money(2.5m, "TRY", "tr").Should().Be("2,50 ₺");
         var monday = new DateOnly(2026, 11, 23);
         plan.TakeWeek(monday).Should().BeFalse("no weekly allowance set");
         plan.Update(10, 5m, "TRY", 20, true);

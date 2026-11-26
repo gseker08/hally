@@ -332,7 +332,7 @@
   "familyChatsBody": "Family chat and direct messages",
   "languageTitle": "Language",
   "languageSystem": "Phone language",
-  "languageSystemBody": "Turkish when the phone is in neither Turkish nor English",
+  "languageSystemBody": "English when the phone is in a language Hally doesn't speak",
   "pushOpen": "Open",
   "screenTimeTitle": "Screen time",
   "screenTimeBody": "A timer you start and stop by hand. It does not lock the device; both parents see the same time right away.",

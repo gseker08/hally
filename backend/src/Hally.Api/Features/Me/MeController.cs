@@ -1,5 +1,6 @@
 using FluentValidation;
 using Hally.Api.Common;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +17,7 @@ public class UpdateProfileRequestValidator : AbstractValidator<UpdateProfileRequ
     public UpdateProfileRequestValidator()
     {
         RuleFor(x => x.DisplayName).NotEmpty().MaximumLength(80);
-        RuleFor(x => x.Locale).NotEmpty().Must(l => l is "tr" or "en").WithMessage("Locale must be 'tr' or 'en'.");
+        RuleFor(x => x.Locale).NotEmpty().Must(l => Locales.Supported.Contains(l)).WithMessage($"Locale must be one of: {string.Join(", ", Locales.Supported)}.");
     }
 }
 

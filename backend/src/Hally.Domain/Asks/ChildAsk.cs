@@ -84,21 +84,14 @@ public class AskPreset : Entity
     }
 
     /// <summary>The starting list, in the language of whoever opens it first.</summary>
-    public static IReadOnlyList<(string Emoji, string Title, string? Question, string[] Options, int? Minutes)> Defaults(bool turkish) => turkish
-        ?
-        [
-            ("🏠", "Arkadaşıma gidebilir miyim?", "Kimin evine?", [], null),
-            ("🎮", "15 dk daha oyun", null, [], 15),
-            ("🍪", "Atıştırmalık alabilir miyim?", null, [], null),
-            ("📺", "Çizgi film izleyebilir miyim?", null, [], null),
-        ]
-        :
-        [
-            ("🏠", "Can I go to my friend's?", "Whose house?", [], null),
-            ("🎮", "15 more minutes of games", null, [], 15),
-            ("🍪", "Can I have a snack?", null, [], null),
-            ("📺", "Can I watch cartoons?", null, [], null),
-        ];
+    /// <summary>The starting list, in <paramref name="lang"/> (Turkish when missing).</summary>
+    public static IReadOnlyList<(string Emoji, string Title, string? Question, string[] Options, int? Minutes)> Defaults(string? lang) =>
+    [
+        ("🏠", Texts.Get(lang, "askPreset.friend"), Texts.Get(lang, "askPreset.friend.question"), [], null),
+        ("🎮", Texts.Get(lang, "askPreset.games"), null, [], 15),
+        ("🍪", Texts.Get(lang, "askPreset.snack"), null, [], null),
+        ("📺", Texts.Get(lang, "askPreset.cartoons"), null, [], null),
+    ];
 }
 
 /// <summary>

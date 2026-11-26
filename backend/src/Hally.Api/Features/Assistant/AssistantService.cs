@@ -9,6 +9,7 @@ using Hally.Domain.Assistant;
 using Hally.Domain.Capture;
 using Hally.Domain.Common;
 using Hally.Domain.Planning;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Ai;
 using Hally.Infrastructure.Analytics;
 using Hally.Infrastructure.Persistence;
@@ -80,7 +81,7 @@ public class AssistantService(HallyDbContext db, IChatModel model, IAnalytics an
 
             if (reply.Length == 0)
             {
-                reply = ctx.Locale == "en" ? "Sorry, I couldn't put an answer together. Could you ask again?" : "Kusura bakma, bir yanıt toparlayamadım. Tekrar sorar mısın?";
+                reply = Texts.Get(ctx.Locale, "assistant.noAnswer");
             }
         }
         catch (AiUnavailableException ex)
@@ -114,7 +115,7 @@ public class AssistantService(HallyDbContext db, IChatModel model, IAnalytics an
     {
         var sb = new StringBuilder();
         sb.AppendLine("You are Hally, a family logistics assistant. Be warm, brief and practical: 1-4 short sentences or a short list.");
-        sb.AppendLine($"Reply in the user's language; default to {(f.Locale == "en" ? "English" : "Turkish")}.");
+        sb.AppendLine($"Reply in the user's language; default to {Locales.EnglishName(f.Locale)}.");
         sb.AppendLine($"Today is {f.Today:yyyy-MM-dd} ({f.Today.DayOfWeek}) in {f.TimeZoneId}. Dates in tools are family-local yyyy-MM-dd.");
         sb.AppendLine($"The family has {adults} adult(s) and {f.Children.Count} child(ren).");
         sb.AppendLine("Rules:");
@@ -305,42 +306,40 @@ public class AssistantFallback(HallyDbContext db, Guid familyId, FamilyContext c
 {
     public async Task<string> AnswerAsync(string text, CancellationToken ct)
     {
-        var en = ctx.Locale == "en";
+        var lang = Locales.Normalize(ctx.Locale);
+        var culture = Texts.Culture(lang);
+        string T(string key, params (string Name, object? Value)[] args) => Texts.Get(lang, key, args);
         var lower = text.ToLower(CultureInfo.GetCultureInfo("tr-TR"));
         if (LooksLikeAddRequest(lower))
         {
             // Without the AI we cannot turn free text into a reviewed suggestion, and answering it as a
             // day question ("Saturday: nothing planned") would read as if the request had been handled.
-            return en
-                ? "The assistant is offline right now, so I can't add this for you. You can add it yourself from the calendar with +. I can still answer day questions like \"What's on this week?\""
-                : "Asistan şu an çevrimdışı, bu yüzden bunu senin yerine ekleyemiyorum. Takvimdeki + ile kendin ekleyebilirsin. \"Bu hafta ne var?\" gibi gün sorularını yine yanıtlayabilirim.";
+            return T("assistant.offlineAdd");
         }
 
         DateOnly from, to;
         string label;
-        if (lower.Contains("bu hafta") || lower.Contains("this week"))
+        if (lower.Contains("bu hafta") || lower.Contains("this week") || lower.Contains("diese woche"))
         {
             from = ctx.Today;
             to = ctx.Today.AddDays(6 - (((int)ctx.Today.DayOfWeek + 6) % 7));
-            label = en ? "This week" : "Bu hafta";
+            label = T("assistant.thisWeek");
         }
-        else if (lower.Contains("bugün") || lower.Contains("today"))
+        else if (lower.Contains("bugün") || lower.Contains("today") || lower.Contains("heute"))
         {
             from = to = ctx.Today;
-            label = en ? "Today" : "Bugün";
+            label = T("day.today");
         }
         else if (RelativeDateResolver.Resolve(text, ctx.Today) is { } resolved)
         {
             from = to = resolved.Date;
             label = resolved.Date == ctx.Today.AddDays(1)
-                ? en ? "Tomorrow" : "Yarın"
-                : resolved.Date.ToString(en ? "dddd, MMM d" : "d MMMM dddd", en ? CultureInfo.InvariantCulture : CultureInfo.GetCultureInfo("tr-TR"));
+                ? T("day.tomorrow")
+                : resolved.Date.ToString(T("format.longDay"), culture);
         }
         else
         {
-            return en
-                ? "The assistant is offline right now. I can still answer day questions like \"What do we need tomorrow?\" or \"What's on this week?\""
-                : "Asistan şu an çevrimdışı. Yine de \"Yarın ne lazım?\" ya da \"Bu hafta ne var?\" gibi gün sorularını yanıtlayabilirim.";
+            return T("assistant.offline");
         }
 
         var zone = TimeZoneInfo.FindSystemTimeZoneById(ctx.TimeZoneId);
@@ -352,14 +351,14 @@ public class AssistantFallback(HallyDbContext db, Guid familyId, FamilyContext c
         var events = (await db.EventsInRangeAsync(familyId, start, end, ctx.TimeZoneId, ct)).Take(20).ToList();
         if (tasks.Count == 0 && events.Count == 0)
         {
-            return en ? $"{label}: nothing planned. 🎉" : $"{label}: planlanmış bir şey yok. 🎉";
+            return T("assistant.nothing", ("label", label)) + " 🎉";
         }
 
         var multiDay = from != to;
         string When(DateTimeOffset at, bool allDay)
         {
             var local = FamilyTimeZone.ToFamilyTime(at, ctx.TimeZoneId);
-            var day = multiDay ? local.ToString(en ? "ddd " : "ddd ", en ? CultureInfo.InvariantCulture : CultureInfo.GetCultureInfo("tr-TR")) : "";
+            var day = multiDay ? local.ToString("ddd ", culture) : "";
             return allDay ? day.Trim() : $"{day}{local:HH:mm}";
         }
 
@@ -380,22 +379,25 @@ public class AssistantFallback(HallyDbContext db, Guid familyId, FamilyContext c
         var needed = tasks.Select(t => t.Notes)
             .Where(n => n is not null)
             .SelectMany(n => n!.Split('\n'))
-            .Where(l => l.StartsWith("Gerekenler:", StringComparison.Ordinal) || l.StartsWith("Needed:", StringComparison.Ordinal))
+            .Where(l => NeededLabels.Any(p => l.StartsWith(p + ":", StringComparison.Ordinal)))
             .Select(l => l[(l.IndexOf(':') + 1)..].Trim())
             .Distinct().ToList();
         if (needed.Count > 0)
         {
-            sb.AppendLine(en ? $"To bring: {string.Join(", ", needed)}" : $"Hazırlanacaklar: {string.Join(", ", needed)}");
+            sb.AppendLine(T("assistant.toBring", ("items", string.Join(", ", needed))));
         }
 
         return sb.ToString().TrimEnd();
     }
 
+    /// <summary>"Gerekenler" / "Needed" / … in every language: older notes keep the language they were written in.</summary>
+    private static readonly string[] NeededLabels = Locales.Supported.Select(l => Texts.Get(l, "notes.needed")).Distinct().ToArray();
+
     private static readonly string[] AddWords =
-        ["ekle", "her gün", "her hafta", "her ay", "hatırlat", "kaydet", "add ", "every ", "remind", "schedule"];
+        ["ekle", "her gün", "her hafta", "her ay", "hatırlat", "kaydet", "add ", "every ", "remind", "schedule", "hinzufügen", "jeden ", "erinner", "eintragen"];
 
     private static readonly string[] QuestionWords =
-        ["ne var", "neler", "var mı", "lazım", "ne zaman", "kaçta", "what", "anything", "is there", "do we", "when"];
+        ["ne var", "neler", "var mı", "lazım", "ne zaman", "kaçta", "what", "anything", "is there", "do we", "when", "was ", "gibt es", "brauchen", "wann", "haben wir"];
 
     /// <summary>"Swimming every Saturday 11:30" or "add dentist": a time or an add/repeat word, and not phrased as a question.</summary>
     internal static bool LooksLikeAddRequest(string lower)

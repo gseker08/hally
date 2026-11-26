@@ -13,6 +13,7 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../child_mode/child_mode_repository.dart';
 import 'bedtime.dart';
+import '../../core/locale/units.dart';
 import '../child_mode/parent_exit.dart' show ParentExitGesture;
 
 /// The night palette of the bedtime screens (the same in light and dark mode).
@@ -25,7 +26,7 @@ abstract final class _Night {
   static const faint = Color(0x33FFFFFF);
 }
 
-String _lang(BuildContext context) => Localizations.localeOf(context).languageCode == 'en' ? 'en' : 'tr';
+String _lang(BuildContext context) => langOf(context);
 
 class _StarrySky extends StatelessWidget {
   const _StarrySky({required this.child});

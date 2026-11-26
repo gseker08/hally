@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/locale/app_language.dart';
 
 class BedtimeStep {
   const BedtimeStep({required this.title, required this.emoji});
@@ -143,7 +144,7 @@ class TtsStorySpeaker implements StorySpeaker {
 
   @override
   Future<void> speak(String text, {required String language, required void Function() onDone}) async {
-    await _tts.setLanguage(language == 'en' ? 'en-US' : 'tr-TR');
+    await _tts.setLanguage(speechLocaleFor(language).replaceAll('_', '-'));
     await _tts.setSpeechRate(rate);
     await _tts.setPitch(1.0);
     _tts.setCompletionHandler(onDone);
@@ -165,10 +166,12 @@ class BedtimeStory {
 
 /// A short story for tonight: the same all evening, another one tomorrow.
 BedtimeStory storyFor(DateTime evening, String language) {
-  final list = language == 'en' ? _storiesEn : _storiesTr;
+  final list = _stories[language] ?? _storiesEn;
   final day = evening.difference(DateTime(2026)).inDays;
   return list[day % list.length];
 }
+
+const _stories = {'tr': _storiesTr, 'en': _storiesEn, 'de': _storiesDe};
 
 const _storiesTr = [
   BedtimeStory(
@@ -216,4 +219,23 @@ const _storiesEn = [
       'Little Turtle walked slowly along the beach all day. He saw a shell, a crab and a shiny stone. '
           'In the evening the waves began to sing him a lullaby: shhh, shhh. Turtle made a warm nest in the sand. '
           'He tucked his head into his shell and thought about all the lovely things he had seen. The waves grew slower and softer. Take a deep breath, just like Turtle, and drift off to sleep. Good night.'),
+];
+
+const _storiesDe = [
+  BedtimeStory(
+      'Der kleine Bär und die Mondlaterne',
+      'In einem kleinen Haus am Waldrand zündete der kleine Bär jeden Abend seine Laterne an und zählte die Sterne, einen nach dem anderen. Eines Nachts fehlte ein Stern. '
+          'Er ging mit der Laterne in den Garten und fand im Gras ein winziges Licht: einen kleinen Stern, der sich nach einem langen Tag ausruhte. '
+          'Der Bär hielt ihn sanft in den Pfoten und summte ein Schlaflied. Als der Stern sich ausgeruht hatte, schwebte er langsam zurück in den Himmel. '
+          'Der Bär gähnte und kroch wieder ins Bett. In dieser Nacht leuchteten alle Sterne ein bisschen heller für ihn. Gute Nacht.'),
+  BedtimeStory(
+      'Watte, die kleine Wolke',
+      'Eine weiche Wolke namens Watte war den ganzen Tag über den Himmel gezogen und hatte den spielenden Kindern Schatten gespendet. Am Abend flüsterte der Wind: Zeit zum Ausruhen. '
+          'Watte legte sich über die Hügel, und die Sonne deckte sie mit einer orangefarbenen Decke zu. Die Vögel flogen nach Hause, die Hasen hoppelten nach Hause. '
+          'Als der Mond aufging, wurde Watte silbern und schloss leise die Augen. Morgen würden sie wieder zusammen spielen. Jetzt ist alles still und friedlich. Gute Nacht.'),
+  BedtimeStory(
+      'Die kleine Schildkröte',
+      'Die kleine Schildkröte spazierte den ganzen Tag langsam am Strand entlang. Sie sah eine Muschel, eine Krabbe und einen glänzenden Stein. '
+          'Am Abend begannen die Wellen, ihr ein Schlaflied zu singen: schhh, schhh. Die Schildkröte baute sich ein warmes Nest im Sand. '
+          'Sie zog den Kopf in ihren Panzer und dachte an all die schönen Dinge, die sie gesehen hatte. Die Wellen wurden langsamer und leiser. Atme tief ein, genau wie die Schildkröte, und schlaf langsam ein. Gute Nacht.'),
 ];

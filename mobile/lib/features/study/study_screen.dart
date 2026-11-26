@@ -13,8 +13,8 @@ import '../family/children.dart';
 import '../family/family_repository.dart';
 import '../screen_time/screen_time_repository.dart' show formatScreenDuration;
 import 'study_repository.dart';
+import '../../core/locale/units.dart';
 
-bool _tr(BuildContext context) => Localizations.localeOf(context).languageCode != 'en';
 
 String studyKindLabel(AppLocalizations l10n, String kind) => kind == 'Reading' ? l10n.studyReading : l10n.studyHomework;
 IconData studyKindIcon(String kind) => kind == 'Reading' ? Icons.menu_book_rounded : Icons.edit_note_rounded;
@@ -112,14 +112,14 @@ class _StudyCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final tr = _tr(context);
+    final lang = langOf(context);
     final s = status;
     final now = DateTime.now();
     final seconds = s?.secondsAt(now) ?? 0;
     final goal = s?.dailyGoalMinutes;
     final met = s?.goalMetAt(now) ?? false;
-    final time = formatScreenDuration(seconds, turkish: tr);
-    final line = goal == null ? l10n.studyToday(time) : l10n.studyOfGoal(time, formatScreenDuration(goal * 60, turkish: tr));
+    final time = formatScreenDuration(seconds, lang: lang);
+    final line = goal == null ? l10n.studyToday(time) : l10n.studyOfGoal(time, formatScreenDuration(goal * 60, lang: lang));
 
     return Card(
       child: InkWell(
@@ -175,7 +175,7 @@ class _StudyCard extends StatelessWidget {
                     const SizedBox(width: HallySpace.xs),
                     Expanded(
                       child: Text(
-                        '${studyKindLabel(l10n, s.runningKind!)} · ${formatScreenDuration(s.runningSecondsAt(now), turkish: tr, withSeconds: true)}',
+                        '${studyKindLabel(l10n, s.runningKind!)} · ${formatScreenDuration(s.runningSecondsAt(now), lang: lang, withSeconds: true)}',
                         key: Key('study.running.${child.id}'),
                         style: theme.textTheme.titleMedium,
                       ),
@@ -227,7 +227,7 @@ class StudyHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final tr = _tr(context);
+    final lang = langOf(context);
     final key = (familyId, child.id);
     final history = ref.watch(studyHistoryProvider(key));
     final locale = Localizations.localeOf(context).toLanguageTag();
@@ -261,7 +261,7 @@ class StudyHistoryScreen extends ConsumerWidget {
                     if (await _pickGoal(context, ref, h.dailyGoalMinutes)) await _refresh(ref);
                   },
                   icon: const Icon(Icons.flag_rounded),
-                  label: Text(h.dailyGoalMinutes == null ? l10n.studySetGoal : l10n.studyGoalLabel(formatScreenDuration(goalSeconds!, turkish: tr))),
+                  label: Text(h.dailyGoalMinutes == null ? l10n.studySetGoal : l10n.studyGoalLabel(formatScreenDuration(goalSeconds!, lang: lang))),
                 ),
               ),
               const SizedBox(height: HallySpace.md),
@@ -326,7 +326,7 @@ class StudyHistoryScreen extends ConsumerWidget {
                   key: Key('study.entry.${e.id}'),
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(studyKindIcon(e.kind), color: e.kind == 'Reading' ? HallyColors.sky : childColor(child.color)),
-                  title: Text('${studyKindLabel(l10n, e.kind)} · ${formatScreenDuration(e.seconds, turkish: tr)}'),
+                  title: Text('${studyKindLabel(l10n, e.kind)} · ${formatScreenDuration(e.seconds, lang: lang)}'),
                   subtitle: Text([
                     '${DateFormat.MMMd(locale).format(e.startedAt)} ${DateFormat.Hm(locale).format(e.startedAt)}',
                     if (e.byName != null) e.byName!,
@@ -352,7 +352,7 @@ class StudyHistoryScreen extends ConsumerWidget {
   /// Returns whether the goal changed.
   Future<bool> _pickGoal(BuildContext context, WidgetRef ref, int? current) async {
     final l10n = AppLocalizations.of(context);
-    final tr = _tr(context);
+    final lang = langOf(context);
     final picked = await showModalBottomSheet<int>(
       context: context,
       useRootNavigator: true,
@@ -376,7 +376,7 @@ class StudyHistoryScreen extends ConsumerWidget {
                   for (final m in _goalChoices)
                     ChoiceChip(
                       key: Key('study.goal.$m'),
-                      label: Text(formatScreenDuration(m * 60, turkish: tr)),
+                      label: Text(formatScreenDuration(m * 60, lang: lang)),
                       selected: current == m,
                       onSelected: (_) => Navigator.pop(context, m),
                     ),
@@ -463,7 +463,7 @@ class _AddStudySheetState extends ConsumerState<_AddStudySheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final tr = _tr(context);
+    final lang = langOf(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(HallySpace.lg, 0, HallySpace.lg, HallySpace.lg + MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
@@ -492,7 +492,7 @@ class _AddStudySheetState extends ConsumerState<_AddStudySheet> {
               ),
               SizedBox(
                 width: 120,
-                child: Text(formatScreenDuration(_minutes * 60, turkish: tr), key: const Key('study.minutes.value'), textAlign: TextAlign.center, style: theme.textTheme.headlineSmall),
+                child: Text(formatScreenDuration(_minutes * 60, lang: lang), key: const Key('study.minutes.value'), textAlign: TextAlign.center, style: theme.textTheme.headlineSmall),
               ),
               IconButton.filledTonal(
                 key: const Key('study.minutes.plus'),

@@ -16,7 +16,7 @@ abstract final class DemoSamples {
       'Parent-teacher meeting on the 25th at 6:30pm. Hope to see you there!\n'
       'Ms. Johnson';
 
-  static String idFor(String languageCode) => languageCode == 'en' ? englishId : turkishId;
+  static String idFor(String languageCode) => languageCode == 'tr' ? turkishId : englishId;
 
-  static String textFor(String languageCode) => languageCode == 'en' ? english : turkish;
+  static String textFor(String languageCode) => languageCode == 'tr' ? turkish : english;
 }

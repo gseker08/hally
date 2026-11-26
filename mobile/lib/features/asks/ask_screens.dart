@@ -13,8 +13,9 @@ import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../child_mode/child_mode_repository.dart';
 import 'asks.dart';
+import '../../core/locale/units.dart';
 
-String _lang(BuildContext context) => Localizations.localeOf(context).languageCode == 'en' ? 'en' : 'tr';
+String _lang(BuildContext context) => langOf(context);
 
 /// The child's requests; [lang] picks the language of the starting list.
 final kidAsksProvider = FutureProvider.autoDispose.family<ChildAsks, String>((ref, lang) => ref.watch(childApiProvider).asks(lang));

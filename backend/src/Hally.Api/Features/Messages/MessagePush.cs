@@ -1,5 +1,7 @@
 using Hally.Api.Features.Notifications;
+using Hally.Domain.Common;
 using Hally.Domain.Messaging;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,10 +36,10 @@ public class MessagePush(HallyDbContext db, IPushSender push, ILogger<MessagePus
                     continue;
                 }
 
-                var photo = user.Locale == "en" ? "📷 Photo" : "📷 Fotoğraf";
+                var photo = "📷 " + Texts.Get(user.Locale, "message.photo");
                 var preview = !hasPhoto ? text : text.Length == 0 ? photo : $"📷 {text}";
                 var title = thread.Kind == MessageThreadKind.Family
-                    ? $"{first} · {(user.Locale == "en" ? "Family chat" : "Aile sohbeti")}"
+                    ? $"{first} · {Texts.Get(user.Locale, "message.familyChat")}"
                     : first;
                 // The recipient opens the chat by its own key: the family chat, or the sender's id for a direct chat.
                 var chatKey = thread.Kind == MessageThreadKind.Family ? MessageThread.FamilyKey : senderId.ToString();

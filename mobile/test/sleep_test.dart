@@ -87,8 +87,8 @@ void _phone(WidgetTester tester) {
 
 void main() {
   test('sleep durations read naturally', () {
-    expect(formatSleepMinutes(45, turkish: true), '45 dk');
-    expect(formatSleepMinutes(605, turkish: false), '10 h 05 min');
+    expect(formatSleepMinutes(45, lang: 'tr'), '45 dk');
+    expect(formatSleepMinutes(605, lang: 'en'), '10 h 05 min');
   });
 
   testWidgets('asleep and awake with one tap', (tester) async {

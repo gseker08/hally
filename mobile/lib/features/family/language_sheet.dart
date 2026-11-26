@@ -9,6 +9,7 @@ String languageLabel(AppLocalizations l10n, AppLanguage language) => switch (lan
       AppLanguage.system => l10n.languageSystem,
       AppLanguage.tr => 'Türkçe',
       AppLanguage.en => 'English',
+      AppLanguage.de => 'Deutsch',
     };
 
 Future<void> showLanguageSheet(BuildContext context) => showModalBottomSheet<void>(
@@ -34,6 +35,11 @@ class _LanguageSheet extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
             child: Text(l10n.languageTitle, style: Theme.of(context).textTheme.titleLarge),
           ),
+          // Nine languages do not fit a short phone's sheet, so the list scrolls.
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              children: [
           for (final language in AppLanguage.values)
             ListTile(
               key: Key('language.${language.name}'),
@@ -46,6 +52,9 @@ class _LanguageSheet extends ConsumerWidget {
                 Navigator.of(context).pop();
               },
             ),
+              ],
+            ),
+          ),
           const SizedBox(height: 8),
         ],
       ),

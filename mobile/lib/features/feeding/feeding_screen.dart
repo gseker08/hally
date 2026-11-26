@@ -11,16 +11,17 @@ import '../../l10n/gen/app_localizations.dart';
 import '../family/children.dart';
 import '../family/family_repository.dart';
 import 'feeding_repository.dart';
+import '../../core/locale/units.dart';
 
 String _hm(BuildContext context, DateTime t) => DateFormat.Hm(Localizations.localeOf(context).toLanguageTag()).format(t);
 
 /// "45 dk" / "2 sa 10 dk" since [t], for "how long since she ate".
-String feedingAgo(DateTime t, DateTime now, {required bool turkish}) {
+String feedingAgo(DateTime t, DateTime now, {required String lang}) {
   final minutes = now.difference(t).inMinutes.clamp(0, 99999);
   final h = minutes ~/ 60;
   final m = minutes % 60;
-  final hu = turkish ? 'sa' : 'h';
-  final mu = turkish ? 'dk' : 'min';
+  final hu = durationUnits(lang).h;
+  final mu = durationUnits(lang).min;
   return h == 0 ? '$m $mu' : '$h $hu $m $mu';
 }
 
@@ -32,8 +33,8 @@ String feedingSideLabel(AppLocalizations l10n, String? side) => switch (side) {
     };
 
 /// "Emzirme · Sol · 15 dk", "Biberon · 120 ml", "Ek gıda · Havuç püresi".
-String feedingSummary(AppLocalizations l10n, FeedingEntry e, {required bool turkish}) => switch (e.kind) {
-      'Breast' => [l10n.feedingBreast, feedingSideLabel(l10n, e.side), if (e.minutes != null) '${e.minutes} ${turkish ? 'dk' : 'min'}'].join(' · '),
+String feedingSummary(AppLocalizations l10n, FeedingEntry e, {required String lang}) => switch (e.kind) {
+      'Breast' => [l10n.feedingBreast, feedingSideLabel(l10n, e.side), if (e.minutes != null) '${e.minutes} ${durationUnits(lang).min}'].join(' · '),
       'Bottle' => '${l10n.feedingBottle} · ${e.amountMl} ml',
       _ => '${l10n.feedingSolid} · ${e.food}',
     };
@@ -44,7 +45,6 @@ IconData feedingIcon(String kind) => switch (kind) {
       _ => Icons.restaurant_rounded,
     };
 
-bool _tr(BuildContext context) => Localizations.localeOf(context).languageCode != 'en';
 
 /// Last feed and today's totals for every child, with quick add buttons. Tapping a child opens the last three days.
 class FeedingScreen extends ConsumerStatefulWidget {
@@ -78,7 +78,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
     final children = watchChildren(ref, familyId);
     final status = ref.watch(feedingStatusProvider(familyId));
     final now = DateTime.now();
-    final tr = _tr(context);
+    final lang = langOf(context);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.feedingTitle)),
@@ -118,7 +118,7 @@ class _FeedingScreenState extends ConsumerState<FeedingScreen> {
                                             Text(
                                               last == null
                                                   ? l10n.feedingNoRecord
-                                                  : l10n.feedingLast(feedingAgo(last.at, now, turkish: tr), feedingSummary(l10n, last, turkish: tr)),
+                                                  : l10n.feedingLast(feedingAgo(last.at, now, lang: lang), feedingSummary(l10n, last, lang: lang)),
                                               key: Key('feeding.line.${c.id}'),
                                               style: theme.textTheme.bodySmall,
                                             ),
@@ -176,7 +176,7 @@ class FeedingHistoryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final tr = _tr(context);
+    final lang = langOf(context);
     final key = (familyId, child.id);
     final history = ref.watch(feedingHistoryProvider(key));
     final locale = Localizations.localeOf(context).toLanguageTag();
@@ -205,7 +205,7 @@ class FeedingHistoryScreen extends ConsumerWidget {
                     ? l10n.feedingNoRecord
                     : [
                         l10n.feedingToday(d.feeds),
-                        if (d.breastFeeds > 0) '${l10n.feedingBreast} ${d.breastFeeds}× · ${d.breastMinutes} ${tr ? 'dk' : 'min'}',
+                        if (d.breastFeeds > 0) '${l10n.feedingBreast} ${d.breastFeeds}× · ${d.breastMinutes} ${durationUnits(lang).min}',
                         if (d.bottles > 0) '${l10n.feedingBottle} ${d.bottles}× · ${d.bottleMl} ml',
                         if (d.solids > 0) '${l10n.feedingSolid} ${d.solids}×',
                       ].join(' · ')),
@@ -217,7 +217,7 @@ class FeedingHistoryScreen extends ConsumerWidget {
                 key: Key('feeding.entry.${e.id}'),
                 contentPadding: EdgeInsets.zero,
                 leading: Icon(feedingIcon(e.kind), color: childColor(child.color)),
-                title: Text(feedingSummary(l10n, e, turkish: tr)),
+                title: Text(feedingSummary(l10n, e, lang: lang)),
                 subtitle: Text([
                   '${DateFormat.MMMd(locale).format(e.at)} ${_hm(context, e.at)}',
                   if (e.byName != null) e.byName!,
@@ -333,7 +333,7 @@ class _AddFeedingSheetState extends ConsumerState<_AddFeedingSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final tr = _tr(context);
+    final lang = langOf(context);
     return Padding(
       padding: EdgeInsets.fromLTRB(HallySpace.lg, 0, HallySpace.lg, HallySpace.lg + MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
@@ -369,7 +369,7 @@ class _AddFeedingSheetState extends ConsumerState<_AddFeedingSheet> {
               ],
             ),
             const SizedBox(height: HallySpace.sm),
-            _stepper('minutes', '$_minutes ${tr ? 'dk' : 'min'}', _minutes > 1 ? () => setState(() => _minutes = (_minutes - 5).clamp(1, 120)) : null,
+            _stepper('minutes', '$_minutes ${durationUnits(lang).min}', _minutes > 1 ? () => setState(() => _minutes = (_minutes - 5).clamp(1, 120)) : null,
                 _minutes < 120 ? () => setState(() => _minutes = (_minutes + 5).clamp(1, 120)) : null),
           ],
           if (_kind == 'Bottle')

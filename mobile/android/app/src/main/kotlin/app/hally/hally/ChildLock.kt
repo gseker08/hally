@@ -35,7 +35,6 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Calendar
-import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
@@ -232,7 +231,6 @@ class ChildLockService : Service() {
 
     private fun showOverlay(usedSeconds: Int) {
         if (overlay != null || !ChildLock.canDrawOverlays(this)) return
-        val tr = Locale.getDefault().language == "tr"
         val cherry = Color.parseColor("#AD5268")
         fun dp(v: Int) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v.toFloat(), resources.displayMetrics).toInt()
         fun text(value: String, size: Float, bold: Boolean = false, color: Int = Color.parseColor("#374B45")) = TextView(this).apply {
@@ -258,9 +256,9 @@ class ChildLockService : Service() {
 
         val minutes = usedSeconds / 60
         val used = if (minutes >= 60) {
-            if (tr) "${minutes / 60} saat ${minutes % 60} dakika" else "${minutes / 60} h ${minutes % 60} min"
+            getString(R.string.child_lock_hours_minutes, minutes / 60, minutes % 60)
         } else {
-            if (tr) "$minutes dakika" else "$minutes min"
+            getString(R.string.child_lock_minutes, minutes)
         }
         val view = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -268,17 +266,17 @@ class ChildLockService : Service() {
             setBackgroundColor(Color.parseColor("#F3E4E7"))
             setPadding(dp(28), dp(48), dp(28), dp(36))
             addView(text("🍒", 64f))
-            addView(text(if (tr) "Ekran süren doldu" else "Screen time is up", 26f, bold = true, color = cherry))
-            addView(text(if (tr) "Bugün $used kullandın.\nYarın tekrar açılır." else "You used $used today.\nIt opens again tomorrow.", 16f))
-            addView(text(if (tr) "Hally'de kirazla süre alabilir ya da annenden/babandan isteyebilirsin." else "In Hally you can buy time with cherries or ask your parents.", 14f))
-            addView(button(if (tr) "Hally'yi aç" else "Open Hally", true) {
+            addView(text(getString(R.string.child_lock_title), 26f, bold = true, color = cherry))
+            addView(text(getString(R.string.child_lock_used, used), 16f))
+            addView(text(getString(R.string.child_lock_hint), 14f))
+            addView(button(getString(R.string.child_lock_open), true) {
                 packageManager.getLaunchIntentForPackage(packageName)?.let {
                     it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     startActivity(it)
                 }
                 hideOverlay()
             })
-            addView(button(if (tr) "Acil arama" else "Emergency call", false) {
+            addView(button(getString(R.string.child_lock_emergency), false) {
                 startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:112")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 hideOverlay()
             })
@@ -310,9 +308,8 @@ class ChildLockService : Service() {
     private fun notification(): Notification {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26) {
-            manager.createNotificationChannel(NotificationChannel(CHANNEL, "Hally çocuk modu", NotificationManager.IMPORTANCE_MIN))
+            manager.createNotificationChannel(NotificationChannel(CHANNEL, getString(R.string.child_lock_channel), NotificationManager.IMPORTANCE_MIN))
         }
-        val tr = Locale.getDefault().language == "tr"
         val open = PendingIntent.getActivity(
             this, 0, packageManager.getLaunchIntentForPackage(packageName), PendingIntent.FLAG_IMMUTABLE,
         )
@@ -320,8 +317,8 @@ class ChildLockService : Service() {
         val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, CHANNEL) else Notification.Builder(this)
         return builder
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(if (tr) "Ekran süresi takip ediliyor" else "Screen time is on")
-            .setContentText(if (tr) "Ailen için Hally çocuk modu açık" else "Hally child mode is on for your family")
+            .setContentTitle(getString(R.string.child_lock_notice_title))
+            .setContentText(getString(R.string.child_lock_notice_body))
             .setContentIntent(open)
             .setOngoing(true)
             .build()

@@ -7,6 +7,7 @@ using Hally.Domain.Expenses;
 using Hally.Domain.Families;
 using Hally.Domain.Notifications;
 using Hally.Domain.Points;
+using Hally.Domain.Users;
 using Hally.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -127,11 +128,10 @@ public class AllowanceService(HallyDbContext db, NotificationPublisher publisher
             var name = await db.Children.AsNoTracking().Where(c => c.Id == childId).Select(c => c.FirstName).FirstAsync(ct);
             foreach (var p in await ParentsAsync(familyId, ct))
             {
-                var tr = p.Locale != "en";
-                var money = Money(amount, plan.Currency, tr);
+                var money = Money(amount, plan.Currency, p.Locale);
                 await publisher.AddAsync(p.Id, familyId, NotificationKind.AllowanceRequest,
-                    tr ? $"{name} harçlık istiyor" : $"{name} asks for pocket money",
-                    tr ? $"{cherries} kiraz = {money}" : $"{cherries} cherries = {money}", null, childId, $"allow:{request.Id:N}:{p.Id:N}", ct);
+                    Texts.Get(p.Locale, "allowance.request.title", ("name", name)),
+                    Texts.Get(p.Locale, "allowance.request.body", ("cherries", cherries), ("money", money)), null, childId, $"allow:{request.Id:N}:{p.Id:N}", ct);
             }
 
             await db.SaveChangesAsync(ct);
@@ -163,9 +163,9 @@ public class AllowanceService(HallyDbContext db, NotificationPublisher publisher
             {
                 var adults = await db.FamilyMembers.AsNoTracking().Where(m => m.FamilyId == familyId && m.Role != FamilyRole.Caregiver).Select(m => m.UserId).ToListAsync(ct);
                 var name = await db.Children.AsNoTracking().Where(c => c.Id == request.ChildId).Select(c => c.FirstName).FirstAsync(ct);
-                var turkish = await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Locale).FirstAsync(ct) != "en";
-                var expense = new Expense(familyId, turkish ? $"Harçlık · {name}" : $"Pocket money · {name}", request.Amount, ExpenseCategory.Other, today, userId,
-                    adults, request.ChildId, turkish ? $"{request.Cherries} kiraz" : $"{request.Cherries} cherries", userId, now);
+                var lang = await db.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Locale).FirstAsync(ct);
+                var expense = new Expense(familyId, Texts.Get(lang, "allowance.expense.title", ("name", name)), request.Amount, ExpenseCategory.Other, today, userId,
+                    adults, request.ChildId, Texts.Get(lang, "allowance.expense.note", ("cherries", request.Cherries)), userId, now);
                 db.Expenses.Add(expense);
                 expenseId = expense.Id;
             }
@@ -225,10 +225,13 @@ public class AllowanceService(HallyDbContext db, NotificationPublisher publisher
         return added;
     }
 
-    public static string Money(decimal amount, string currency, bool turkish)
+    /// <summary>"20 ₺", "2,50 ₺" in Turkish; "₺2.50" in English; "2,50 ₺" in German.</summary>
+    public static string Money(decimal amount, string currency, string? locale)
     {
-        var text = amount.ToString(amount == decimal.Truncate(amount) ? "0" : "0.00", turkish ? new System.Globalization.CultureInfo("tr-TR") : System.Globalization.CultureInfo.InvariantCulture);
-        return currency == "TRY" ? (turkish ? $"{text} ₺" : $"₺{text}") : $"{text} {currency}";
+        var lang = Locales.Normalize(locale);
+        var culture = lang == Locales.English ? System.Globalization.CultureInfo.InvariantCulture : Texts.Culture(lang);
+        var text = amount.ToString(amount == decimal.Truncate(amount) ? "0" : "0.00", culture);
+        return currency == "TRY" ? (lang == Locales.English ? $"₺{text}" : $"{text} ₺") : $"{text} {currency}";
     }
 
     private async Task<List<(Guid Id, string Locale)>> ParentsAsync(Guid familyId, CancellationToken ct) =>

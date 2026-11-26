@@ -11,6 +11,7 @@ import '../family/children.dart';
 import '../family/family_repository.dart' show isCaregiverProvider;
 import 'handoff_repository.dart';
 import 'handoff_screen.dart';
+import '../../core/locale/units.dart';
 
 /// Caregiver's Today: one "Günü bitir" row per child they look after; a sent report shows a tick and can be updated.
 class CaregiverHandoffCard extends ConsumerWidget {
@@ -115,7 +116,7 @@ class HandoffReportCard extends ConsumerWidget {
     final r = report;
     final s = r.summary;
     final lines = handoffLines(context, s);
-    final tr = Localizations.localeOf(context).languageCode == 'tr';
+    final lang = langOf(context);
     final locale = Localizations.localeOf(context).toLanguageTag();
     final food = s.solids > 0 ? l10n.handoffMeals(s.solids) : (s.bottleMl > 0 ? l10n.handoffBottle(s.bottleMl) : lines.food);
 
@@ -169,7 +170,7 @@ class HandoffReportCard extends ConsumerWidget {
             Row(children: [
               tile(l10n.handoffFood, food, HallyColors.peach),
               const SizedBox(width: HallySpace.sm),
-              tile(l10n.handoffSleep, s.sleepMinutes > 0 ? formatSleep(s.sleepMinutes, tr) : null, HallyColors.lavender),
+              tile(l10n.handoffSleep, s.sleepMinutes > 0 ? formatSleep(s.sleepMinutes, lang) : null, HallyColors.lavender),
             ]),
             const SizedBox(height: HallySpace.sm),
             Row(children: [
@@ -223,12 +224,13 @@ class HandoffReportCard extends ConsumerWidget {
     );
   }
 
-  static String formatSleep(int minutes, bool tr) {
+  static String formatSleep(int minutes, String lang) {
     final h = minutes ~/ 60;
     final m = minutes % 60;
-    if (h == 0) return tr ? '$m dk' : '$m min';
-    if (m == 0) return tr ? '$h sa' : '$h h';
-    return tr ? '$h sa $m dk' : '$h h $m min';
+    final u = durationUnits(lang);
+    if (h == 0) return '$m ${u.min}';
+    if (m == 0) return '$h ${u.h}';
+    return '$h ${u.h} $m ${u.min}';
   }
 }
 

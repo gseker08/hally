@@ -136,11 +136,11 @@ void _phone(WidgetTester tester) {
 
 void main() {
   test('durations read naturally in both languages', () {
-    expect(formatScreenDuration(12 * 60, turkish: true), '12 dk');
-    expect(formatScreenDuration(3600, turkish: true), '1 sa');
-    expect(formatScreenDuration(3900, turkish: false), '1 h 05 min');
-    expect(formatScreenDuration(3725, turkish: true, withSeconds: true), '1:02:05');
-    expect(formatScreenDuration(65, turkish: true, withSeconds: true), '01:05');
+    expect(formatScreenDuration(12 * 60, lang: 'tr'), '12 dk');
+    expect(formatScreenDuration(3600, lang: 'tr'), '1 sa');
+    expect(formatScreenDuration(3900, lang: 'en'), '1 h 05 min');
+    expect(formatScreenDuration(3725, lang: 'tr', withSeconds: true), '1:02:05');
+    expect(formatScreenDuration(65, lang: 'tr', withSeconds: true), '01:05');
   });
 
   test('a running timer counts on locally but not past its 8 hour cap', () {

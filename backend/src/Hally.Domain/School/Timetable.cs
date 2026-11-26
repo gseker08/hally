@@ -232,11 +232,25 @@ public static class TurkishHolidays
     private static readonly DateOnly[] Bayrams =
     [
         // 2026: Ramazan Bayramı 20–22 March, Kurban Bayramı 27–30 May.
-        new(2026, 3, 19), new(2026, 3, 20), new(2026, 3, 21), new(2026, 3, 22),
-        new(2026, 5, 26), new(2026, 5, 27), new(2026, 5, 28), new(2026, 5, 29), new(2026, 5, 30),
+        new(2026, 3, 19),
+        new(2026, 3, 20),
+        new(2026, 3, 21),
+        new(2026, 3, 22),
+        new(2026, 5, 26),
+        new(2026, 5, 27),
+        new(2026, 5, 28),
+        new(2026, 5, 29),
+        new(2026, 5, 30),
         // 2027: Ramazan Bayramı 9–11 March, Kurban Bayramı 16–19 May.
-        new(2027, 3, 8), new(2027, 3, 9), new(2027, 3, 10), new(2027, 3, 11),
-        new(2027, 5, 15), new(2027, 5, 16), new(2027, 5, 17), new(2027, 5, 18), new(2027, 5, 19),
+        new(2027, 3, 8),
+        new(2027, 3, 9),
+        new(2027, 3, 10),
+        new(2027, 3, 11),
+        new(2027, 5, 15),
+        new(2027, 5, 16),
+        new(2027, 5, 17),
+        new(2027, 5, 18),
+        new(2027, 5, 19),
     ];
 
     public static bool Contains(DateOnly day) => Fixed.Contains((day.Month, day.Day)) || Bayrams.Contains(day);
