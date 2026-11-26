@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
+import 'features/calendar_sync/calendar_sync.dart';
+import 'features/calendar_sync/calendar_sync_screens.dart';
 import 'features/tips/tips.dart' show TipsSettingsScreen;
 import 'features/tips/weekly_report.dart';
 import 'features/activities/activity_screens.dart' show FamilyActivitiesScreen;
@@ -191,6 +193,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           path: '/assistant',
           builder: (_, s) => AssistantScreen(startVoice: s.uri.queryParameters['voice'] == '1', startBriefing: s.uri.queryParameters['briefing'] == '1')),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+      GoRoute(path: '/calendar-sync', builder: (_, __) => const ConnectedCalendarsScreen()),
+      GoRoute(
+          path: '/calendar-sync/:provider',
+          builder: (_, s) => CalendarConnectScreen(provider: CalendarProvider.values.firstWhere((p) => p.name == s.pathParameters['provider'], orElse: () => CalendarProvider.other))),
       GoRoute(path: '/privacy', builder: (_, __) => const PrivacyScreen()),
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => HomeShell(shell: shell),

@@ -2724,6 +2724,137 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("events", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Planning.CalendarFeed", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<int>("FetchCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("fetch_count");
+
+                    b.Property<DateTimeOffset?>("LastFetchedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_fetched_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_calendar_feeds");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_calendar_feeds_token_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_calendar_feeds_user_id");
+
+                    b.HasIndex("FamilyId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_calendar_feeds_family_id_user_id");
+
+                    b.ToTable("calendar_feeds", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.Planning.ExternalEvent", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AllDay")
+                        .HasColumnType("boolean")
+                        .HasColumnName("all_day");
+
+                    b.Property<bool>("BusyOnly")
+                        .HasColumnType("boolean")
+                        .HasColumnName("busy_only");
+
+                    b.Property<string>("CalendarName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("calendar_name");
+
+                    b.Property<string>("ColorHex")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasColumnName("color_hex");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_user_id");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("SourceKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("source_key");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<DateTimeOffset>("SyncedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("synced_at");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title");
+
+                    b.HasKey("Id")
+                        .HasName("pk_external_events");
+
+                    b.HasIndex("OwnerUserId")
+                        .HasDatabaseName("ix_external_events_owner_user_id");
+
+                    b.HasIndex("FamilyId", "StartsAt")
+                        .HasDatabaseName("ix_external_events_family_id_starts_at");
+
+                    b.HasIndex("FamilyId", "OwnerUserId", "SourceKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_external_events_family_id_owner_user_id_source_key");
+
+                    b.ToTable("external_events", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Planning.FamilyTask", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4595,6 +4726,40 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_events_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Planning.CalendarFeed", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_calendar_feeds_families_family_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_calendar_feeds_users_user_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Planning.ExternalEvent", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_external_events_families_family_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_external_events_users_owner_user_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Planning.FamilyTask", b =>

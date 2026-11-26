@@ -3301,5 +3301,154 @@
     }
   },
   "reportTipHeader": "Önümüzdeki hafta için",
-  "familyWeeklyReportBody": "Haftalık rapor ve paylaşılabilir kart"
+  "familyWeeklyReportBody": "Haftalık rapor ve paylaşılabilir kart",
+  "calSyncTitle": "Bağlı takvimler",
+  "calSyncProfileSubtitle": "Google, iCloud ve Outlook takvimlerini bağla",
+  "calSyncTooltip": "Takvimleri bağla",
+  "calSyncGoogle": "Google Takvim",
+  "calSyncICloud": "iCloud Takvim",
+  "calSyncOutlook": "Outlook Takvim",
+  "calSyncOther": "Telefondaki diğer takvimler",
+  "calSyncInviteTitle": "Takvimini bağla, aile planın tek yerde dursun",
+  "calSyncInviteBody": "İş toplantıların Hally'de, okul ve kurslar telefon takviminde görünür.",
+  "calSyncLater": "Sonra Ayarlar'dan yaparım",
+  "calSyncPrivacyNote": "Telefonundaki takvimleri okuyoruz. Şifre istemiyoruz; etkinlikler sadece senin seçtiğin kişilere görünür.",
+  "calSyncOnlyMe": "Sadece ben",
+  "calSyncFamily": "Ailem",
+  "calSyncWhatShows": "Ne görünsün?",
+  "calSyncBusyOnly": "\"Ailem\" seçilenlerde sadece \"Meşgul\"",
+  "calSyncBusyOnlyBody": "Etkinlik adı yerine ailen \"{name} meşgul\" görür",
+  "@calSyncBusyOnlyBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncToPhone": "Hally'den telefona",
+  "calSyncExport": "Aile etkinliklerini telefon takvimime ekle",
+  "calSyncExportBody": "\"Hally\" adlı ayrı bir takvim açılır",
+  "calSyncConnect": "Bağla",
+  "calSyncDone": "Takvim bağlandı",
+  "calSyncPermissionTitle": "Takvim izni gerekli",
+  "calSyncPermissionBody": "Hally, seçtiğin takvimleri göstermek ve aile etkinliklerini eklemek için telefon takvimine erişir.",
+  "calSyncAllow": "İzin ver",
+  "calSyncOpenSettings": "Ayarları aç",
+  "calSyncNoAccount": "Bu telefonda hesap yok",
+  "calSyncNotConnected": "Bağlı değil",
+  "calSyncConnected": "Bağlı",
+  "calSyncCalendarCount": "{count, plural, =1{1 takvim} other{{count} takvim}}",
+  "@calSyncCalendarCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calSyncNoAccountTitle": "Bu telefonda {provider} hesabı yok",
+  "@calSyncNoAccountTitle": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncNoAccountBody": "İki yolu var, ikisi de birkaç dakika sürer.",
+  "calSyncNoAccountA": "A · Etkinlikleri Hally'de gör",
+  "calSyncAddAccountIos": "iPhone'da Ayarlar → Takvim → Hesaplar → Hesap Ekle'den {provider} hesabını ekle ve Takvimler'i aç.",
+  "@calSyncAddAccountIos": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncAddAccountAndroid": "Telefonun Ayarlar → Hesaplar → Hesap ekle bölümünden {provider} hesabını ekle ve takvim eşitlemesini aç.",
+  "@calSyncAddAccountAndroid": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncAndroidICloud": "Android'e iCloud eklemek için ayrı bir uygulama gerekir. En kolayı iCloud takvimini Google Takvim'e aktarmak.",
+  "calSyncAndroidOutlook": "Outlook uygulamasında Ayarlar → hesabın → \"Takvimleri eşitle\" seçeneğini aç.",
+  "calSyncComeBack": "Hally'ye dön ve \"Tekrar dene\"ye dokun.",
+  "calSyncNoAccountB": "B · Hally etkinliklerini {provider} takvimine gönder",
+  "@calSyncNoAccountB": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncNoAccountBBody": "Abonelik bağlantısını kopyala ve {provider} web sitesinde \"URL ile takvim ekle\" bölümüne yapıştır.",
+  "@calSyncNoAccountBBody": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncCopyLink": "Bağlantıyı kopyala",
+  "calSyncRetry": "Tekrar dene",
+  "calSyncCopied": "Bağlantı kopyalandı",
+  "calSyncBusyLabel": "Meşgul",
+  "calSyncFromHally": "Hally'den dışarıya",
+  "calSyncAddToPhone": "Telefon takvimime ekle",
+  "calSyncHallyCalendar": "\"Hally\" takvimi · {count, plural, =0{henüz etkinlik yok} other{{count} etkinlik}}",
+  "@calSyncHallyCalendar": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calSyncWhichEvents": "Hangi etkinlikler",
+  "calSyncWholeFamily": "Tüm aile",
+  "calSyncFeedTitle": "Bilgisayarda abone ol",
+  "calSyncFeedBody": "Bu gizli bağlantıyı Google, iCloud veya Outlook'ta \"URL ile takvim ekle\" bölümüne yapıştır. Aile etkinlikleri orada da görünür.",
+  "calSyncFeedHidden": "Bağlantı başka bir telefonda oluşturuldu. Burada görmek için yenile.",
+  "calSyncFeedCreate": "Bağlantı oluştur",
+  "calSyncCopy": "Kopyala",
+  "calSyncFeedRenew": "Bağlantıyı yenile",
+  "calSyncFeedRenewConfirm": "Eski bağlantı çalışmayı bırakır. Onu eklediğin yerlere yenisini eklemen gerekir.",
+  "calSyncLastSync": "Son eşitleme: {time}",
+  "@calSyncLastSync": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncStop": "Takvim bağlantısını kaldır",
+  "calSyncStopConfirm": "Seçili takvimler Hally'den kalkar, ailenle paylaştıkların silinir ve telefondaki \"Hally\" takvimi kaldırılır.",
+  "calSyncFromProvider": "Kaynak: {source}. Değiştirmek için orada düzenle; Hally birkaç dakika içinde günceller.",
+  "@calSyncFromProvider": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncSharedBy": "{name} bu etkinliği aileyle paylaştı. Hally'de sadece görüntülenir.",
+  "@calSyncSharedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncOpenInCalendar": "Takvimde aç",
+  "calSyncBusy": "{name} meşgul",
+  "@calSyncBusy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "calSyncOnlyYou": "Sadece sen",
+  "calSyncFamilySees": "Aile görüyor",
+  "privacyPointCalendar": "Takvim bağlantısı isteğe bağlıdır. \"Sadece ben\" seçtiğin telefon takvimleri telefonunda kalır, bize gönderilmez. \"Ailem\" seçtiklerin ailenin diğer yetişkinleri görsün diye sunucuya kopyalanır (istersen sadece \"meşgul\" olarak) ve bağlantıyı kaldırınca silinir. Bilgisayar için oluşturduğun takvim bağlantısı gizlidir, istediğin an yenilenebilir."
 }

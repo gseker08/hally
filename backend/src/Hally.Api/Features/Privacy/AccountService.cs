@@ -81,6 +81,9 @@ public class AccountService(HallyDbContext db, IDocumentStore store, TimeProvide
         }
 
         await db.Conversations.Where(c => c.FamilyId == familyId && c.UserId == userId).ExecuteDeleteAsync(ct);
+        // Phone calendar events they shared and their subscription link leave with them.
+        await db.ExternalEvents.Where(x => x.FamilyId == familyId && x.OwnerUserId == userId).ExecuteDeleteAsync(ct);
+        await db.CalendarFeeds.Where(x => x.FamilyId == familyId && x.UserId == userId).ExecuteDeleteAsync(ct);
         // Direct chats with the leaver go (with their messages and photos); in the family chat their messages stay, shown without a name.
         var photoKeys = await db.FamilyMessages
             .Where(m => m.PhotoKey != null && db.MessageThreads.Any(t => t.Id == m.ThreadId && t.FamilyId == familyId && (t.UserA == userId || t.UserB == userId)))

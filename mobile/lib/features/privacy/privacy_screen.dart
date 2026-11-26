@@ -109,6 +109,7 @@ class _PrivacyScreenState extends ConsumerState<PrivacyScreen> {
       (Icons.lock_rounded, HallyColors.mint, l10n.privacyPointPhotos(info?.originalsRetentionDays ?? 30)),
       (Icons.child_care_rounded, HallyColors.apricot, l10n.privacyPointChildren),
       (Icons.forum_rounded, HallyColors.mint, l10n.privacyPointChat),
+      (Icons.event_repeat_rounded, HallyColors.lavender, l10n.privacyPointCalendar),
       (Icons.link_rounded, HallyColors.rose, l10n.privacyPointLinks),
       (Icons.analytics_rounded, HallyColors.cherry, l10n.privacyPointAnalytics),
     ];

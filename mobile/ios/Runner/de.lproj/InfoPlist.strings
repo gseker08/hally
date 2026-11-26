@@ -3,3 +3,5 @@
 "NSPhotoLibraryUsageDescription" = "Hally fügt den Screenshot oder das Foto, das du auswählst, zu deinem Plan hinzu.";
 "NSMicrophoneUsageDescription" = "Hally nutzt das Mikrofon nur, während du auf die Mikrofon-Taste tippst, damit du per Sprache fragen oder etwas hinzufügen kannst.";
 "NSSpeechRecognitionUsageDescription" = "Hally nutzt die Spracherkennung des iPhones, um das Gesagte für Hally in Text umzuwandeln.";
+"NSCalendarsUsageDescription" = "Wir nutzen deine Kalender, um die ausgewählten (Google, iCloud, Outlook) in Hally anzuzeigen und Familientermine in einen Kalender „Hally“ einzutragen.";
+"NSCalendarsFullAccessUsageDescription" = "Wir nutzen deine Kalender, um die ausgewählten (Google, iCloud, Outlook) in Hally anzuzeigen und Familientermine in einen Kalender „Hally“ einzutragen.";

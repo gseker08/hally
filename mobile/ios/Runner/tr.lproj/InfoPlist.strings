@@ -3,3 +3,5 @@
 "NSPhotoLibraryUsageDescription" = "Seçtiğin ekran görüntüsünü ya da fotoğrafı planına eklemek için kullanırız.";
 "NSMicrophoneUsageDescription" = "Hally'ye konuşarak sorabilmen ya da ekleyebilmen için mikrofonu yalnızca mikrofon düğmesine bastığında kullanırız.";
 "NSSpeechRecognitionUsageDescription" = "Söylediklerini yazıya çevirip Hally'ye göndermek için iPhone'un konuşma tanımasını kullanırız.";
+"NSCalendarsUsageDescription" = "Seçtiğin takvimleri (Google, iCloud, Outlook) Hally takviminde göstermek ve aile etkinliklerini \"Hally\" takvimine eklemek için kullanırız.";
+"NSCalendarsFullAccessUsageDescription" = "Seçtiğin takvimleri (Google, iCloud, Outlook) Hally takviminde göstermek ve aile etkinliklerini \"Hally\" takvimine eklemek için kullanırız.";
