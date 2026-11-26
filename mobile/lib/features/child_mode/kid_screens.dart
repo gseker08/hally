@@ -18,6 +18,7 @@ import '../allowance/allowance_screens.dart' show KidSavingsSection;
 import '../asks/ask_screens.dart' show KidAskCard;
 import '../bedtime/bedtime.dart' show bedtimeLaterProvider;
 import '../bedtime/bedtime_screens.dart' show KidBedtimeCard, KidBedtimeScreen, KidNightView;
+import '../exams/exams.dart' show ChildExam;
 import '../goal/goal_widgets.dart' show GoalBody, GoalMiniCard;
 import '../mood/mood.dart' show moodSkippedProvider;
 import '../mood/mood_widgets.dart' show KidMoodCard;
@@ -238,6 +239,7 @@ class _KidToday extends ConsumerWidget {
         if (home.bedtime case final bed? when bed.due) KidBedtimeCard(bedtime: bed),
         if (home.todayMood == null && !ref.watch(moodSkippedProvider)) const KidMoodCard(),
         const KidAskCard(),
+        for (final exam in home.exams.take(2)) _KidExamCard(exam: exam),
         const _LockSetupCard(),
         Row(
           children: [
@@ -308,6 +310,85 @@ class _KidToday extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// "Cuma Matematik sınavın var": the countdown, topics, minutes studied for it and "Çalıştım" (one cherry with the parents' OK).
+class _KidExamCard extends ConsumerWidget {
+  const _KidExamCard({required this.exam});
+
+  final ChildExam exam;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final b = theme.brightness;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final title = switch (exam.daysLeft) {
+      0 => l10n.kidExamToday(exam.subject),
+      1 => l10n.kidExamTomorrow(exam.subject),
+      _ => l10n.kidExamOn(DateFormat(exam.daysLeft < 7 ? 'EEEE' : 'd MMMM', locale).format(exam.date), exam.subject),
+    };
+    final minutes = exam.studySeconds ~/ 60;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: HallySpace.md),
+      child: Container(
+        key: Key('kid.exam.${exam.id}'),
+        padding: const EdgeInsets.all(HallySpace.md),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [HallyColors.softOf(HallyColors.mist, b), HallyColors.softOf(HallyColors.lavender, b)],
+          ),
+          borderRadius: BorderRadius.circular(HallyRadius.lg),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(children: [
+              const Text('📝', style: TextStyle(fontSize: 36)),
+              const SizedBox(width: HallySpace.sm),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                  if (exam.topics != null) Text(exam.topics!, style: theme.textTheme.bodyMedium),
+                ]),
+              ),
+            ]),
+            if (exam.daysLeft > 0) ...[
+              const SizedBox(height: HallySpace.sm),
+              Container(
+                padding: const EdgeInsets.fromLTRB(HallySpace.md, HallySpace.xs, HallySpace.xs, HallySpace.xs),
+                decoration: BoxDecoration(color: theme.colorScheme.surface.withValues(alpha: 0.85), borderRadius: BorderRadius.circular(HallyRadius.md)),
+                child: Row(children: [
+                  Expanded(
+                    child: Text(
+                      exam.state == 'Done'
+                          ? l10n.kidExamStudyDone
+                          : minutes > 0
+                              ? l10n.kidExamStudied(minutes)
+                              : l10n.kidExamStudyPrompt,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  if (exam.state == 'Pending')
+                    HallyPill(label: l10n.kidWaiting, color: HallyColors.butter)
+                  else if (exam.state == 'Todo')
+                    FilledButton(
+                      key: Key('kid.exam.${exam.id}.studied'),
+                      style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
+                      onPressed: () => _act(context, ref, (api) => api.examStudied(exam.id), (h) => h.requireApproval ? l10n.kidDoneSent : l10n.kidDoneCherry(1)),
+                      child: Text(l10n.kidExamStudyButton),
+                    ),
+                ]),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

@@ -12,6 +12,7 @@ import '../activities/activities.dart';
 import '../allowance/allowance.dart';
 import '../asks/asks.dart';
 import '../bedtime/bedtime.dart';
+import '../exams/exams.dart';
 import '../goal/family_goal.dart';
 import '../messages/chat_realtime.dart';
 import 'child_lock.dart';
@@ -151,6 +152,7 @@ class ChildHome {
     this.screen = const ChildScreen(),
     this.todayMood,
     this.bedtime,
+    this.exams = const [],
   });
 
   factory ChildHome.fromJson(Map<String, dynamic> j) {
@@ -170,6 +172,7 @@ class ChildHome {
       screen: ChildScreen.fromJson(j['screen'] as Map<String, dynamic>? ?? const {}),
       todayMood: j['todayMood'] as String?,
       bedtime: j['bedtime'] == null ? null : ChildBedtime.fromJson(j['bedtime'] as Map<String, dynamic>),
+      exams: [for (final e in j['exams'] as List? ?? const []) ChildExam.fromJson(e as Map<String, dynamic>)],
     );
   }
 
@@ -191,6 +194,9 @@ class ChildHome {
 
   /// Tonight's bedtime routine; null without one.
   final ChildBedtime? bedtime;
+
+  /// Exams in the next two weeks (Sınav takvimi), soonest first.
+  final List<ChildExam> exams;
 
   /// The cheapest reward still out of reach (the "next reward" bar).
   ChildReward? get nextReward {
@@ -248,6 +254,9 @@ abstract interface class ChildApi {
   /// "Ebeveyn çıkışı": the parents' PIN takes this phone out of child mode (the server unpairs it and the session is
   /// dropped here). Throws [ChildExitException] for a wrong PIN, too many tries or no PIN set.
   Future<void> exit(String pin);
+
+  /// "Çalıştım" for an upcoming exam (one cherry a day, with the parents' OK).
+  Future<ChildHome> examStudied(String examId);
 }
 
 class UnpairedException implements Exception {}
@@ -331,6 +340,12 @@ class DioChildApi implements ChildApi {
   @override
   Future<ChildHome> markDone(ChildItem item) =>
       _call(() => _home(_dio.post<Map<String, dynamic>>('/api/v1/child/${item.isHabit ? 'habits' : 'chores'}/${item.id}/done')));
+
+  @override
+  Future<ChildHome> examStudied(String examId) => _call(() async {
+        await _dio.post<dynamic>('/api/v1/child/exams/$examId/studied');
+        return _home(_dio.get<Map<String, dynamic>>('/api/v1/child/home'));
+      });
 
   @override
   Future<ChildHome> redeem(String rewardId) => _call(() => _home(_dio.post<Map<String, dynamic>>('/api/v1/child/rewards/$rewardId/redeem')));

@@ -12,13 +12,15 @@ import '../family/children.dart';
 import '../family/family_repository.dart';
 import '../insights/insights_repository.dart';
 import '../sleep/sleep_screen.dart';
+import '../exams/exam_screens.dart' show examCountdown;
+import '../exams/exams.dart';
 import '../profile/profile_screen.dart';
 
 /// The child picked on the Kids tab. Null means "the first child".
 final kidsSelectedProvider = StateProvider<String?>((ref) => null);
 
 /// The trackers a child can have, grouped on the Kids tab.
-enum Tracker { study, habits, stars, screenTime, sleep, feeding, medications, health }
+enum Tracker { study, exams, habits, stars, screenTime, sleep, feeding, medications, health }
 
 /// Which trackers fit a child's age. Unknown age shows everything; hidden ones stay one tap away under "More".
 /// Ages come from the birth year only, so they are approximate on purpose.
@@ -33,6 +35,7 @@ Set<Tracker> trackersForAge(int? age) {
     if (age >= 2) Tracker.screenTime,
     if (age >= 3) Tracker.stars,
     if (age >= 5) Tracker.study,
+    if (age >= 6) Tracker.exams,
   };
 }
 
@@ -204,10 +207,14 @@ class _ChildDayState extends ConsumerState<_ChildDay> {
     // A caregiver without health permission doesn't get the health card at all.
     final fits = trackersForAge(age).where((t) => t != Tracker.health || ref.watch(canSeeHealthProvider)).toSet();
 
+    final nextExam = (ref.watch(examsProvider(widget.familyId)).valueOrNull ?? const <Exam>[]).where((e) => e.childId == c.id && e.upcoming).firstOrNull;
+
     _TileData tile(Tracker t) => switch (t) {
           Tracker.study => _TileData(t, Icons.menu_book_rounded, HallyModule.study, l10n.studyTitle, '/study',
               value: today == null ? null : dur(today.studyMinutes),
               progress: data?.studyGoalMinutes == null || today == null ? null : today.studyMinutes / data!.studyGoalMinutes!),
+          Tracker.exams => _TileData(t, Icons.edit_note_rounded, HallyModule.study, l10n.examsTitle, '/exams?child=${c.id}',
+              value: nextExam == null ? null : examCountdown(l10n, nextExam.daysLeft), note: nextExam?.subject),
           Tracker.habits => _TileData(t, Icons.local_fire_department_rounded, HallyModule.habits, l10n.habitsTitle, '/habits',
               value: data == null || data.habits.isEmpty ? null : l10n.kidsStreakDays(data.habits.map((h) => h.streak).reduce(math.max)),
               note: today == null || today.habitsScheduled == 0 ? null : l10n.kidsDoneOf(today.habitsDone, today.habitsScheduled),
@@ -236,7 +243,7 @@ class _ChildDayState extends ConsumerState<_ChildDay> {
               warn: (data?.health.vaccinesOverdue ?? 0) > 0),
         };
 
-    const growth = [Tracker.study, Tracker.habits, Tracker.stars, Tracker.screenTime];
+    const growth = [Tracker.study, Tracker.exams, Tracker.habits, Tracker.stars, Tracker.screenTime];
     const care = [Tracker.sleep, Tracker.feeding, Tracker.medications, Tracker.health];
     // Babies and toddlers: care first.
     final careFirst = age != null && age <= 3;

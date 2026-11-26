@@ -57,7 +57,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           'EveningPrep' => Icons.nights_stay_rounded,
                           'ScreenTimeGoal' => Icons.timer_rounded,
                           'MedicationDue' => Icons.medication_rounded,
-                          'StudyGoal' => Icons.menu_book_rounded,
+                          'StudyGoal' || 'ExamStudy' => Icons.menu_book_rounded,
+                          'ExamResult' => Icons.edit_note_rounded,
                           _ => Icons.alarm_rounded,
                         },
                         color: n.kind == 'EveningPrep' ? HallyColors.cherry : HallyColors.apricot,
@@ -65,7 +66,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       title: Text(n.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: n.read ? FontWeight.w500 : FontWeight.w700)),
                       subtitle: Text('${n.body}\n${DateFormat.MMMd(locale).add_Hm().format(n.createdAt)}'),
                       isThreeLine: true,
-                      onTap: switch (n.kind == 'ScreenTimeGoal' ? 'ScreenTime' : n.kind == 'MedicationDue' ? 'Medication' : n.kind == 'StudyGoal' ? 'Study' : n.targetKind) {
+                      onTap: n.kind == 'ExamResult' && n.targetId != null
+                          ? () => context.push('/exams/${n.targetId}/result')
+                          : n.kind == 'ExamStudy'
+                              ? () => context.push('/exams')
+                              : switch (n.kind == 'ScreenTimeGoal' ? 'ScreenTime' : n.kind == 'MedicationDue' ? 'Medication' : n.kind == 'StudyGoal' ? 'Study' : n.targetKind) {
                         'ScreenTime' => () => context.push('/screen-time'),
                         'Medication' => () => context.push('/medications'),
                         'Study' => () => context.push('/study'),

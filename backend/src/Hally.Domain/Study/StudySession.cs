@@ -38,6 +38,11 @@ public class StudySession : Entity
     public Guid? StartedByUserId { get; private set; }
     public Guid? EndedByUserId { get; private set; }
 
+    /// <summary>The exam this study was for ("Başlat" on a Çalışma zamanı row); its minutes add up on the exam.</summary>
+    public Guid? ExamId { get; private set; }
+
+    public void ForExam(Guid? examId) => ExamId = examId;
+
     /// <summary>What was read or worked on ("Küçük Prens, 20 sayfa").</summary>
     public string? Note { get; private set; }
 

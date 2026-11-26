@@ -44,7 +44,8 @@ public record ChildHomeDto(
     IReadOnlyList<ChildRewardDto> Rewards,
     ChildScreenDto Screen,
     string? TodayMood = null,
-    Hally.Api.Features.Bedtime.ChildBedtimeDto? Bedtime = null);
+    Hally.Api.Features.Bedtime.ChildBedtimeDto? Bedtime = null,
+    IReadOnlyList<Hally.Api.Features.Exams.ChildExamDto>? Exams = null);
 
 public record ClaimDto(Guid Id, Guid ChildId, string ChildName, string Kind, string Title, int Cherries, DateOnly Day, DateTimeOffset At);
 
@@ -96,7 +97,8 @@ public class ChildModeService(
             family.Name, balance, week, streak, CherryStreak.BonusEvery - streak % CherryStreak.BonusEvery,
             family.RequireChildApproval, items, rewards, await ScreenAsync(child, today, ct),
             (await db.MoodChecks.AsNoTracking().Where(m => m.ChildId == childId && m.Day == today).Select(m => (Hally.Domain.Mood.Mood?)m.Mood).FirstOrDefaultAsync(ct))?.ToString(),
-            await bedtime.ChildAsync(childId, family.TimeZoneId, ct));
+            await bedtime.ChildAsync(childId, family.TimeZoneId, ct),
+            await ExamsAsync(childId, today, ct));
     }
 
     /// <summary>The child says "Yaptım!". With approval on it waits for a parent, otherwise the cherries land at once.
@@ -119,6 +121,17 @@ public class ChildModeService(
             }
 
             (title, points) = (chore.Title, chore.Points);
+        }
+        else if (kind == ClaimKind.Study)
+        {
+            var exam = await db.Exams.AsNoTracking().FirstOrDefaultAsync(e => e.Id == itemId && e.ChildId == childId && e.FamilyId == familyId, ct)
+                       ?? throw new NotFoundException("exam.not_found", "Exam not found.");
+            if (exam.Date < today)
+            {
+                throw new DomainException("exam.past", "This exam is over.");
+            }
+
+            (title, points) = (exam.Subject, StudyCherries);
         }
         else if (kind == ClaimKind.Activity)
         {
@@ -189,6 +202,34 @@ public class ChildModeService(
         }
 
         await AnnounceAsync(familyId, ct);
+    }
+
+    /// <summary>Cherries for one approved "Çalıştım" before an exam.</summary>
+    public const int StudyCherries = 1;
+
+    private async Task<IReadOnlyList<Hally.Api.Features.Exams.ChildExamDto>> ExamsAsync(Guid childId, DateOnly today, CancellationToken ct)
+    {
+        var until = today.AddDays(Hally.Api.Features.Exams.ExamService.ChildAheadDays);
+        var exams = await db.Exams.AsNoTracking().Where(e => e.ChildId == childId && e.Date >= today && e.Date <= until)
+            .OrderBy(e => e.Date).ThenBy(e => e.CreatedAt).ToListAsync(ct);
+        if (exams.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = exams.Select(e => e.Id).ToList();
+        var now = clock.GetUtcNow();
+        var sessions = await db.StudySessions.AsNoTracking().Where(s => s.ExamId != null && ids.Contains(s.ExamId.Value)).ToListAsync(ct);
+        var claims = await db.ChildClaims.AsNoTracking()
+            .Where(c => c.ChildId == childId && c.Kind == ClaimKind.Study && c.Day == today && ids.Contains(c.ItemId) && c.Status != ClaimStatus.Rejected)
+            .Select(c => new { c.ItemId, c.Status }).ToListAsync(ct);
+        return exams.Select(e =>
+        {
+            var claim = claims.FirstOrDefault(c => c.ItemId == e.Id);
+            var seconds = (int)sessions.Where(s => s.ExamId == e.Id).Sum(s => (s.CountsUntil(now) - s.StartedAt).TotalSeconds);
+            return new Hally.Api.Features.Exams.ChildExamDto(e.Id, e.Subject, e.Topics, e.Date, e.Slot, e.Date.DayNumber - today.DayNumber, seconds,
+                claim is null ? "Todo" : claim.Status == ClaimStatus.Pending ? "Pending" : "Done");
+        }).ToList();
     }
 
     public async Task<IReadOnlyList<ClaimDto>> PendingAsync(Guid familyId, CancellationToken ct)
@@ -318,6 +359,12 @@ public class ChildModeService(
     /// when today completes seven days in a row. Caller saves.</summary>
     private async Task CreditAsync(ChildClaim claim, Guid? userId, DateOnly today, DateTimeOffset now, CancellationToken ct)
     {
+        if (claim.Kind == ClaimKind.Study)
+        {
+            db.PointEntries.Add(PointEntry.ForExam(claim.FamilyId, claim.ChildId, claim.Title, claim.Points, userId, claim.Day, now));
+            return;
+        }
+
         if (claim.Kind == ClaimKind.Activity)
         {
             db.PointEntries.Add(PointEntry.ForActivity(claim.FamilyId, claim.ChildId, claim.Title, claim.Points, userId, claim.Day, now));
