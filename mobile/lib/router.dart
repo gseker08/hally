@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import 'core/auth/auth_repository.dart';
 import 'core/design/widgets.dart';
+import 'features/tips/tips.dart' show TipsSettingsScreen;
+import 'features/tips/weekly_report.dart';
 import 'features/activities/activity_screens.dart' show FamilyActivitiesScreen;
 import 'features/allowance/allowance_screens.dart' show AllowanceScreen;
 import 'features/asks/ask_screens.dart' show AskPresetsScreen, AsksScreen;
@@ -174,6 +176,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/ask-presets', builder: (_, s) => AskPresetsScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
       GoRoute(path: '/activities', builder: (_, s) => FamilyActivitiesScreen(familyId: s.uri.queryParameters['familyId'] ?? '')),
       GoRoute(path: '/weekly-card', builder: (_, __) => const WeeklyCardScreen()),
+      GoRoute(path: '/weekly-report', builder: (_, s) => WeeklyReportScreen(offset: int.tryParse(s.uri.queryParameters['offset'] ?? ''))),
+      GoRoute(path: '/tips-settings', builder: (_, __) => const TipsSettingsScreen()),
       GoRoute(path: '/share-links', builder: (_, __) => const ShareLinksScreen()),
       GoRoute(
         path: '/paywall',

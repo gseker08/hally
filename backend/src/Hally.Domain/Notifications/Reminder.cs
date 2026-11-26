@@ -165,6 +165,9 @@ public enum NotificationKind
 
     /// <summary>"🎒 Yarın çantaya": the evening before a school day (target = the child).</summary>
     SchoolBag,
+
+    /// <summary>"Haftanın özeti": the weekly family report (Sunday evening or Monday morning).</summary>
+    WeeklyReport,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

@@ -1456,6 +1456,14 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("photo_updated_at");
 
+                    b.Property<int?>("ScreenGoalRestoreMinutes")
+                        .HasColumnType("integer")
+                        .HasColumnName("screen_goal_restore_minutes");
+
+                    b.Property<DateOnly?>("ScreenGoalRestoreOn")
+                        .HasColumnType("date")
+                        .HasColumnName("screen_goal_restore_on");
+
                     b.HasKey("Id")
                         .HasName("pk_children");
 
@@ -1573,9 +1581,25 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("setup_completed_at");
 
+                    b.Property<bool>("TipsEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("tips_enabled");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
+
+                    b.Property<int>("WeeklyReportDay")
+                        .HasColumnType("integer")
+                        .HasColumnName("weekly_report_day");
+
+                    b.Property<DateOnly?>("WeeklyReportSentOn")
+                        .HasColumnType("date")
+                        .HasColumnName("weekly_report_sent_on");
+
+                    b.Property<TimeOnly?>("WeeklyReportTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("weekly_report_time");
 
                     b.HasKey("Id")
                         .HasName("pk_family_members");
@@ -3552,6 +3576,51 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("study_sessions", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.Tips.TipDismissal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("key");
+
+                    b.Property<DateOnly?>("Until")
+                        .HasColumnType("date")
+                        .HasColumnName("until");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_tip_dismissals");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_tip_dismissals_family_id");
+
+                    b.HasIndex("UserId", "FamilyId", "Key")
+                        .IsUnique()
+                        .HasDatabaseName("ix_tip_dismissals_user_id_family_id_key");
+
+                    b.ToTable("tip_dismissals", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.Users.ExternalLogin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4823,6 +4892,23 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasForeignKey("StartedByUserId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_study_sessions_users_started_by_user_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.Tips.TipDismissal", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tip_dismissals_families_family_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_tip_dismissals_users_user_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.Users.ExternalLogin", b =>

@@ -136,7 +136,7 @@ class FamilyScreen extends ConsumerWidget {
                     _SharedTile(key: const Key('family.expenses'), icon: Icons.account_balance_wallet_rounded, color: HallyModule.expenses,
                         title: l10n.expensesTitle, body: l10n.expensesBody, route: '/expenses'),
                     _SharedTile(key: const Key('family.weeklyCard'), icon: Icons.auto_awesome_rounded, color: HallyColors.lavender,
-                        title: l10n.familyWeeklyCard, body: l10n.familyWeeklyCardBody, route: '/weekly-card'),
+                        title: l10n.familyWeeklyCard, body: l10n.familyWeeklyReportBody, route: '/weekly-report'),
                     _SharedTile(key: const Key('family.balance'), icon: Icons.balance_rounded, color: HallyColors.lavender,
                         title: l10n.balanceTileTitle, body: l10n.balanceTileBody, route: '/balance'),
                     _SharedTile(key: const Key('family.goal'), icon: Icons.flag_rounded, color: HallyColors.cherry,
