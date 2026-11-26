@@ -59,6 +59,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           'MedicationDue' => Icons.medication_rounded,
                           'StudyGoal' || 'ExamStudy' => Icons.menu_book_rounded,
                           'ExamResult' => Icons.edit_note_rounded,
+                          'SchoolBag' => Icons.backpack_rounded,
                           _ => Icons.alarm_rounded,
                         },
                         color: n.kind == 'EveningPrep' ? HallyColors.cherry : HallyColors.apricot,
@@ -68,7 +69,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       isThreeLine: true,
                       onTap: n.kind == 'ExamResult' && n.targetId != null
                           ? () => context.push('/exams/${n.targetId}/result')
-                          : n.kind == 'ExamStudy'
+                          : n.kind == 'SchoolBag'
+                              ? () => context.push(n.targetId == null ? '/timetable' : '/timetable?child=${n.targetId}')
+                              : n.kind == 'ExamStudy'
                               ? () => context.push('/exams')
                               : switch (n.kind == 'ScreenTimeGoal' ? 'ScreenTime' : n.kind == 'MedicationDue' ? 'Medication' : n.kind == 'StudyGoal' ? 'Study' : n.targetKind) {
                         'ScreenTime' => () => context.push('/screen-time'),

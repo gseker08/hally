@@ -25,6 +25,7 @@ enum FocusArea {
   school('school', Icons.school_rounded, HallyModule.study, [
     FocusShortcut('study', Icons.menu_book_rounded, '/study'),
     FocusShortcut('exams', Icons.edit_note_rounded, '/exams'),
+    FocusShortcut('timetable', Icons.backpack_rounded, '/timetable'),
     FocusShortcut('schoolRun', Icons.directions_car_rounded, '/school-run'),
   ]),
   tasks('tasks', Icons.task_alt_rounded, HallyModule.tasks, [
@@ -83,6 +84,7 @@ enum FocusArea {
 String shortcutLabel(AppLocalizations l10n, String key) => switch (key) {
       'study' => l10n.shortcutStudy,
       'exams' => l10n.shortcutExams,
+      'timetable' => l10n.shortcutTimetable,
       'schoolRun' => l10n.shortcutSchoolRun,
       'tasks' => l10n.shortcutTasks,
       'screenTime' => l10n.shortcutScreenTime,
