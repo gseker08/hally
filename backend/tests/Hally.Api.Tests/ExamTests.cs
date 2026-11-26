@@ -58,6 +58,9 @@ public class ExamTests(HallyApiFactory api)
         ExamTexts.SubjectOf("漢字の小テスト").Should().Be("漢字");
         ExamTexts.SubjectOf("수학 시험").Should().Be("수학");
         ExamTexts.SubjectOf("数学考试").Should().Be("数学");
+        ExamTexts.SubjectOf("Prova de Matemática").Should().Be("Matemática");
+        ExamTexts.SubjectOf("गणित की परीक्षा").Should().Be("गणित");
+        ExamTexts.SubjectOf("Ulangan Matematika").Should().Be("Matematika");
         ExamTexts.SubjectOf("Science exam").Should().Be("Science");
         ExamTexts.SubjectOf("Veli toplantısı").Should().BeNull();
     }

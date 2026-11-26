@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Indonesian. Android uses the legacy folder code "in" for Indonesian. -->
+<resources>
+    <string name="child_lock_title">Waktu layar habis</string>
+    <string name="child_lock_used">Hari ini kamu memakai %1$s.\nBesok terbuka lagi.</string>
+    <string name="child_lock_hint">Di Hally kamu bisa membeli waktu dengan ceri atau meminta ke orang tuamu.</string>
+    <string name="child_lock_open">Buka Hally</string>
+    <string name="child_lock_emergency">Darurat</string>
+    <string name="child_lock_hours_minutes">%1$d j %2$d mnt</string>
+    <string name="child_lock_minutes">%1$d mnt</string>
+    <string name="child_lock_notice_title">Waktu layar sedang dihitung</string>
+    <string name="child_lock_notice_body">Mode anak Hally aktif untuk keluargamu</string>
+    <string name="child_lock_channel">Mode anak Hally</string>
+    <string name="today_widget_description">Acara dan tugas berikutnya hari ini</string>
+    <string name="today_widget_title">Hari ini</string>
+    <string name="today_widget_stale">Buka Hally untuk melihat hari ini</string>
+    <string name="now_widget_description">Timer yang berjalan, langsung</string>
+    <string name="now_widget_title">Saat ini</string>
+    <string name="now_widget_empty">Tidak ada timer berjalan</string>
+    <string name="today_widget_voice">Bicara ke Hally</string>
+</resources>

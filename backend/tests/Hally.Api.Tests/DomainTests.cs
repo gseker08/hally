@@ -100,6 +100,8 @@ public class DomainTests
     [InlineData("en-GB", "en")]
     [InlineData("de", "de")]
     [InlineData("DE-at", "de")]
+    [InlineData("in-ID", "id")]
+    [InlineData("pt-BR", "pt")]
     [InlineData("fr", "en")]
     public void Locales_keep_supported_languages_and_send_the_rest_to_English(string? input, string expected)
     {

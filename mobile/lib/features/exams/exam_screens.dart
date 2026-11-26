@@ -693,7 +693,9 @@ class _OutcomeButton extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: HallyMotion.fast,
-        height: 64,
+        // A minimum, not a fixed height: taller scripts (Devanagari) need a few more pixels.
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: selected ? HallyColors.softOf(HallyColors.mint, b) : theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(HallyRadius.md),
@@ -701,7 +703,8 @@ class _OutcomeButton extends StatelessWidget {
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Text(examOutcomeEmoji(outcome), style: const TextStyle(fontSize: 22)),
-          Text(examOutcomeLabel(l10n, outcome), style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(examOutcomeLabel(l10n, outcome),
+              maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700)),
         ]),
       ),
     );

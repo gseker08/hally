@@ -1,0 +1,5 @@
+/* Textos de permissão que o iOS mostra em português. */
+"NSCameraUsageDescription" = "O Hally usa a câmera para fotografar um bilhete da escola ou um documento e adicioná-lo ao seu plano.";
+"NSPhotoLibraryUsageDescription" = "O Hally adiciona ao seu plano o print ou a foto que você escolher.";
+"NSMicrophoneUsageDescription" = "O Hally usa o microfone só enquanto você toca no botão do microfone, para você perguntar ou adicionar algo falando.";
+"NSSpeechRecognitionUsageDescription" = "O Hally usa o reconhecimento de fala do iPhone para transformar o que você diz em texto para o Hally.";

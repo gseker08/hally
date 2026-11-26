@@ -1,0 +1,5 @@
+/* Teks izin yang ditampilkan iOS dalam bahasa Indonesia. */
+"NSCameraUsageDescription" = "Hally memakai kamera untuk memotret pengumuman sekolah atau dokumen dan menambahkannya ke rencana Anda.";
+"NSPhotoLibraryUsageDescription" = "Hally menambahkan tangkapan layar atau foto yang Anda pilih ke rencana Anda.";
+"NSMicrophoneUsageDescription" = "Hally memakai mikrofon hanya saat Anda menekan tombol mikrofon, agar Anda bisa bertanya atau menambahkan sesuatu dengan suara.";
+"NSSpeechRecognitionUsageDescription" = "Hally memakai pengenalan suara iPhone untuk mengubah ucapan Anda menjadi teks untuk Hally.";

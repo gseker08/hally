@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="child_lock_title">स्क्रीन टाइम खत्म हो गया</string>
+    <string name="child_lock_used">आज तुमने %1$s इस्तेमाल किया।\nकल फिर से खुलेगा।</string>
+    <string name="child_lock_hint">Hally में तुम चेरी से समय ले सकते हो या मम्मी-पापा से माँग सकते हो।</string>
+    <string name="child_lock_open">Hally खोलें</string>
+    <string name="child_lock_emergency">आपातकाल</string>
+    <string name="child_lock_hours_minutes">%1$d घं %2$d मि</string>
+    <string name="child_lock_minutes">%1$d मि</string>
+    <string name="child_lock_notice_title">स्क्रीन टाइम गिना जा रहा है</string>
+    <string name="child_lock_notice_body">आपके परिवार के लिए Hally चाइल्ड मोड चालू है</string>
+    <string name="child_lock_channel">Hally चाइल्ड मोड</string>
+    <string name="today_widget_description">आज के अगले इवेंट और काम</string>
+    <string name="today_widget_title">आज</string>
+    <string name="today_widget_stale">दिन देखने के लिए Hally खोलें</string>
+    <string name="now_widget_description">चल रहे टाइमर, लाइव</string>
+    <string name="now_widget_title">अभी</string>
+    <string name="now_widget_empty">कोई टाइमर नहीं चल रहा</string>
+    <string name="today_widget_voice">Hally से बोलें</string>
+</resources>

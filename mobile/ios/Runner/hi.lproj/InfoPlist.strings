@@ -1,0 +1,5 @@
+/* iOS द्वारा हिन्दी में दिखाए जाने वाले अनुमति टेक्स्ट। */
+"NSCameraUsageDescription" = "Hally कैमरे से स्कूल का नोटिस या कोई दस्तावेज़ फ़ोटो लेकर आपकी योजना में जोड़ता है।";
+"NSPhotoLibraryUsageDescription" = "Hally आपके चुने हुए स्क्रीनशॉट या फ़ोटो को आपकी योजना में जोड़ता है।";
+"NSMicrophoneUsageDescription" = "Hally माइक्रोफ़ोन का इस्तेमाल सिर्फ़ तब करता है जब आप माइक बटन दबाते हैं, ताकि आप बोलकर पूछ या जोड़ सकें।";
+"NSSpeechRecognitionUsageDescription" = "Hally iPhone की स्पीच रिकग्निशन से आपकी बात को Hally के लिए टेक्स्ट में बदलता है।";

@@ -185,7 +185,7 @@ class _MoodScreenState extends ConsumerState<MoodScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             for (final d in w.days)
-                              Column(children: [
+                              Expanded(child: Column(children: [
                                 Container(
                                   width: 38,
                                   height: 38,
@@ -200,8 +200,8 @@ class _MoodScreenState extends ConsumerState<MoodScreen> {
                                   child: Text(d.mood == null ? '–' : moodEmoji(d.mood!), style: TextStyle(fontSize: d.mood == null ? 14 : 20)),
                                 ),
                                 const SizedBox(height: 4),
-                                Text(DateFormat.E(locale).format(d.date), style: theme.textTheme.labelSmall),
-                              ]),
+                                Text(DateFormat.E(locale).format(d.date), style: theme.textTheme.labelSmall, maxLines: 1, overflow: TextOverflow.clip, softWrap: false),
+                              ])),
                           ],
                         ),
                       const SizedBox(height: HallySpace.md),
