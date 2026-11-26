@@ -255,6 +255,58 @@ public class FamilyMember : Entity
         SetupCompletedAt ??= now;
     }
 
+    /// <summary>"Akıllı ipuçları" on Today; off hides every tip for this member.</summary>
+    public bool TipsEnabled { get; private set; } = true;
+
+    public void SetTipsEnabled(bool enabled) => TipsEnabled = enabled;
+
+    /// <summary>The evening (Sunday) or morning (Monday) the weekly family report comes.</summary>
+    public static readonly IReadOnlySet<DayOfWeek> WeeklyReportDays = new HashSet<DayOfWeek> { DayOfWeek.Sunday, DayOfWeek.Monday };
+
+    /// <summary>"Haftalık rapor": family-local time of the weekly report notification; null is off. Parents only.</summary>
+    public TimeOnly? WeeklyReportTime { get; private set; } = new(19, 0);
+
+    /// <summary>Sunday (this week, in the evening) or Monday (last week, in the morning).</summary>
+    public DayOfWeek WeeklyReportDay { get; private set; } = DayOfWeek.Sunday;
+
+    /// <summary>The family-local day the weekly report was last sent, so it goes once.</summary>
+    public DateOnly? WeeklyReportSentOn { get; private set; }
+
+    public void SetWeeklyReport(DayOfWeek day, TimeOnly? time)
+    {
+        if (!WeeklyReportDays.Contains(day))
+        {
+            throw new DomainException("weekly_report.day_invalid", "The weekly report comes on Sunday or Monday.");
+        }
+
+        if (time is { } t && t > new TimeOnly(23, 0))
+        {
+            throw new DomainException("weekly_report.time_invalid", "The weekly report time must be before 23:00.");
+        }
+
+        WeeklyReportDay = day;
+        WeeklyReportTime = time is { } v ? new TimeOnly(v.Hour, v.Minute) : null;
+    }
+
+    /// <summary>True when the weekly report is due at <paramref name="local"/> and was not sent that day; marks it sent.</summary>
+    public bool TakeWeeklyReport(DateTime local)
+    {
+        if (!IsParent || WeeklyReportTime is not { } at || local.DayOfWeek != WeeklyReportDay)
+        {
+            return false;
+        }
+
+        var day = DateOnly.FromDateTime(local);
+        var time = TimeOnly.FromDateTime(local);
+        if (WeeklyReportSentOn == day || time < at || time >= at.AddMinutes(30) || at.AddMinutes(30) < at)
+        {
+            return false;
+        }
+
+        WeeklyReportSentOn = day;
+        return true;
+    }
+
     /// <summary>True when the summary is due at <paramref name="local"/> and was not sent today; marks it sent.</summary>
     public bool TakeBriefing(DateTime local)
     {
@@ -362,6 +414,38 @@ public class Child : Entity
         DailyStudyMinutes = minutes;
     }
 
+    /// <summary>"Sınavlar bitince geri al": the goal to go back to (null = no goal) once <see cref="ScreenGoalRestoreOn"/> comes.</summary>
+    public int? ScreenGoalRestoreMinutes { get; private set; }
+
+    /// <summary>The family-local day a lowered goal goes back; null when nothing is pending.</summary>
+    public DateOnly? ScreenGoalRestoreOn { get; private set; }
+
+    /// <summary>Lowers the daily goal for a while (an exam week); the current goal comes back on <paramref name="restoreOn"/>.</summary>
+    public void LowerScreenTimeGoalUntil(int minutes, DateOnly? restoreOn)
+    {
+        var previous = ScreenGoalRestoreOn is null ? DailyScreenMinutes : ScreenGoalRestoreMinutes;
+        SetScreenTimeGoal(minutes);
+        if (restoreOn is { } day)
+        {
+            ScreenGoalRestoreMinutes = previous;
+            ScreenGoalRestoreOn = day;
+        }
+    }
+
+    /// <summary>Puts the earlier goal back when its day has come; true when something changed.</summary>
+    public bool RestoreScreenTimeGoal(DateOnly today)
+    {
+        if (ScreenGoalRestoreOn is not { } day || today < day)
+        {
+            return false;
+        }
+
+        DailyScreenMinutes = ScreenGoalRestoreMinutes;
+        ScreenGoalRestoreMinutes = null;
+        ScreenGoalRestoreOn = null;
+        return true;
+    }
+
     public void SetScreenTimeGoal(int? minutes)
     {
         if (minutes is { } m && (m < MinScreenGoal || m > MaxScreenGoal))
@@ -370,6 +454,8 @@ public class Child : Entity
         }
 
         DailyScreenMinutes = minutes;
+        ScreenGoalRestoreMinutes = null;
+        ScreenGoalRestoreOn = null;
     }
 
     public void Update(string firstName, int? birthYear, string color)

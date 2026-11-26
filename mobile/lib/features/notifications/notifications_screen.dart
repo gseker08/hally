@@ -60,6 +60,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           'StudyGoal' || 'ExamStudy' => Icons.menu_book_rounded,
                           'ExamResult' => Icons.edit_note_rounded,
                           'SchoolBag' => Icons.backpack_rounded,
+                          'WeeklyReport' => Icons.insights_rounded,
                           _ => Icons.alarm_rounded,
                         },
                         color: n.kind == 'EveningPrep' ? HallyColors.cherry : HallyColors.apricot,
@@ -69,7 +70,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       isThreeLine: true,
                       onTap: n.kind == 'ExamResult' && n.targetId != null
                           ? () => context.push('/exams/${n.targetId}/result')
-                          : n.kind == 'SchoolBag'
+                          : n.kind == 'WeeklyReport'
+                              ? () => context.push('/weekly-report')
+                              : n.kind == 'SchoolBag'
                               ? () => context.push(n.targetId == null ? '/timetable' : '/timetable?child=${n.targetId}')
                               : n.kind == 'ExamStudy'
                               ? () => context.push('/exams')

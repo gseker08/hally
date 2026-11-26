@@ -27,6 +27,7 @@ import '../profile/profile_screen.dart';
 import '../school/school_screens.dart' show TodayBagCards;
 import '../setup/focus.dart';
 import '../setup/setup_wizard.dart';
+import '../tips/tips.dart' show TodayTipCard, tipsProvider;
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});
@@ -43,7 +44,10 @@ class TodayScreen extends ConsumerWidget {
     return Scaffold(
       body: RefreshIndicator(
         edgeOffset: 60,
-        onRefresh: () => ref.refresh(todayProvider(familyId).future),
+        onRefresh: () {
+          ref.invalidate(tipsProvider(familyId));
+          return ref.refresh(todayProvider(familyId).future);
+        },
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
           slivers: [
@@ -52,6 +56,7 @@ class TodayScreen extends ConsumerWidget {
                 name: me.displayName,
                 data: today.valueOrNull,
                 caregiverFor: _caregiverFor(context, ref, familyId),
+                tip: TodayTipCard(familyId: familyId),
                 shortcuts: focus == null || focus.areas.isEmpty ? null : TodayFocusShortcuts(areas: focus.areas, familyId: familyId),
                 onTasks: () => context.push('/tasks'),
                 onEvents: () => context.go('/calendar'),
@@ -163,7 +168,10 @@ class TodayScreen extends ConsumerWidget {
 /// Header: wordmark and shortcuts, date, greeting, the Hally assistant card and the day's counts as pastel tiles.
 class TodayHero extends StatelessWidget {
   const TodayHero(
-      {super.key, required this.name, required this.data, this.caregiverFor, this.onTasks, this.onEvents, this.onSuggestions, this.shortcuts});
+      {super.key, required this.name, required this.data, this.caregiverFor, this.onTasks, this.onEvents, this.onSuggestions, this.shortcuts, this.tip});
+
+  /// "Hally fark etti": the smart tip card under the greeting (hides itself when there is none).
+  final Widget? tip;
 
   /// "Senin kısayolların" from the setup wizard, under the assistant bar; null when nothing was chosen.
   final Widget? shortcuts;
@@ -225,6 +233,7 @@ class TodayHero extends StatelessWidget {
             const SizedBox(height: HallySpace.xs),
             Text(l10n.brandEmotional, style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: HallySpace.md + 4),
+            if (tip case final card?) card,
             if (caregiverFor case final names?)
               Container(
                 key: const Key('today.caregiverBanner'),

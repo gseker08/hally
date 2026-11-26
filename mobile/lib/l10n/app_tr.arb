@@ -3138,5 +3138,168 @@
   "kidBagReady": "Çantan hazır 🎉",
   "kidBagSent": "Harika! Annene/babana haber verdik.",
   "savingsLineBag": "🎒 Çantamı hazırladım",
-  "shortcutTimetable": "Ders programı"
+  "shortcutTimetable": "Ders programı",
+  "tipHeader": "Hally fark etti",
+  "tipDismiss": "Bir daha gösterme",
+  "tipLater": "Sonra",
+  "tipApply": "Uygula",
+  "tipMinutes": "{minutes} dk",
+  "@tipMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tipScreenTitle": "Ekran süresi",
+  "tipScreenDaily": "Günlük limit",
+  "tipScreenNow": "Şu an: {minutes} dk",
+  "@tipScreenNow": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tipScreenRestore": "Sınavlar bitince geri al",
+  "tipScreenRestoreBody": "{day} limit tekrar {minutes} dk olur",
+  "@tipScreenRestoreBody": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tipScreenRestoreNone": "{date} günü limit kalkar",
+  "@tipScreenRestoreNone": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "tipBedtimeDone": "Uyku rutini {minutes} dk öne alındı",
+  "@tipBedtimeDone": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "tipSettingsTitle": "İpuçları ve rapor",
+  "tipSettingsSubtitle": "Akıllı ipuçları, haftalık rapor",
+  "tipSettingsTips": "Akıllı ipuçları",
+  "tipSettingsTipsBody": "Bugün ekranında tek satır öneri",
+  "tipSettingsHidden": "Gizlenen ipuçları",
+  "tipSettingsHiddenBody": "{count, plural, =0{Gizlenen ipucu yok} other{Kapattığın {count} ipucu}}",
+  "@tipSettingsHiddenBody": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "tipSettingsRestore": "Geri getir",
+  "tipSettingsReport": "Haftalık rapor bildirimi",
+  "tipSettingsReportBody": "Haftanın özeti tek bildirimde",
+  "tipSettingsReportDay": "Gün",
+  "tipSettingsReportTime": "Saat",
+  "tipSettingsSundayEvening": "Pazar akşamı",
+  "tipSettingsMondayMorning": "Pazartesi sabahı",
+  "tipSettingsFootnote": "Her ebeveyn kendisi seçer. Bakıcıya haftalık rapor gitmez. İpuçları yapay zekâ kullanmaz, sadece Hally'deki bilgilerinizden çıkar.",
+  "reportTitle": "Haftanın özeti",
+  "reportShare": "Paylaş",
+  "reportPrevious": "Önceki hafta",
+  "reportNext": "Sonraki hafta",
+  "reportQuietTitle": "Sessiz bir hafta",
+  "reportQuietBody": "Bu hafta için kayıt yok. Görev, etkinlik ve sınav ekledikçe özet dolar.",
+  "reportTasksDone": "iş bitti",
+  "reportEvents": "etkinlik",
+  "reportExams": "sınav",
+  "reportWhoDidWhat": "Kim ne yaptı",
+  "reportHelper": "Yardımcı",
+  "reportHoursMinutes": "{hours} sa {minutes} dk",
+  "@reportHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "reportChildExams": "{count} sınav",
+  "@reportChildExams": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "reportStudy": "{time} çalışma",
+  "@reportStudy": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reportScreenAvg": "ort. {time}/gün ekran",
+  "@reportScreenAvg": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSleepAvg": "ort. {time} uyku",
+  "@reportSleepAvg": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reportActivities": "{count} ekransız aktivite",
+  "@reportActivities": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "reportNextWeek": "Gelecek hafta",
+  "reportNextExams": "{count} sınav",
+  "@reportNextExams": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "reportNextEvents": "{count} etkinlik",
+  "@reportNextEvents": {
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "reportBusiest": "En yoğun gün {day} ({count} etkinlik)",
+  "@reportBusiest": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "reportTipHeader": "Önümüzdeki hafta için",
+  "familyWeeklyReportBody": "Haftalık rapor ve paylaşılabilir kart"
 }

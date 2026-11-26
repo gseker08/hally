@@ -71,6 +71,7 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<Hally.Domain.School.SchoolBreak> SchoolBreaks => Set<Hally.Domain.School.SchoolBreak>();
     public DbSet<Hally.Domain.School.Lesson> Lessons => Set<Hally.Domain.School.Lesson>();
     public DbSet<Hally.Domain.School.BagCheck> BagChecks => Set<Hally.Domain.School.BagCheck>();
+    public DbSet<Hally.Domain.Tips.TipDismissal> TipDismissals => Set<Hally.Domain.Tips.TipDismissal>();
     public DbSet<Chore> Chores => Set<Chore>();
     public DbSet<Reward> Rewards => Set<Reward>();
     public DbSet<PointEntry> PointEntries => Set<PointEntry>();
@@ -647,6 +648,15 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasIndex(x => x.FamilyId);
             e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.Tips.TipDismissal>(e =>
+        {
+            e.Property(x => x.Key).HasMaxLength(Hally.Domain.Tips.TipDismissal.MaxKey);
+            e.HasIndex(x => new { x.UserId, x.FamilyId, x.Key }).IsUnique();
+            e.HasIndex(x => x.FamilyId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<Hally.Domain.School.BagCheck>(e =>
