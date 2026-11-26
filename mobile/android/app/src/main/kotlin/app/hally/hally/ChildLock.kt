@@ -38,6 +38,7 @@ import java.util.Calendar
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 
 /**
  * Child mode on Android: a paired child's phone measures its own screen time (Usage access) and, once the parents'
@@ -121,6 +122,9 @@ object ChildLock {
 class ChildLockService : Service() {
     private val handler = Handler(Looper.getMainLooper())
     private val io = Executors.newSingleThreadExecutor()
+    // Reading today's usage events and asking the package and telecom services are binder calls that can take
+    // seconds on a slow phone, so they run here and only the lock page is touched on the main thread.
+    private val worker = Executors.newSingleThreadExecutor()
     private var overlay: View? = null
     private var lastReport = 0L
     private var lastReported = -1
@@ -154,16 +158,30 @@ class ChildLockService : Service() {
         handler.removeCallbacks(tick)
         hideOverlay()
         io.shutdownNow()
+        worker.shutdownNow()
         super.onDestroy()
     }
 
     private fun check() {
-        if (!ChildLock.hasUsageAccess(this)) return
-        val (used, front) = ChildLock.measure(this)
+        try {
+            worker.execute {
+                if (!ChildLock.hasUsageAccess(this)) return@execute
+                val (used, front) = ChildLock.measure(this)
+                val limit = ChildLock.prefs(this).getInt("limitMinutes", -1)
+                val locked = limit >= 0 && used >= limit * 60
+                val cover = locked && !allowed(front)
+                handler.post { enforce(used, locked, cover) }
+            }
+        } catch (_: RejectedExecutionException) {
+            // The service is being destroyed.
+        }
+    }
+
+    /** Main thread: show or hide the lock page, and report to the server when something changed. */
+    private fun enforce(used: Int, locked: Boolean, cover: Boolean) {
+        if (!ChildLock.isEnabled(this)) return
         val prefs = ChildLock.prefs(this)
-        val limit = prefs.getInt("limitMinutes", -1)
-        val locked = limit >= 0 && used >= limit * 60
-        if (locked && !allowed(front)) showOverlay(used) else hideOverlay()
+        if (cover) showOverlay(used) else hideOverlay()
 
         val now = System.currentTimeMillis()
         if (now - lastReport >= 60_000 || (locked != prefs.getBoolean("locked", false)) || used - lastReported >= 300) {
