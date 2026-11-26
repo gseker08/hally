@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="child_lock_title">スクリーンタイムは終わりです</string>
+    <string name="child_lock_used">今日は%1$s使いました。\nまた明日ね。</string>
+    <string name="child_lock_hint">Hallyでチェリーを使って時間を買うか、お父さんお母さんにおねがいできます。</string>
+    <string name="child_lock_open">Hallyを開く</string>
+    <string name="child_lock_emergency">緊急通報</string>
+    <string name="child_lock_hours_minutes">%1$d時間%2$d分</string>
+    <string name="child_lock_minutes">%1$d分</string>
+    <string name="child_lock_notice_title">スクリーンタイムを記録中</string>
+    <string name="child_lock_notice_body">家族のHally子どもモードがオンです</string>
+    <string name="child_lock_channel">Hally子どもモード</string>
+    <string name="today_widget_description">今日の次の予定とタスク</string>
+    <string name="today_widget_title">今日</string>
+    <string name="today_widget_stale">Hallyを開いて今日を表示</string>
+    <string name="now_widget_description">動いているタイマーをライブ表示</string>
+    <string name="now_widget_title">いま</string>
+    <string name="now_widget_empty">動いているタイマーはありません</string>
+    <string name="today_widget_voice">Hallyに話しかける</string>
+</resources>

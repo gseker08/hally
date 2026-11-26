@@ -7,5 +7,6 @@ String langOf(BuildContext context) => Localizations.localeOf(context).languageC
 ({String h, String min}) durationUnits(String languageCode) => switch (languageCode) {
       'tr' => (h: 'sa', min: 'dk'),
       'de' => (h: 'Std.', min: 'Min.'),
+      'ja' => (h: '時間', min: '分'),
       _ => (h: 'h', min: 'min'),
     };

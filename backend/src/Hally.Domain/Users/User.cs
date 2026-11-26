@@ -79,9 +79,10 @@ public static class Locales
     public const string Turkish = "tr";
     public const string English = "en";
     public const string German = "de";
+    public const string Japanese = "ja";
 
     /// <summary>The languages the app and the server texts speak.</summary>
-    public static readonly IReadOnlyList<string> Supported = [Turkish, English, German];
+    public static readonly IReadOnlyList<string> Supported = [Turkish, English, German, Japanese];
 
     /// <summary>Two-letter code of a supported language. Missing means Turkish (the launch market); any other
     /// language gets English.</summary>
@@ -104,6 +105,7 @@ public static class Locales
     {
         Turkish => "Turkish",
         German => "German",
+        Japanese => "Japanese",
         _ => "English",
     };
 }

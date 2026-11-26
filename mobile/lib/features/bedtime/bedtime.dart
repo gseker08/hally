@@ -171,7 +171,7 @@ BedtimeStory storyFor(DateTime evening, String language) {
   return list[day % list.length];
 }
 
-const _stories = {'tr': _storiesTr, 'en': _storiesEn, 'de': _storiesDe};
+const _stories = {'tr': _storiesTr, 'en': _storiesEn, 'de': _storiesDe, 'ja': _storiesJa};
 
 const _storiesTr = [
   BedtimeStory(
@@ -238,4 +238,23 @@ const _storiesDe = [
       'Die kleine Schildkröte spazierte den ganzen Tag langsam am Strand entlang. Sie sah eine Muschel, eine Krabbe und einen glänzenden Stein. '
           'Am Abend begannen die Wellen, ihr ein Schlaflied zu singen: schhh, schhh. Die Schildkröte baute sich ein warmes Nest im Sand. '
           'Sie zog den Kopf in ihren Panzer und dachte an all die schönen Dinge, die sie gesehen hatte. Die Wellen wurden langsamer und leiser. Atme tief ein, genau wie die Schildkröte, und schlaf langsam ein. Gute Nacht.'),
+];
+
+const _storiesJa = [
+  BedtimeStory(
+      'くまさんとお月さまのランタン',
+      '森のはずれの小さな家で、くまさんは毎晩ランタンに明かりをつけて、星をひとつずつ数えていました。ある夜、星がひとつ足りません。'
+          'くまさんがランタンを持って庭に出ると、草の中に小さな光が見えました。長い一日でつかれて、ひと休みしている小さな星でした。'
+          'くまさんは星をそっと手にのせて、子もり歌をハミングしました。星は元気になると、ゆっくり空へ帰っていきました。'
+          'くまさんはあくびをして、ベッドにもどりました。その夜、空の星はみんな、くまさんのために少しだけ明るく光りました。おやすみなさい。'),
+  BedtimeStory(
+      'くものわたちゃん',
+      'わたちゃんという、ふわふわのくもがいました。一日じゅう空をただよって、遊んでいる子どもたちにかげを作っていました。夕方になると、風がささやきました。休む時間だよ。'
+          'わたちゃんが山の上に横になると、お日さまがオレンジ色のふとんをかけてくれました。鳥たちも、うさぎたちも、おうちに帰りました。'
+          'お月さまがのぼると、わたちゃんは銀色になって、そっと目をとじました。あしたもまた一緒に遊ぼうね。いまは、みんな静かでおだやかです。おやすみなさい。'),
+  BedtimeStory(
+      'ちいさなかめのおさんぽ',
+      'ちいさなかめは、一日じゅう浜辺をゆっくり歩きました。貝がらと、かにと、ぴかぴかの石を見つけました。'
+          '夕方になると、波が子もり歌を歌いはじめました。ざざーん、ざざーん。かめは砂の中にあたたかい寝床を作りました。'
+          '頭をこうらの中にしまって、今日見たすてきなものを思い出しました。波の音はだんだんゆっくり、静かになりました。かめと同じように深く息をすって、ゆっくりねむりましょう。おやすみなさい。'),
 ];
