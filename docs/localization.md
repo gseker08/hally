@@ -1,6 +1,6 @@
 # Languages
 
-Hally speaks Turkish (template), English, German and Japanese. A phone in another language gets English; Turkish stays the
+Hally speaks Turkish (template), English, German, Japanese, Korean and Chinese (Simplified; iOS folder `zh-Hans.lproj`). A phone in another language gets English; Turkish stays the
 default when the server gets no language at all (old clients).
 
 ## Adding a language
@@ -26,7 +26,7 @@ Server (backend/):
    ("name", value))` fills `{name}`; `Texts.Plural` picks `key.one` / `key.other`. `format.*` keys are .NET date
    patterns. A missing key falls back to English, and a test checks every language has every key and placeholder.
 3. If the language has its own words for "exam", add them to `ExamTexts.ExamWord` so scanned notes become exams.
-   Languages without spaces (Japanese, Chinese) go after the `\b(...)\b` group, since word boundaries do not work there.
+   Languages without spaces (Japanese, Chinese) and Korean go after the `\b(...)\b` group, since word boundaries do not work there.
 4. The weekly PNG card (`SummaryCard`) only bundles Latin fonts. Languages in other scripts get the card in English
    (`SummaryCard.CardLocale`) until a font for that script is bundled.
 

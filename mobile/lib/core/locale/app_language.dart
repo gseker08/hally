@@ -12,7 +12,9 @@ enum AppLanguage {
   tr('tr'),
   en('en'),
   de('de'),
-  ja('ja');
+  ja('ja'),
+  ko('ko'),
+  zh('zh');
 
   const AppLanguage(this.code);
 
@@ -25,7 +27,7 @@ enum AppLanguage {
       AppLanguage.values.firstWhere((l) => l.code != null && l.code == code, orElse: () => AppLanguage.system);
 }
 
-const supportedLanguageCodes = ['tr', 'en', 'de', 'ja'];
+const supportedLanguageCodes = ['tr', 'en', 'de', 'ja', 'ko', 'zh'];
 
 /// Picks a supported language for a device locale. A phone in a language Hally does not speak gets English.
 Locale resolveDeviceLocale(Locale? device) =>
@@ -36,6 +38,8 @@ String speechLocaleFor(String languageCode) => switch (languageCode) {
       'tr' => 'tr_TR',
       'de' => 'de_DE',
       'ja' => 'ja_JP',
+      'ko' => 'ko_KR',
+      'zh' => 'zh_CN',
       _ => 'en_US',
     };
 
@@ -44,6 +48,8 @@ String defaultTimeZoneFor(String languageCode) => switch (languageCode) {
       'tr' => 'Europe/Istanbul',
       'de' => 'Europe/Berlin',
       'ja' => 'Asia/Tokyo',
+      'ko' => 'Asia/Seoul',
+      'zh' => 'Asia/Shanghai',
       _ => 'Europe/London',
     };
 
