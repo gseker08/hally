@@ -11,6 +11,8 @@ String languageLabel(AppLocalizations l10n, AppLanguage language) => switch (lan
       AppLanguage.en => 'English',
       AppLanguage.de => 'Deutsch',
       AppLanguage.ja => '日本語',
+      AppLanguage.ko => '한국어',
+      AppLanguage.zh => '中文',
     };
 
 Future<void> showLanguageSheet(BuildContext context) => showModalBottomSheet<void>(

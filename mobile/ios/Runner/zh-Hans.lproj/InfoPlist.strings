@@ -1,0 +1,5 @@
+/* iOS 以简体中文显示的权限说明。 */
+"NSCameraUsageDescription" = "Hally 使用相机拍摄学校通知或文件，并添加到你的计划中。";
+"NSPhotoLibraryUsageDescription" = "Hally 会把你选择的截图或照片添加到你的计划中。";
+"NSMicrophoneUsageDescription" = "Hally 只在你按住麦克风按钮时使用麦克风，让你用语音提问或添加内容。";
+"NSSpeechRecognitionUsageDescription" = "Hally 使用 iPhone 的语音识别，把你说的话转成文字交给 Hally。";

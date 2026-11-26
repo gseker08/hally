@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="child_lock_title">屏幕时间到了</string>
+    <string name="child_lock_used">你今天用了 %1$s。\n明天会再打开。</string>
+    <string name="child_lock_hint">在 Hally 里可以用樱桃换时间，或者问问爸爸妈妈。</string>
+    <string name="child_lock_open">打开 Hally</string>
+    <string name="child_lock_emergency">紧急呼叫</string>
+    <string name="child_lock_hours_minutes">%1$d 小时 %2$d 分钟</string>
+    <string name="child_lock_minutes">%1$d 分钟</string>
+    <string name="child_lock_notice_title">正在记录屏幕时间</string>
+    <string name="child_lock_notice_body">你家的 Hally 儿童模式已开启</string>
+    <string name="child_lock_channel">Hally 儿童模式</string>
+    <string name="today_widget_description">今天接下来的日程和任务</string>
+    <string name="today_widget_title">今天</string>
+    <string name="today_widget_stale">打开 Hally 查看今天</string>
+    <string name="now_widget_description">运行中的计时器实时显示</string>
+    <string name="now_widget_title">现在</string>
+    <string name="now_widget_empty">没有计时器在运行</string>
+    <string name="today_widget_voice">对 Hally 说</string>
+</resources>
