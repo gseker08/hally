@@ -45,7 +45,8 @@ public record ChildHomeDto(
     ChildScreenDto Screen,
     string? TodayMood = null,
     Hally.Api.Features.Bedtime.ChildBedtimeDto? Bedtime = null,
-    IReadOnlyList<Hally.Api.Features.Exams.ChildExamDto>? Exams = null);
+    IReadOnlyList<Hally.Api.Features.Exams.ChildExamDto>? Exams = null,
+    Hally.Api.Features.School.ChildSchoolDto? School = null);
 
 public record ClaimDto(Guid Id, Guid ChildId, string ChildName, string Kind, string Title, int Cherries, DateOnly Day, DateTimeOffset At);
 
@@ -60,6 +61,7 @@ public class ChildModeService(
     IHubContext<ChatHub, IChatClient> hub,
     TimeProvider clock,
     Hally.Api.Features.Bedtime.BedtimeService bedtime,
+    Hally.Api.Features.School.SchoolReader school,
     ILogger<ChildModeService> logger)
 {
     public async Task<ChildHomeDto> HomeAsync(Guid familyId, Guid childId, CancellationToken ct)
@@ -98,7 +100,8 @@ public class ChildModeService(
             family.RequireChildApproval, items, rewards, await ScreenAsync(child, today, ct),
             (await db.MoodChecks.AsNoTracking().Where(m => m.ChildId == childId && m.Day == today).Select(m => (Hally.Domain.Mood.Mood?)m.Mood).FirstOrDefaultAsync(ct))?.ToString(),
             await bedtime.ChildAsync(childId, family.TimeZoneId, ct),
-            await ExamsAsync(childId, today, ct));
+            await ExamsAsync(childId, today, ct),
+            await school.ChildAsync(familyId, childId, family.TimeZoneId, ct));
     }
 
     /// <summary>The child says "Yaptım!". With approval on it waits for a parent, otherwise the cherries land at once.
@@ -132,6 +135,10 @@ public class ChildModeService(
             }
 
             (title, points) = (exam.Subject, StudyCherries);
+        }
+        else if (kind == ClaimKind.Bag)
+        {
+            (title, points) = (turkish ? "🎒 Çantam hazır" : "🎒 Bag packed", BagCherries);
         }
         else if (kind == ClaimKind.Activity)
         {
@@ -206,6 +213,9 @@ public class ChildModeService(
 
     /// <summary>Cherries for one approved "Çalıştım" before an exam.</summary>
     public const int StudyCherries = 1;
+
+    /// <summary>Cherries for an approved "Çantam hazır".</summary>
+    public const int BagCherries = 1;
 
     private async Task<IReadOnlyList<Hally.Api.Features.Exams.ChildExamDto>> ExamsAsync(Guid childId, DateOnly today, CancellationToken ct)
     {
@@ -362,6 +372,12 @@ public class ChildModeService(
         if (claim.Kind == ClaimKind.Study)
         {
             db.PointEntries.Add(PointEntry.ForExam(claim.FamilyId, claim.ChildId, claim.Title, claim.Points, userId, claim.Day, now));
+            return;
+        }
+
+        if (claim.Kind == ClaimKind.Bag)
+        {
+            db.PointEntries.Add(PointEntry.ForBag(claim.FamilyId, claim.ChildId, claim.Points, userId, claim.Day, now));
             return;
         }
 

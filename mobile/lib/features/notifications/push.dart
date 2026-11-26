@@ -29,7 +29,7 @@ class PushEvent {
 /// Where tapping a push should take the user. Pure so it can be unit tested.
 ///
 /// The server sends `kind=Message` + `chatKey` for chat messages, and `targetKind` (Task/Event) for reminders and
-/// the evening summary, `kind=ScreenTimeGoal` when a child's daily screen time goal is reached, `MedicationGiven`/`MedicationDue` for medications, `ShoppingHeadingOut` for the shopping list, `StudyGoal` for homework/reading, `DutyDone` for the school run, `HandoffReport`/`HandoffThanks` for caregiver reports, `FamilyGoalReached` for the weekly family goal, `ChildAsk`/`ChildAskAnswered` for a child's requests, `MorningBriefing` for the spoken morning summary, `ExamStudy`/`ExamResult` for exams. Anything else opens the inbox.
+/// the evening summary, `kind=ScreenTimeGoal` when a child's daily screen time goal is reached, `MedicationGiven`/`MedicationDue` for medications, `ShoppingHeadingOut` for the shopping list, `StudyGoal` for homework/reading, `DutyDone` for the school run, `HandoffReport`/`HandoffThanks` for caregiver reports, `FamilyGoalReached` for the weekly family goal, `ChildAsk`/`ChildAskAnswered` for a child's requests, `MorningBriefing` for the spoken morning summary, `ExamStudy`/`ExamResult` for exams, `SchoolBag` for the evening "Yarın çantaya". Anything else opens the inbox.
 String pushRoute(Map<String, dynamic> data) {
   final chatKey = data['chatKey'];
   if (data['kind'] == 'Message' && chatKey is String && chatKey.isNotEmpty) return '/chats/$chatKey';
@@ -38,6 +38,7 @@ String pushRoute(Map<String, dynamic> data) {
   if (data['kind'] == 'StudyGoal') return '/study';
   final examId = data['targetId'];
   if (data['kind'] == 'ExamStudy') return '/exams';
+  if (data['kind'] == 'SchoolBag') return examId is String ? '/timetable?child=$examId' : '/timetable';
   if (data['kind'] == 'ExamResult' && examId is String) return '/exams/$examId/result';
   if (data['kind'] == 'DutyDone') return '/school-run';
   if (data['kind'] == 'FamilyGoalReached') return '/family-goal';

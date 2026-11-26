@@ -67,6 +67,10 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
     public DbSet<Hally.Domain.Care.HandoffReport> HandoffReports => Set<Hally.Domain.Care.HandoffReport>();
     public DbSet<StudySession> StudySessions => Set<StudySession>();
     public DbSet<Hally.Domain.School.Exam> Exams => Set<Hally.Domain.School.Exam>();
+    public DbSet<Hally.Domain.School.SchoolPlan> SchoolPlans => Set<Hally.Domain.School.SchoolPlan>();
+    public DbSet<Hally.Domain.School.SchoolBreak> SchoolBreaks => Set<Hally.Domain.School.SchoolBreak>();
+    public DbSet<Hally.Domain.School.Lesson> Lessons => Set<Hally.Domain.School.Lesson>();
+    public DbSet<Hally.Domain.School.BagCheck> BagChecks => Set<Hally.Domain.School.BagCheck>();
     public DbSet<Chore> Chores => Set<Chore>();
     public DbSet<Reward> Rewards => Set<Reward>();
     public DbSet<PointEntry> PointEntries => Set<PointEntry>();
@@ -615,6 +619,44 @@ public class HallyDbContext(DbContextOptions<HallyDbContext> options) : DbContex
             e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.ByUserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<User>().WithMany().HasForeignKey(x => x.ThankedByUserId).OnDelete(DeleteBehavior.SetNull);
+        });
+
+        b.Entity<Hally.Domain.School.SchoolPlan>(e =>
+        {
+            e.Property(x => x.BellTimesJson).HasColumnType("jsonb");
+            e.Property(x => x.DailyItemsJson).HasColumnType("jsonb");
+            e.Ignore(x => x.BellTimes);
+            e.Ignore(x => x.DailyItems);
+            e.HasIndex(x => x.FamilyId).IsUnique();
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.School.SchoolBreak>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(40);
+            e.HasIndex(x => new { x.FamilyId, x.To });
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.School.Lesson>(e =>
+        {
+            e.Property(x => x.Subject).HasMaxLength(Hally.Domain.School.Exam.MaxSubject);
+            e.Property(x => x.ItemsJson).HasColumnType("jsonb");
+            e.Ignore(x => x.Items);
+            e.HasIndex(x => new { x.ChildId, x.Weekday, x.Period }).IsUnique();
+            e.HasIndex(x => x.FamilyId);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<Hally.Domain.School.BagCheck>(e =>
+        {
+            e.Property(x => x.Packed).HasDefaultValueSql("'{}'::text[]");
+            e.HasIndex(x => new { x.ChildId, x.Day }).IsUnique();
+            e.HasIndex(x => x.Day);
+            e.HasOne<Family>().WithMany().HasForeignKey(x => x.FamilyId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Child>().WithMany().HasForeignKey(x => x.ChildId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<User>().WithMany().HasForeignKey(x => x.ReadyByUserId).OnDelete(DeleteBehavior.SetNull);
         });
 
         b.Entity<Hally.Domain.School.Exam>(e =>

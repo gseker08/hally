@@ -48,6 +48,7 @@ import 'features/shopping/shopping_screen.dart';
 import 'features/sleep/sleep_screen.dart';
 import 'features/study/study_screen.dart';
 import 'features/exams/exam_screens.dart';
+import 'features/school/school_screens.dart';
 import 'features/sharing/weekly_card_screen.dart';
 import 'features/planning/calendar_screen.dart';
 import 'features/planning/tasks_screen.dart';
@@ -121,9 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/kid', builder: (_, __) => const KidShell()),
       GoRoute(path: '/i/:token', builder: (_, s) => JoinFamilyScreen(token: s.pathParameters['token']!)),
       GoRoute(path: '/family/new', builder: (_, __) => const FamilySetupScreen()),
-      GoRoute(
-          path: '/setup',
-          builder: (_, s) => SetupWizardScreen(familyId: s.uri.queryParameters['familyId'] ?? '', next: s.uri.queryParameters['next'])),
+      GoRoute(path: '/setup', builder: (_, s) => SetupWizardScreen(familyId: s.uri.queryParameters['familyId'] ?? '', next: s.uri.queryParameters['next'])),
       GoRoute(path: '/today-focus', builder: (_, __) => const TodayFocusScreen()),
       GoRoute(path: '/features', builder: (_, __) => const AllFeaturesScreen()),
       GoRoute(path: '/family/:id/invite', builder: (_, s) => InvitePartnerScreen(familyId: s.pathParameters['id']!)),
@@ -144,6 +143,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/study', builder: (_, __) => const StudyScreen()),
       GoRoute(path: '/exams', builder: (_, s) => ExamsScreen(childId: s.uri.queryParameters['child'])),
       GoRoute(path: '/exams/:id/result', builder: (_, s) => ExamResultScreen(examId: s.pathParameters['id']!)),
+      GoRoute(path: '/timetable', builder: (_, s) => TimetableScreen(childId: s.uri.queryParameters['child'])),
+      GoRoute(path: '/timetable/settings', builder: (_, __) => const SchoolSettingsScreen()),
       GoRoute(path: '/stars', builder: (_, __) => const PointsScreen()),
       GoRoute(path: '/habits', builder: (_, __) => const HabitsScreen()),
       GoRoute(path: '/school-run', builder: (_, __) => const DutiesScreen()),

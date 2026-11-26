@@ -35,6 +35,7 @@ String ledgerTitle(AppLocalizations l10n, LedgerLine line) => switch (line.kind)
       'Bedtime' => l10n.savingsLineBedtime,
       'Bonus' => l10n.savingsLineBonus,
       'Exam' => l10n.savingsLineExam(line.title),
+      'Bag' => l10n.savingsLineBag,
       'Allowance' => line.title == 'weekly' ? l10n.savingsLineWeekly : l10n.savingsLineConverted,
       _ => line.title,
     };

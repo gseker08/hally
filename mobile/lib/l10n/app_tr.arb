@@ -3017,5 +3017,126 @@
     }
   },
   "examsHowQuestion": "Nasıl geçti?",
-  "shortcutExams": "Sınavlar"
+  "shortcutExams": "Sınavlar",
+  "timetableTitle": "Ders programı",
+  "timetableSettings": "Program ayarları",
+  "timetableNoChildren": "Önce çocuk ekleyin",
+  "timetableNoChildrenBody": "Ders programı her çocuk için ayrı tutulur. Aile sekmesinden çocuk ekleyin.",
+  "timetableEmpty": "{child} için program boş",
+  "@timetableEmpty": {
+    "placeholders": {
+      "child": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableEmptyBody": "Bir kutuya dokunup dersi seçin. Beden eğitimi gibi derslere götürülecek eşyaları ekleyin; akşamları hatırlatalım.",
+  "timetableCopyFrom": "{child}'nın programını kopyala",
+  "@timetableCopyFrom": {
+    "placeholders": {
+      "child": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableAddPeriod": "Ders saati ekle",
+  "timetableItemAdd": "Eşya ekle",
+  "timetableItemHint": "🎨 Boya kalemi",
+  "timetableItemAddButton": "Ekle",
+  "timetableLessonTitle": "{day} · {period}. ders",
+  "@timetableLessonTitle": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "period": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableLessonClear": "Dersi kaldır",
+  "timetableSubject": "Ders",
+  "timetableSubjects": "Matematik|Türkçe|Fen|Hayat Bilgisi|Sosyal|İngilizce|Beden Eğitimi|Müzik|Görsel Sanatlar|Din Kültürü|Kulüp",
+  "timetableSubjectHint": "Ders adı yaz",
+  "timetableItemsQuestion": "Bu derse ne götürülür?",
+  "timetableItems": "👟 Eşofman|🧴 Havlu|💧 Su|🎨 Boya kalemi|📏 Cetvel|🎵 Flüt|📖 Kitap",
+  "timetableWeekly": "Her hafta tekrarlar",
+  "timetableWeeklyBody": "Aynı ders başka günlerde de varsa eşyaları orada da güncellenir.",
+  "timetableSave": "Kaydet",
+  "timetableTileBag": "Yarın çantaya",
+  "bagTitle": "Yarın çantaya",
+  "bagTitleFor": "Yarın çantaya · {child}",
+  "@bagTitleFor": {
+    "placeholders": {
+      "child": {
+        "type": "String"
+      }
+    }
+  },
+  "bagNothing": "Özel eşya yok. Dersler: {subjects}",
+  "@bagNothing": {
+    "placeholders": {
+      "subjects": {
+        "type": "String"
+      }
+    }
+  },
+  "bagReady": "Çanta hazır",
+  "bagReadyByChild": "{child} çantasını kendisi hazırladı",
+  "@bagReadyByChild": {
+    "placeholders": {
+      "child": {
+        "type": "String"
+      }
+    }
+  },
+  "bagDone": "Hazırladık",
+  "bagExam": "{subject} sınavı",
+  "@bagExam": {
+    "placeholders": {
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "bagExamTomorrow": "yarın",
+  "bagExamStudy": "{day} · çalışma",
+  "@bagExamStudy": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "bagEveryDay": "her gün",
+  "schoolSettingsTitle": "Program ayarları",
+  "schoolBellTimes": "Ders saatleri",
+  "schoolBellTimesBody": "Okulun zil saatleri, tüm çocuklar için",
+  "schoolBellAdd": "Ekle",
+  "schoolReminder": "Akşam hatırlatması",
+  "schoolReminderBody": "Yarının eşyaları ve sınavlar",
+  "schoolReminderTime": "Saat",
+  "schoolChildPhone": "Çocuğun telefonunda da",
+  "schoolChildPhoneBody": "Eşleşmiş telefonda \"Yarın çantana\" listesi",
+  "schoolQuiet": "Tatillerde sessiz",
+  "schoolQuietBody": "Resmi tatillerden önce hatırlatma yok (hafta sonu zaten yok)",
+  "schoolDailyItems": "Her gün götürülenler",
+  "schoolDailyItemsBody": "Her okul günü listeye eklenir",
+  "schoolDailyItemHint": "🍎 Beslenme",
+  "schoolBreaks": "Ara tatil",
+  "schoolBreaksBody": "Bu günlerde hatırlatma yok",
+  "schoolBreakQuiet": "hatırlatma yok",
+  "schoolBreakAdd": "Ekle",
+  "schoolBreakDelete": "Tatili sil",
+  "schoolBreakHint": "Ara tatil",
+  "schoolBreakDefault": "Ara tatil",
+  "schoolCaregiverNote": "Ders programı bakıcıya da görünür; böylece okul eşyalarını o da hazırlayabilir.",
+  "kidLessonsToday": "Bugünün dersleri",
+  "kidLessonNow": "şimdi",
+  "kidBagTitle": "Yarın çantana",
+  "kidBagDone": "Çantam hazır!",
+  "kidBagReady": "Çantan hazır 🎉",
+  "kidBagSent": "Harika! Annene/babana haber verdik.",
+  "savingsLineBag": "🎒 Çantamı hazırladım",
+  "shortcutTimetable": "Ders programı"
 }

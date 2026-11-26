@@ -24,6 +24,7 @@ import '../handoff/handoff_cards.dart';
 import 'family_today.dart';
 import 'live_now.dart';
 import '../profile/profile_screen.dart';
+import '../school/school_screens.dart' show TodayBagCards;
 import '../setup/focus.dart';
 import '../setup/setup_wizard.dart';
 
@@ -115,6 +116,7 @@ class TodayScreen extends ConsumerWidget {
       ChildFilterBar(familyId: familyId, padding: EdgeInsets.zero),
       if (!ref.watch(isCaregiverProvider)) ParentAsksCard(familyId: familyId),
       if (!ref.watch(isCaregiverProvider)) ChildClaimsCard(familyId: familyId),
+      TodayBagCards(familyId: familyId),
       if (!caregiver && cherries) ParentAllowanceCard(familyId: familyId),
       if (ref.watch(isCaregiverProvider)) CaregiverHandoffCard(familyId: familyId) else ParentHandoffCards(familyId: familyId),
       if (!caregiver && cherries) FamilyGoalCard(familyId: familyId),

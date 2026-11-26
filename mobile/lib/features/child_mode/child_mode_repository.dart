@@ -13,6 +13,7 @@ import '../allowance/allowance.dart';
 import '../asks/asks.dart';
 import '../bedtime/bedtime.dart';
 import '../exams/exams.dart';
+import '../school/school.dart' show ChildSchool;
 import '../goal/family_goal.dart';
 import '../messages/chat_realtime.dart';
 import 'child_lock.dart';
@@ -153,6 +154,7 @@ class ChildHome {
     this.todayMood,
     this.bedtime,
     this.exams = const [],
+    this.school,
   });
 
   factory ChildHome.fromJson(Map<String, dynamic> j) {
@@ -173,6 +175,7 @@ class ChildHome {
       todayMood: j['todayMood'] as String?,
       bedtime: j['bedtime'] == null ? null : ChildBedtime.fromJson(j['bedtime'] as Map<String, dynamic>),
       exams: [for (final e in j['exams'] as List? ?? const []) ChildExam.fromJson(e as Map<String, dynamic>)],
+      school: j['school'] == null ? null : ChildSchool.fromJson(j['school'] as Map<String, dynamic>),
     );
   }
 
@@ -197,6 +200,9 @@ class ChildHome {
 
   /// Exams in the next two weeks (Sınav takvimi), soonest first.
   final List<ChildExam> exams;
+
+  /// Today's lessons and tomorrow's bag (Ders programı); null without a timetable.
+  final ChildSchool? school;
 
   /// The cheapest reward still out of reach (the "next reward" bar).
   ChildReward? get nextReward {
@@ -257,6 +263,12 @@ abstract interface class ChildApi {
 
   /// "Çalıştım" for an upcoming exam (one cherry a day, with the parents' OK).
   Future<ChildHome> examStudied(String examId);
+
+  /// Ticks one line of tomorrow's bag.
+  Future<void> packBag(String key, bool packed);
+
+  /// "Çantam hazır!": ticks the whole bag and asks for one cherry (with the parents' OK).
+  Future<void> bagReady();
 }
 
 class UnpairedException implements Exception {}
@@ -346,6 +358,12 @@ class DioChildApi implements ChildApi {
         await _dio.post<dynamic>('/api/v1/child/exams/$examId/studied');
         return _home(_dio.get<Map<String, dynamic>>('/api/v1/child/home'));
       });
+
+  @override
+  Future<void> packBag(String key, bool packed) => _call(() => _dio.put<dynamic>('/api/v1/child/school/bag/items', data: {'key': key, 'packed': packed}));
+
+  @override
+  Future<void> bagReady() => _call(() => _dio.post<dynamic>('/api/v1/child/school/bag/ready'));
 
   @override
   Future<ChildHome> redeem(String rewardId) => _call(() => _home(_dio.post<Map<String, dynamic>>('/api/v1/child/rewards/$rewardId/redeem')));

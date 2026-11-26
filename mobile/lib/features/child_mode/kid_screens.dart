@@ -22,6 +22,7 @@ import '../exams/exams.dart' show ChildExam;
 import '../goal/goal_widgets.dart' show GoalBody, GoalMiniCard;
 import '../mood/mood.dart' show moodSkippedProvider;
 import '../mood/mood_widgets.dart' show KidMoodCard;
+import '../school/school_screens.dart' show KidSchoolCards;
 import 'child_mode_repository.dart';
 import 'parent_exit.dart';
 
@@ -239,6 +240,7 @@ class _KidToday extends ConsumerWidget {
         if (home.bedtime case final bed? when bed.due) KidBedtimeCard(bedtime: bed),
         if (home.todayMood == null && !ref.watch(moodSkippedProvider)) const KidMoodCard(),
         const KidAskCard(),
+        if (home.school case final school?) KidSchoolCards(school: school),
         for (final exam in home.exams.take(2)) _KidExamCard(exam: exam),
         const _LockSetupCard(),
         Row(
@@ -380,7 +382,8 @@ class _KidExamCard extends ConsumerWidget {
                     FilledButton(
                       key: Key('kid.exam.${exam.id}.studied'),
                       style: FilledButton.styleFrom(minimumSize: const Size(0, 40)),
-                      onPressed: () => _act(context, ref, (api) => api.examStudied(exam.id), (h) => h.requireApproval ? l10n.kidDoneSent : l10n.kidDoneCherry(1)),
+                      onPressed: () =>
+                          _act(context, ref, (api) => api.examStudied(exam.id), (h) => h.requireApproval ? l10n.kidDoneSent : l10n.kidDoneCherry(1)),
                       child: Text(l10n.kidExamStudyButton),
                     ),
                 ]),
