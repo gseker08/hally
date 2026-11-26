@@ -2947,6 +2947,62 @@ namespace Hally.Infrastructure.Persistence.Migrations
                     b.ToTable("rewards", (string)null);
                 });
 
+            modelBuilder.Entity("Hally.Domain.School.BagCheck", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<List<string>>("Packed")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text[]")
+                        .HasColumnName("packed")
+                        .HasDefaultValueSql("'{}'::text[]");
+
+                    b.Property<DateTimeOffset?>("ReadyAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ready_at");
+
+                    b.Property<Guid?>("ReadyByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ready_by_user_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_bag_checks");
+
+                    b.HasIndex("Day")
+                        .HasDatabaseName("ix_bag_checks_day");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_bag_checks_family_id");
+
+                    b.HasIndex("ReadyByUserId")
+                        .HasDatabaseName("ix_bag_checks_ready_by_user_id");
+
+                    b.HasIndex("ChildId", "Day")
+                        .IsUnique()
+                        .HasDatabaseName("ix_bag_checks_child_id_day");
+
+                    b.ToTable("bag_checks", (string)null);
+                });
+
             modelBuilder.Entity("Hally.Domain.School.Exam", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3038,6 +3094,139 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_exams_family_id_date");
 
                     b.ToTable("exams", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.School.Lesson", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ChildId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("child_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<string>("ItemsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("items_json");
+
+                    b.Property<int>("Period")
+                        .HasColumnType("integer")
+                        .HasColumnName("period");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("subject");
+
+                    b.Property<int>("Weekday")
+                        .HasColumnType("integer")
+                        .HasColumnName("weekday");
+
+                    b.HasKey("Id")
+                        .HasName("pk_lessons");
+
+                    b.HasIndex("FamilyId")
+                        .HasDatabaseName("ix_lessons_family_id");
+
+                    b.HasIndex("ChildId", "Weekday", "Period")
+                        .IsUnique()
+                        .HasDatabaseName("ix_lessons_child_id_weekday_period");
+
+                    b.ToTable("lessons", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.School.SchoolBreak", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<DateOnly>("From")
+                        .HasColumnType("date")
+                        .HasColumnName("from");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("title");
+
+                    b.Property<DateOnly>("To")
+                        .HasColumnType("date")
+                        .HasColumnName("to");
+
+                    b.HasKey("Id")
+                        .HasName("pk_school_breaks");
+
+                    b.HasIndex("FamilyId", "To")
+                        .HasDatabaseName("ix_school_breaks_family_id_to");
+
+                    b.ToTable("school_breaks", (string)null);
+                });
+
+            modelBuilder.Entity("Hally.Domain.School.SchoolPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("BellTimesJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("bell_times_json");
+
+                    b.Property<bool>("ChildPhone")
+                        .HasColumnType("boolean")
+                        .HasColumnName("child_phone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("DailyItemsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("daily_items_json");
+
+                    b.Property<Guid>("FamilyId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("family_id");
+
+                    b.Property<bool>("QuietOnHolidays")
+                        .HasColumnType("boolean")
+                        .HasColumnName("quiet_on_holidays");
+
+                    b.Property<TimeOnly?>("ReminderTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("reminder_time");
+
+                    b.HasKey("Id")
+                        .HasName("pk_school_plans");
+
+                    b.HasIndex("FamilyId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_school_plans_family_id");
+
+                    b.ToTable("school_plans", (string)null);
                 });
 
             modelBuilder.Entity("Hally.Domain.ScreenTime.ScreenTimeSession", b =>
@@ -4416,6 +4605,29 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_rewards_families_family_id");
                 });
 
+            modelBuilder.Entity("Hally.Domain.School.BagCheck", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bag_checks_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_bag_checks_families_family_id");
+
+                    b.HasOne("Hally.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReadyByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_bag_checks_users_ready_by_user_id");
+                });
+
             modelBuilder.Entity("Hally.Domain.School.Exam", b =>
                 {
                     b.HasOne("Hally.Domain.Families.Child", null)
@@ -4449,6 +4661,43 @@ namespace Hally.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ResultByUserId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("fk_exams_users_result_by_user_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.School.Lesson", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Child", null)
+                        .WithMany()
+                        .HasForeignKey("ChildId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_lessons_children_child_id");
+
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_lessons_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.School.SchoolBreak", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_school_breaks_families_family_id");
+                });
+
+            modelBuilder.Entity("Hally.Domain.School.SchoolPlan", b =>
+                {
+                    b.HasOne("Hally.Domain.Families.Family", null)
+                        .WithMany()
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_school_plans_families_family_id");
                 });
 
             modelBuilder.Entity("Hally.Domain.ScreenTime.ScreenTimeSession", b =>

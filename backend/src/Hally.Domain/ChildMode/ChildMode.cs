@@ -100,6 +100,9 @@ public enum ClaimKind
 
     /// <summary>"Çalıştım" for an upcoming exam (item = the exam), once a day.</summary>
     Study,
+
+    /// <summary>"Çantam hazır" for tomorrow's school bag (item = the child, once a day).</summary>
+    Bag,
 }
 
 public enum ClaimStatus

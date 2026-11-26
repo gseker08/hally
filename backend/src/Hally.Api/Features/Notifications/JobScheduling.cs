@@ -20,6 +20,8 @@ public static class JobScheduling
         services.AddScoped<Asks.AskService>();
         services.AddScoped<Allowance.AllowanceService>();
         services.AddScoped<Exams.ExamService>();
+        services.AddScoped<School.SchoolReader>();
+        services.AddScoped<School.SchoolService>();
         services.AddScoped<Briefing.BriefingService>();
         services.AddScoped<ChildMode.ChildModeService>();
         services.AddScoped<ScreenTime.ScreenTimeGoalJob>();
@@ -56,6 +58,7 @@ public static class JobScheduling
         jobs.AddOrUpdate<Goals.FamilyGoalService>("family-goals", j => j.CheckAllAsync(CancellationToken.None), "*/10 * * * *");
         jobs.AddOrUpdate<Allowance.AllowanceService>("weekly-allowance", j => j.WeeklyAsync(CancellationToken.None), "5 * * * *");
         jobs.AddOrUpdate<Exams.ExamService>("exam-evenings", j => j.EveningAsync(CancellationToken.None), "*/15 * * * *");
+        jobs.AddOrUpdate<School.SchoolService>("school-evenings", j => j.EveningAsync(CancellationToken.None), "*/15 * * * *");
         jobs.AddOrUpdate<Briefing.BriefingService>("morning-briefing", j => j.MorningAsync(CancellationToken.None), "*/5 * * * *");
         jobs.AddOrUpdate<Privacy.CaregiverExpiryJob>("caregiver-expiry", j => j.RunAsync(CancellationToken.None), Cron.Hourly());
         jobs.AddOrUpdate<Billing.SubscriptionRefreshJob>("subscription-refresh", j => j.RunAsync(CancellationToken.None), Cron.Hourly());

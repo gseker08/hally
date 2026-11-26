@@ -48,6 +48,8 @@ public interface IChatClient
 
     /// <summary>Exams were added, changed or got a result; apps reload.</summary>
     Task ExamsChanged(Exams.ExamsEvent e);
+
+    Task SchoolChanged(School.SchoolEvent e);
 }
 
 /// <summary>

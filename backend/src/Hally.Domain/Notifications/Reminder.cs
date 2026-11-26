@@ -162,6 +162,9 @@ public enum NotificationKind
 
     /// <summary>Exam day evening: "Nasıl geçti?" (target = the exam).</summary>
     ExamResult,
+
+    /// <summary>"🎒 Yarın çantaya": the evening before a school day (target = the child).</summary>
+    SchoolBag,
 }
 
 /// <summary>An in-app inbox entry; the same content is pushed to the user's devices.

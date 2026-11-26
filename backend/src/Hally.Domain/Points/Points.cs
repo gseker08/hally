@@ -80,6 +80,9 @@ public enum PointKind
 
     /// <summary>Exams: a parent's cherries for a result, or one cherry for an approved "Çalıştım" before an exam.</summary>
     Exam,
+
+    /// <summary>"Çantam hazır": the child packed tomorrow's school bag (one cherry, with the parents' OK).</summary>
+    Bag,
 }
 
 /// <summary>
@@ -230,6 +233,18 @@ public class PointEntry : Entity
         ChildId = childId,
         Kind = PointKind.Exam,
         Title = title,
+        Points = points,
+        Day = day,
+        ByUserId = userId,
+        CreatedAt = now,
+    };
+
+    public static PointEntry ForBag(Guid familyId, Guid childId, int points, Guid? userId, DateOnly day, DateTimeOffset now) => new()
+    {
+        FamilyId = familyId,
+        ChildId = childId,
+        Kind = PointKind.Bag,
+        Title = "bag",
         Points = points,
         Day = day,
         ByUserId = userId,
