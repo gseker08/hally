@@ -50,7 +50,7 @@ public class OpenAiCompatibleChatModel(HttpClient http, IOptions<AiOptions> opti
         }
 
         using var message = new HttpRequestMessage(HttpMethod.Post, $"{o.BaseUrl.TrimEnd('/')}/chat/completions") { Content = JsonContent.Create(body) };
-        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", o.ApiKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", o.ApiKey.Trim());
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
