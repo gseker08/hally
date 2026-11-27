@@ -93,7 +93,7 @@ public class OpenAiCompatibleVisionModel(HttpClient http, IOptions<AiOptions> op
         {
             Content = JsonContent.Create(body),
         };
-        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", o.ApiKey);
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", o.ApiKey.Trim());
 
         try
         {
