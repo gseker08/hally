@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hally/core/auth/auth_repository.dart';
 import 'package:hally/core/design/theme.dart';
 import 'package:hally/features/family/caregiver_screen.dart';
@@ -28,6 +29,12 @@ class _Repo implements FamilyRepository {
   }
 
   @override
+  Future<ChildProfile> addChild(String familyId, {required String firstName, int? birthYear, String? color}) async {
+    calls.add('addChild $firstName $birthYear $color');
+    return ChildProfile(id: 'c9', firstName: firstName, birthYear: birthYear, color: color ?? 'sky');
+  }
+
+  @override
   Future<void> removeCaregiver(String familyId, String userId) async => calls.add('remove $userId');
 
   @override
@@ -45,26 +52,46 @@ const _family = FamilyDetails(
   children: [ChildProfile(id: 'c1', firstName: 'Ela'), ChildProfile(id: 'c2', firstName: 'Deniz')],
 );
 
-Widget _app(_Repo repo, Widget home, {String role = 'Owner'}) => ProviderScope(
+/// The invite screen inside a router, so "Kod al" can open the child's phone page.
+Widget _routed(_Repo repo) => _app(
+      repo,
+      null,
+      router: GoRouter(routes: [
+        GoRoute(path: '/', builder: (_, __) => const InvitePartnerScreen(familyId: 'f1')),
+        GoRoute(path: '/family/:id/child/:childId/phone', builder: (_, s) => Text('phone ${s.pathParameters['childId']}')),
+      ]),
+    );
+
+Widget _app(_Repo repo, Widget? home, {String role = 'Owner', GoRouter? router}) => ProviderScope(
       overrides: [
         familyRepositoryProvider.overrideWithValue(repo),
         familyProvider.overrideWith((ref, id) async => _family),
         meProvider.overrideWith((ref) async =>
             Me(id: 'u1', displayName: 'Ayşe', locale: 'tr', families: [FamilyRef(id: 'f1', name: 'Yılmaz', role: role)])),
       ],
-      child: MaterialApp(
-        theme: buildHallyTheme(Brightness.light),
-        locale: const Locale('tr'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: home,
-      ),
+      child: router != null
+          ? MaterialApp.router(
+              theme: buildHallyTheme(Brightness.light),
+              locale: const Locale('tr'),
+              localizationsDelegates: _delegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              routerConfig: router,
+            )
+          : MaterialApp(
+              theme: buildHallyTheme(Brightness.light),
+              locale: const Locale('tr'),
+              localizationsDelegates: _delegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: home,
+            ),
     );
+
+const _delegates = [
+  AppLocalizations.delegate,
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+];
 
 void _phone(WidgetTester tester) {
   tester.view.physicalSize = const Size(1080, 2340);
@@ -81,6 +108,8 @@ void main() {
 
     await tester.tap(find.byKey(const Key('invite.role.caregiver')));
     await tester.pumpAndSettle();
+    // The child card sits between the role cards and the caregiver choices, so scroll down to them.
+    await tester.scrollUntilVisible(find.byKey(const Key('invite.child.c2')), 200, scrollable: find.byType(Scrollable).first);
     expect(find.text('Hangi çocuklara bakacak?'), findsOneWidget);
     await tester.tap(find.byKey(const Key('invite.child.c2'))); // Deniz off: only Ela
     await tester.pumpAndSettle();
@@ -94,6 +123,55 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.calls, ['invite caregiver c1 health=true until=true']);
 
+  });
+
+  testWidgets('adding a child picks an existing child and opens its phone code', (tester) async {
+    _phone(tester);
+    final repo = _Repo();
+    await tester.pumpWidget(_routed(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('invite.role.child')));
+    await tester.pumpAndSettle();
+    expect(find.text('Hangi çocuk?'), findsOneWidget);
+    expect(find.byKey(const Key('invite.whatsapp')), findsNothing);
+    await tester.ensureVisible(find.byKey(const Key('invite.kid.c2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('invite.kid.c2')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('invite.childCode')));
+    await tester.pumpAndSettle();
+    expect(find.text('phone c2'), findsOneWidget);
+    expect(repo.calls, isEmpty);
+  });
+
+  testWidgets('adding a new child creates the profile first, with a free colour', (tester) async {
+    _phone(tester);
+    final repo = _Repo();
+    await tester.pumpWidget(_routed(repo));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('invite.role.child')));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byKey(const Key('invite.kid.new')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('invite.kid.new')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('invite.childCode')));
+    await tester.pumpAndSettle();
+    expect(find.text('Çocuğun adını yaz'), findsOneWidget);
+    expect(repo.calls, isEmpty);
+
+    await tester.scrollUntilVisible(find.byKey(const Key('invite.kid.year')), 100,
+        scrollable: find.descendant(of: find.byType(ListView), matching: find.byType(Scrollable)).first);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('invite.kid.name')), 'Can');
+    await tester.enterText(find.byKey(const Key('invite.kid.year')), '2016');
+    await tester.tap(find.byKey(const Key('invite.childCode')));
+    await tester.pumpAndSettle();
+    // Ela and Deniz are both sky (the default), so the next free colour is mint.
+    expect(repo.calls, ['addChild Can 2016 mint']);
+    expect(find.text('phone c9'), findsOneWidget);
   });
 
   testWidgets('a parent opens health for a caregiver and can remove them', (tester) async {

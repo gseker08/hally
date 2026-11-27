@@ -92,7 +92,7 @@ class _KidPairScreenState extends ConsumerState<KidPairScreen> {
               keyboardType: TextInputType.number,
               maxLength: 6,
               textAlign: TextAlign.center,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              inputFormatters: const [PairingCodeFormatter()],
               style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: 12, fontWeight: FontWeight.w800),
               decoration: InputDecoration(hintText: '••••••', labelText: l10n.kidPairCode, errorText: _error),
               onSubmitted: (_) => _pair(),
@@ -103,6 +103,20 @@ class _KidPairScreenState extends ConsumerState<KidPairScreen> {
         ),
       ),
     );
+  }
+}
+
+/// Keeps only the digits of what was typed or pasted. A pasted message ("Hally kodun: 482 913 …") gives its
+/// first six-digit code, so a code shared over WhatsApp can be pasted as a whole.
+class PairingCodeFormatter extends TextInputFormatter {
+  const PairingCodeFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final grouped = RegExp(r'(?<!\d)(\d{3})[ -]?(\d{3})(?!\d)').firstMatch(newValue.text);
+    var digits = grouped != null && newValue.text.length > 6 ? '${grouped[1]}${grouped[2]}' : newValue.text.replaceAll(RegExp(r'\D'), '');
+    if (digits.length > 6) digits = digits.substring(0, 6);
+    return TextEditingValue(text: digits, selection: TextSelection.collapsed(offset: digits.length));
   }
 }
 

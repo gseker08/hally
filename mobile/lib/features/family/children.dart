@@ -404,7 +404,7 @@ class _ChildSheetState extends ConsumerState<_ChildSheet> {
             autofocus: child == null,
             maxLength: 40,
             textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(labelText: l10n.childName, helperText: l10n.childNameHelp),
+            decoration: InputDecoration(labelText: l10n.childName),
           ),
           TextField(
             key: const Key('child.birthYear'),
