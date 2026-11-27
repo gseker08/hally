@@ -35,3 +35,7 @@ KVKK lawyer before launch is worthwhile.
 
 Settings → Pages → Build and deployment → Source: **GitHub Actions**. The site appears at
 `https://<github-user>.github.io/hally/` (for example `.../hally/gizlilik.html`).
+
+Custom domain (used now): DNS `CNAME hally → gseker08.github.io.` at the registrar (Natro), then Settings → Pages →
+Custom domain `hally.lusnikaapps.com` → Save, and tick **Enforce HTTPS** once the certificate is ready. The API's
+`PRIVACY_POLICY_URL` is `https://hally.lusnikaapps.com/gizlilik.html`.
