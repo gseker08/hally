@@ -105,6 +105,16 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     );
   }
 
+  /// Some keyboards (Samsung) still hold the sent words as composing text and write them back
+  /// after a plain clear, so the composing region is dropped and the field is cleared again once
+  /// the frame is done.
+  void _clearInput() {
+    _input.value = TextEditingValue.empty;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _input.text.isNotEmpty && !_listening) _input.value = TextEditingValue.empty;
+    });
+  }
+
   Future<void> _send(String familyId, String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || _sending) return;
@@ -115,8 +125,8 @@ class _AssistantScreenState extends ConsumerState<AssistantScreen> {
     setState(() {
       _entries.add(ChatEntry(id: 'local-${_entries.length}', fromUser: true, text: trimmed));
       _sending = true;
-      _input.clear();
     });
+    _clearInput();
     _toBottom();
     try {
       final reply = await ref.read(assistantRepositoryProvider).send(familyId, trimmed, conversationId: _conversationId);
