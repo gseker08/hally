@@ -88,9 +88,10 @@ class _ParentRepo implements ChildModeRepository {
     return PairingCode('482715', DateTime.now().add(const Duration(minutes: 10)));
   }
 
+  var deviceList = [ChildDevice(id: 'd1', name: "Ela'nın telefonu", pairedAt: DateTime(2026, 11, 25), lastSeenAt: DateTime(2026, 11, 25, 15))];
+
   @override
-  Future<List<ChildDevice>> devices(String familyId, String childId) async =>
-      [ChildDevice(id: 'd1', name: "Ela'nın telefonu", pairedAt: DateTime(2026, 11, 25), lastSeenAt: DateTime(2026, 11, 25, 15))];
+  Future<List<ChildDevice>> devices(String familyId, String childId) async => deviceList;
 
   @override
   Future<bool> requireApproval(String familyId) async => true;
@@ -313,6 +314,37 @@ void main() {
     await tester.tap(find.byKey(const Key('phone.give.15')));
     await tester.pump();
     expect(repo.calls, ['code c1', 'grant 15']);
+  });
+
+  testWidgets('the code screen shows the steps, waits for the phone and says when it connected', (tester) async {
+    _phone(tester);
+    final repo = _ParentRepo()..deviceList = [];
+    await tester.pumpWidget(_app(const ConnectPhoneScreen(familyId: 'f1', childId: 'c1'), parent: repo));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(find.text("Çocuğun telefonuna Hally'yi indir"), findsOneWidget);
+    expect(find.byKey(const Key('phone.whatsapp')), findsOneWidget);
+    expect(find.byKey(const Key('phone.copy')), findsOneWidget);
+    expect(find.text('Telefon bekleniyor…'), findsOneWidget);
+    expect(find.byKey(const Key('phone.paired')), findsNothing);
+
+    // The child's phone uses the code; the screen notices on its next refresh.
+    repo.deviceList = [ChildDevice(id: 'd2', name: null, pairedAt: DateTime.now(), lastSeenAt: DateTime.now())];
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.byKey(const Key('phone.paired')), findsOneWidget);
+    expect(find.text('Telefon bağlandı'), findsOneWidget);
+    expect(find.text('Telefon bekleniyor…'), findsNothing);
+  });
+
+  test('a pasted message gives its six-digit code', () {
+    const f = PairingCodeFormatter();
+    TextEditingValue paste(String text) => f.formatEditUpdate(TextEditingValue.empty, TextEditingValue(text: text));
+    expect(paste('Hally kodun: 482 913\nHally\'yi aç ve kodu gir.').text, '482913');
+    expect(paste('482913').text, '482913');
+    expect(paste('48a2').text, '482');
+    expect(paste('12345678').text, '123456');
   });
 
   testWidgets('the approval card on Today approves a claim', (tester) async {

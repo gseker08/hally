@@ -65,7 +65,7 @@
   "todayEmptyTitle": "Bugün için her şey yolunda",
   "todayEmptyBody": "Bir okul duyurusunun fotoğrafını çek, görevleri ben çıkarayım.",
   "familyMembers": "Aile üyeleri",
-  "familyInviteMore": "Kişi davet et",
+  "familyInviteMore": "Kişi ekle",
   "roleOwner": "Kurucu",
   "roleAdult": "Yetişkin",
   "signOut": "Çıkış yap",
@@ -191,7 +191,7 @@
       }
     }
   },
-  "familyInviteBody": "Eşini, partnerini ya da bakıcını ekle.",
+  "familyInviteBody": "Eşini, bakıcını ya da çocuğunun telefonunu ekle.",
   "demoTitle": "Hadi bir deneyelim",
   "demoBody": "Bu örnek okul duyurusunu tara, Hally görevleri çıkarsın. Hesap gerekmez.",
   "demoSampleLabel": "Örnek duyuru",
@@ -1593,7 +1593,7 @@
   "privacyPointVoice": "Mikrofon yalnızca mikrofon düğmesine bastığında dinler, arka planda asla dinlemez. Konuşman telefonunun konuşma tanıma servisinde (Android'de Google, iPhone'da Apple) yazıya çevrilir. Ses kaydı Hally'ye gönderilmez ya da saklanmaz, sadece metin Hally'ye gider.",
   "roleParent": "Ebeveyn",
   "roleCaregiver": "Bakıcı",
-  "inviteWhoTitle": "Kimi davet ediyorsun?",
+  "inviteWhoTitle": "Kimi ekliyorsun?",
   "inviteRoleParentBody": "Eşin ya da diğer ebeveyn. Seninle aynı yetkiler.",
   "inviteRoleCaregiverBody": "Dadı, büyükanne, yardımcı. Günü görür; ilaç, uyku, beslenme ve görevleri işaretler.",
   "inviteCaregiverChildren": "Hangi çocuklara bakacak?",
@@ -1650,7 +1650,7 @@
   "joinAsCaregiver": "Bakıcı olarak katılacaksın: günü görür, bakım kayıtlarını işaretlersin.",
   "welcomeChildPhone": "Bu telefon bir çocuğun",
   "kidPairTitle": "Bu telefon bir çocuğun",
-  "kidPairBody": "Annenin ya da babanın telefonunda Hally'de senin sayfana gidip telefon simgesine dokunsun. Çıkan 6 haneli kodu buraya yaz.",
+  "kidPairBody": "Annen ya da baban Hally'de Aile → Kişi ekle → Çocuk'a dokunsun. Çıkan 6 haneli kodu buraya yaz.",
   "kidPairCode": "6 haneli kod",
   "kidPairButton": "Bağla",
   "kidPairInvalid": "Kod yanlış ya da süresi dolmuş. Yeni bir kod iste.",
@@ -1791,7 +1791,6 @@
       }
     }
   },
-  "childPhoneSteps": "Çocuğun telefonunda Hally'yi aç, \"Bu telefon bir çocuğun\" seç ve bu kodu gir:",
   "childPhoneCodeValid": "Kod 10 dakika geçerli, bir kez kullanılır",
   "childPhoneExpired": "Kodun süresi doldu",
   "childPhoneNewCode": "Yeni kod al",
@@ -3450,5 +3449,38 @@
   },
   "calSyncOnlyYou": "Sadece sen",
   "calSyncFamilySees": "Aile görüyor",
-  "privacyPointCalendar": "Takvim bağlantısı isteğe bağlıdır. \"Sadece ben\" seçtiğin telefon takvimleri telefonunda kalır, bize gönderilmez. \"Ailem\" seçtiklerin ailenin diğer yetişkinleri görsün diye sunucuya kopyalanır (istersen sadece \"meşgul\" olarak) ve bağlantıyı kaldırınca silinir. Bilgisayar için oluşturduğun takvim bağlantısı gizlidir, istediğin an yenilenebilir."
+  "privacyPointCalendar": "Takvim bağlantısı isteğe bağlıdır. \"Sadece ben\" seçtiğin telefon takvimleri telefonunda kalır, bize gönderilmez. \"Ailem\" seçtiklerin ailenin diğer yetişkinleri görsün diye sunucuya kopyalanır (istersen sadece \"meşgul\" olarak) ve bağlantıyı kaldırınca silinir. Bilgisayar için oluşturduğun takvim bağlantısı gizlidir, istediğin an yenilenebilir.",
+  "roleChild": "Çocuk",
+  "inviteRoleChildBody": "Kendi telefonu olan çocuk. Hesap ya da e-posta açılmaz, kodla bağlanır.",
+  "inviteChildWhich": "Hangi çocuk?",
+  "inviteChildNew": "Yeni çocuk",
+  "inviteChildName": "Adı",
+  "inviteChildYear": "Doğum yılı (isteğe bağlı)",
+  "inviteChildNoPhone": "Telefonu olmayan çocuğu Çocuklar sekmesinden eklemeye devam edebilirsin.",
+  "inviteChildGetCode": "Kod al",
+  "inviteChildNameMissing": "Çocuğun adını yaz",
+  "childPhoneStep1": "Çocuğun telefonuna Hally'yi indir",
+  "childPhoneStep2": "Açılışta \"Bu telefon bir çocuğun\" seçeneğine dokun",
+  "childPhoneStep3": "Bu kodu gir:",
+  "childPhoneCopy": "Kopyala",
+  "childPhoneCopied": "Kod kopyalandı",
+  "childPhoneShareText": "Hally kodun: {code}\nHally'yi aç, \"Bu telefon bir çocuğun\" seçeneğine dokun ve kodu gir.",
+  "@childPhoneShareText": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "childPhoneWaiting": "Telefon bekleniyor…",
+  "childPhonePairedTitle": "Telefon bağlandı",
+  "childPhonePairedBody": "{name} artık kendi gününü görüyor. İzinleri çocuğun telefonunda açın; Hally adım adım gösterir.",
+  "@childPhonePairedBody": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "childPhoneDone": "Bitti"
 }

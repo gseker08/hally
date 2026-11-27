@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/design/brand.dart';
 import '../../core/design/tokens.dart';
@@ -29,6 +31,10 @@ class _ConnectPhoneScreenState extends ConsumerState<ConnectPhoneScreen> {
   bool _loading = false;
   bool _failed = false;
   Timer? _tick;
+
+  /// Phones that were already paired when this screen opened; a new one means the code was just used.
+  Set<String>? _known;
+  bool _paired = false;
 
   @override
   void initState() {
@@ -63,6 +69,25 @@ class _ConnectPhoneScreenState extends ConsumerState<ConnectPhoneScreen> {
     }
   }
 
+  String _shareText(AppLocalizations l10n) {
+    final c = _code!.code;
+    return l10n.childPhoneShareText('${c.substring(0, 3)} ${c.substring(3)}');
+  }
+
+  Future<void> _shareWhatsApp() async {
+    if (_code == null) return;
+    final text = _shareText(AppLocalizations.of(context));
+    await launchUrl(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}'), mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _copy() async {
+    if (_code == null) return;
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    await Clipboard.setData(ClipboardData(text: _shareText(l10n)));
+    messenger.showSnackBar(SnackBar(content: Text(l10n.childPhoneCopied)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -75,56 +100,136 @@ class _ConnectPhoneScreenState extends ConsumerState<ConnectPhoneScreen> {
     final screen = ref.watch(childDeviceScreenProvider((widget.familyId, widget.childId)));
     final expired = _code != null && _code!.expiresAt.isBefore(DateTime.now());
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final ids = devices.valueOrNull?.map((d) => d.id).toSet();
+    if (ids != null) {
+      if (_known == null) {
+        _known = ids;
+      } else if (!_paired && ids.difference(_known!).isNotEmpty) {
+        _paired = true;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.childPhoneTitle(name))),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(HallySpace.md, 0, HallySpace.md, HallySpace.xl),
         children: [
-          Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(HallySpace.md),
-              child: Column(
-                children: [
-                  Text(l10n.childPhoneSteps, textAlign: TextAlign.center),
-                  const SizedBox(height: HallySpace.md),
-                  if (_loading && _code == null)
-                    const HallyLoading()
-                  else if (_failed)
-                    Text(l10n.errorGeneric)
-                  else if (_code != null)
-                    Opacity(
-                      opacity: expired ? 0.35 : 1,
-                      child: Row(
-                        key: const Key('phone.code'),
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          for (final digit in _code!.code.split(''))
-                            Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 3),
-                              width: 42,
-                              height: 54,
-                              alignment: Alignment.center,
-                              decoration:
-                                  BoxDecoration(border: Border.all(color: HallyColors.line, width: 2), borderRadius: BorderRadius.circular(HallyRadius.sm)),
-                              child: Text(digit, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
-                            ),
-                        ],
+          if (_paired)
+            Card(
+              key: const Key('phone.paired'),
+              margin: EdgeInsets.zero,
+              color: HallyColors.softOf(HallyColors.sage, b),
+              child: Padding(
+                padding: const EdgeInsets.all(HallySpace.lg),
+                child: Column(
+                  children: [
+                    Icon(Icons.check_circle_rounded, size: 44, color: HallyColors.accent(HallyColors.sage, b)),
+                    const SizedBox(height: HallySpace.sm),
+                    Text(l10n.childPhonePairedTitle, textAlign: TextAlign.center, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                    const SizedBox(height: HallySpace.xs),
+                    Text(l10n.childPhonePairedBody(name), textAlign: TextAlign.center),
+                    const SizedBox(height: HallySpace.md),
+                    FilledButton(key: const Key('phone.done'), onPressed: () => context.pop(), child: Text(l10n.childPhoneDone)),
+                  ],
+                ),
+              ),
+            )
+          else
+            Card(
+              margin: EdgeInsets.zero,
+              child: Padding(
+                padding: const EdgeInsets.all(HallySpace.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final (i, step) in [l10n.childPhoneStep1, l10n.childPhoneStep2, l10n.childPhoneStep3].indexed)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundColor: HallyColors.softOf(HallyColors.cherry, b),
+                            child: Text('${i + 1}', style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w800, color: HallyColors.accent(HallyColors.cherry, b))),
+                          ),
+                          const SizedBox(width: HallySpace.sm),
+                          Expanded(child: Text(step)),
+                        ]),
+                      ),
+                    const SizedBox(height: HallySpace.sm),
+                    if (_loading && _code == null)
+                      const HallyLoading()
+                    else if (_failed)
+                      Text(l10n.errorGeneric, textAlign: TextAlign.center)
+                    else if (_code != null)
+                      Opacity(
+                        opacity: expired ? 0.35 : 1,
+                        child: Row(
+                          key: const Key('phone.code'),
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            for (final (i, digit) in _code!.code.split('').indexed)
+                              Container(
+                                margin: EdgeInsets.only(left: i == 3 ? 12 : 3, right: 3),
+                                width: 40,
+                                height: 54,
+                                alignment: Alignment.center,
+                                decoration:
+                                    BoxDecoration(border: Border.all(color: HallyColors.line, width: 2), borderRadius: BorderRadius.circular(HallyRadius.sm)),
+                                child: Text(digit, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                              ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: HallySpace.sm),
+                    Text(expired ? l10n.childPhoneExpired : l10n.childPhoneCodeValid, textAlign: TextAlign.center, style: theme.textTheme.bodySmall),
+                    Center(
+                      child: TextButton.icon(
+                        key: const Key('phone.newCode'),
+                        onPressed: _loading ? null : _newCode,
+                        icon: const Icon(Icons.refresh_rounded),
+                        label: Text(l10n.childPhoneNewCode),
                       ),
                     ),
-                  const SizedBox(height: HallySpace.sm),
-                  Text(expired ? l10n.childPhoneExpired : l10n.childPhoneCodeValid, style: theme.textTheme.bodySmall),
-                  TextButton.icon(
-                    key: const Key('phone.newCode'),
-                    onPressed: _loading ? null : _newCode,
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: Text(l10n.childPhoneNewCode),
-                  ),
-                ],
+                    if (_code != null && !expired) ...[
+                      Row(children: [
+                        Expanded(
+                          child: FilledButton.icon(
+                            key: const Key('phone.whatsapp'),
+                            onPressed: _shareWhatsApp,
+                            icon: const Icon(Icons.chat_outlined),
+                            label: Text(l10n.inviteWhatsApp),
+                          ),
+                        ),
+                        const SizedBox(width: HallySpace.sm),
+                        OutlinedButton.icon(
+                          key: const Key('phone.copy'),
+                          // The theme makes buttons full width; in a row this one takes only what it needs.
+                          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 48)),
+                          onPressed: _copy,
+                          icon: const Icon(Icons.copy_rounded, size: 18),
+                          label: Text(l10n.childPhoneCopy),
+                        ),
+                      ]),
+                      const SizedBox(height: HallySpace.sm),
+                      Container(
+                        key: const Key('phone.waiting'),
+                        padding: const EdgeInsets.symmetric(horizontal: HallySpace.md, vertical: HallySpace.sm + 2),
+                        decoration: BoxDecoration(color: HallyColors.softOf(HallyColors.mist, b), borderRadius: BorderRadius.circular(HallyRadius.md)),
+                        child: Row(children: [
+                          // A static icon, not a spinner: the screen already refreshes every few seconds.
+                          Icon(Icons.hourglass_top_rounded, size: 18, color: HallyColors.readableOn(HallyColors.mist, b)),
+                          const SizedBox(width: HallySpace.sm),
+                          Expanded(
+                            child: Text(l10n.childPhoneWaiting,
+                                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: HallyColors.readableOn(HallyColors.mist, b))),
+                          ),
+                        ]),
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
-          ),
           HallySectionHeader(title: l10n.childPhoneOnThis),
           Card(
             margin: EdgeInsets.zero,

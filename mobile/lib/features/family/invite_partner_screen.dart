@@ -10,12 +10,17 @@ import '../../core/design/tokens.dart';
 import '../../core/design/widgets.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../billing/paywall_screen.dart';
+import 'children.dart';
 import 'family_repository.dart';
 
 /// How long a caregiver's access lasts, picked with chips.
 enum AccessPeriod { forever, oneMonth, threeMonths, custom }
 
-/// Invite a parent (same rights) or a caregiver (limited to some children, an end date and, if allowed, health info).
+/// Who is being added: a parent, a caregiver, or a child's own phone.
+enum InviteRole { parent, caregiver, child }
+
+/// Invite a parent (same rights) or a caregiver (limited to some children, an end date and, if allowed, health info),
+/// or connect a child's phone: pick the child (or type a new one) and get a pairing code.
 class InvitePartnerScreen extends ConsumerStatefulWidget {
   const InvitePartnerScreen({super.key, required this.familyId});
 
@@ -28,7 +33,15 @@ class InvitePartnerScreen extends ConsumerStatefulWidget {
 class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
   Invitation? _invitation;
   bool _busy = false;
-  bool _caregiver = false;
+  InviteRole _role = InviteRole.parent;
+  bool get _caregiver => _role == InviteRole.caregiver;
+
+  /// The child whose phone is being connected; null with [_newChild] means a new child typed here.
+  String? _childId;
+  bool _newChild = false;
+  final _childName = TextEditingController();
+  final _childYear = TextEditingController();
+  String? _childError;
   final Set<String> _children = {};
   AccessPeriod _period = AccessPeriod.threeMonths;
   DateTime? _customUntil;
@@ -39,6 +52,48 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
         fn();
         _invitation = null;
       });
+
+  @override
+  void dispose() {
+    _childName.dispose();
+    _childYear.dispose();
+    super.dispose();
+  }
+
+  /// Creates the child if it is new, then opens the pairing code for its phone.
+  Future<void> _getChildCode(List<ChildProfile> children) async {
+    final l10n = AppLocalizations.of(context);
+    final repo = ref.read(familyRepositoryProvider);
+    var childId = _newChild || children.isEmpty ? null : (_childId ?? children.first.id);
+    if (childId == null) {
+      final name = _childName.text.trim();
+      if (name.isEmpty) {
+        setState(() => _childError = l10n.inviteChildNameMissing);
+        return;
+      }
+      setState(() {
+        _busy = true;
+        _childError = null;
+      });
+      try {
+        final year = int.tryParse(_childYear.text.trim());
+        final used = children.map((c) => c.color).toSet();
+        final color = childColorKeys.firstWhere((k) => !used.contains(k), orElse: () => childColorKeys.first);
+        final child = await repo.addChild(widget.familyId, firstName: name, birthYear: year, color: color);
+        ref.invalidate(familyProvider(widget.familyId));
+        childId = child.id;
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
+        return;
+      } finally {
+        if (mounted) setState(() => _busy = false);
+      }
+    }
+    if (!mounted) return;
+    ref.read(analyticsProvider).track(AnalyticsEvent.invitationShared, {'channel': 'code', 'role': 'child'});
+    // Replaces this screen, so "Bitti" on the code screen goes back to the family.
+    context.pushReplacement('/family/${widget.familyId}/child/$childId/phone');
+  }
 
   CaregiverAccess _access() {
     final now = DateTime.now();
@@ -110,6 +165,14 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
       body: HallyPage(
         bottom: Column(
           children: [
+            if (_role == InviteRole.child)
+              FilledButton.icon(
+                key: const Key('invite.childCode'),
+                onPressed: _busy ? null : () => _getChildCode(children),
+                icon: const Icon(Icons.key_rounded),
+                label: Text(l10n.inviteChildGetCode),
+              )
+            else ...[
             FilledButton.icon(
               key: const Key('invite.whatsapp'),
               onPressed: _busy ? null : _shareWhatsApp,
@@ -123,6 +186,7 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
               icon: const Icon(Icons.link),
               label: Text(l10n.inviteCopy),
             ),
+            ],
             TextButton(onPressed: () => context.go('/today'), child: Text(l10n.inviteSkip)),
           ],
         ),
@@ -133,8 +197,8 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
             color: HallyColors.powder,
             title: l10n.roleParent,
             body: l10n.inviteRoleParentBody,
-            selected: !_caregiver,
-            onTap: () => _change(() => _caregiver = false),
+            selected: _role == InviteRole.parent,
+            onTap: () => _change(() => _role = InviteRole.parent),
           ),
           const SizedBox(height: HallySpace.sm),
           _RoleCard(
@@ -144,8 +208,68 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
             title: l10n.roleCaregiver,
             body: l10n.inviteRoleCaregiverBody,
             selected: _caregiver,
-            onTap: () => _change(() => _caregiver = true),
+            onTap: () => _change(() => _role = InviteRole.caregiver),
           ),
+          const SizedBox(height: HallySpace.sm),
+          _RoleCard(
+            key: const Key('invite.role.child'),
+            icon: Icons.child_care_rounded,
+            color: HallyColors.apricot,
+            title: l10n.roleChild,
+            body: l10n.inviteRoleChildBody,
+            selected: _role == InviteRole.child,
+            onTap: () => _change(() => _role = InviteRole.child),
+          ),
+          if (_role == InviteRole.child) ...[
+            const SizedBox(height: HallySpace.lg),
+            Text(l10n.inviteChildWhich, style: theme.textTheme.titleSmall),
+            const SizedBox(height: HallySpace.sm),
+            Wrap(
+              spacing: HallySpace.sm,
+              runSpacing: HallySpace.sm,
+              children: [
+                for (final c in children)
+                  ChoiceChip(
+                    key: Key('invite.kid.${c.id}'),
+                    label: Text(c.firstName),
+                    selected: !_newChild && (_childId ?? children.first.id) == c.id,
+                    onSelected: (_) => setState(() {
+                      _childId = c.id;
+                      _newChild = false;
+                    }),
+                  ),
+                ChoiceChip(
+                  key: const Key('invite.kid.new'),
+                  avatar: const Icon(Icons.add_rounded, size: 18),
+                  // Keep the plus: a checkmark over it reads oddly.
+                  showCheckmark: false,
+                  label: Text(l10n.inviteChildNew),
+                  selected: _newChild || children.isEmpty,
+                  onSelected: (_) => setState(() => _newChild = true),
+                ),
+              ],
+            ),
+            if (_newChild || children.isEmpty) ...[
+              const SizedBox(height: HallySpace.md),
+              TextField(
+                key: const Key('invite.kid.name'),
+                controller: _childName,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(labelText: l10n.inviteChildName, errorText: _childError),
+              ),
+              const SizedBox(height: HallySpace.sm),
+              TextField(
+                key: const Key('invite.kid.year'),
+                controller: _childYear,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(labelText: l10n.inviteChildYear, counterText: ''),
+              ),
+            ],
+            const SizedBox(height: HallySpace.sm),
+            Text(l10n.inviteChildNoPhone, style: theme.textTheme.bodySmall),
+          ],
           if (_caregiver) ...[
             if (children.isNotEmpty) ...[
               const SizedBox(height: HallySpace.lg),
@@ -188,7 +312,7 @@ class _InvitePartnerScreenState extends ConsumerState<InvitePartnerScreen> {
               title: Text(l10n.caregiverHealthTitle),
               subtitle: Text(l10n.caregiverHealthBody),
             ),
-          ] else ...[
+          ] else if (_role == InviteRole.parent) ...[
             const SizedBox(height: HallySpace.lg),
             Text(l10n.inviteBody, style: theme.textTheme.bodyMedium),
           ],
