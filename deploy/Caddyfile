@@ -11,3 +11,15 @@
 	respond @admin 404
 	reverse_proxy api:8080
 }
+
+# The web pages in site/ (privacy policy, KVKK text, account deletion), e.g. hally.example.com.
+# Its DNS A record must point at this server too. Unset: served only on an internal port, no certificate.
+{$SITE_DOMAIN} {
+	encode gzip
+	root * /srv/site
+	file_server
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+	}
+}

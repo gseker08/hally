@@ -1,6 +1,6 @@
 # Hally web pages (privacy policy, KVKK, account deletion)
 
-Static pages published to GitHub Pages by `.github/workflows/pages.yml`. Both stores ask for these links:
+Static pages served by the API server's Caddy (`SITE_DOMAIN`, see below). Both stores ask for these links:
 
 | Page | Store field |
 |---|---|
@@ -26,16 +26,16 @@ In Visual Studio / VS Code: Find in Files (`Ctrl+Shift+F`) for `class="todo"` in
 | `[YEDEK SAKLAMA SÜRESİ]`, `[BACKUP DAYS]` | How long database backups are kept, e.g. 30. |
 | `[YAYIN TARİHİ]`, `[RELEASE DATE]` | Today's date when you publish. |
 
-The Pages workflow publishes nothing (and shows a warning) while any `class="todo"` is left.
+The optional Pages workflow publishes nothing (and shows a warning) while any `class="todo"` is left.
 
 This text is a careful starting point, not legal advice. Because the app stores children's health data, a short review by a
 KVKK lawyer before launch is worthwhile.
 
-## One-time GitHub setup
+## Where the pages are published
 
-Settings → Pages → Build and deployment → Source: **GitHub Actions**. The site appears at
-`https://<github-user>.github.io/hally/` (for example `.../hally/gizlilik.html`).
+Optional GitHub Pages copy (public repository only): Settings → Pages → Source: **GitHub Actions**, then run the Pages
+workflow by hand. It appears at `https://<github-user>.github.io/hally/`.
 
-Custom domain (used now): DNS `CNAME hally → gseker08.github.io.` at the registrar (Natro), then Settings → Pages →
-Custom domain `hally.lusnikaapps.com` → Save, and tick **Enforce HTTPS** once the certificate is ready. The API's
-`PRIVACY_POLICY_URL` is `https://hally.lusnikaapps.com/gizlilik.html`.
+The live pages are served by the API server itself: Caddy serves `site/` on `SITE_DOMAIN` (`hally.lusnikaapps.com`,
+DNS `A hally → server IP` at Natro). After changing a page: on the server `cd /root/hally && git pull`, nothing to restart.
+The API's `PRIVACY_POLICY_URL` is `https://hally.lusnikaapps.com/gizlilik.html`.

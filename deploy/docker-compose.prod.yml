@@ -63,8 +63,10 @@ services:
     ports: ["80:80", "443:443"]
     environment:
       API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in deploy/.env}
+      SITE_DOMAIN: ${SITE_DOMAIN:-http://localhost:8099}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../site:/srv/site:ro
       - caddy_data:/data
       - caddy_config:/config
 
