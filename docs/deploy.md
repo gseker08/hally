@@ -6,7 +6,7 @@
 
 | Service | What it does |
 |---|---|
-| `caddy` | The only public service (ports 80/443). Gets and renews the HTTPS certificate for `API_DOMAIN` automatically and forwards to the API. Blocks `/api/v1/admin/*` from the internet. |
+| `caddy` | The only public service (ports 80/443). Gets and renews the HTTPS certificates for `API_DOMAIN` and `SITE_DOMAIN` automatically, forwards `API_DOMAIN` to the API and serves the `site/` pages (privacy policy, KVKK, account deletion) on `SITE_DOMAIN`. Blocks `/api/v1/admin/*` from the internet. |
 | `api` | The .NET API, `ASPNETCORE_ENVIRONMENT=Production`, dev sign-in off, migrations on start. |
 | `postgres` | PostgreSQL 16, data in the `pgdata` volume. No published port. |
 | `backup` | `pg_dump` once a day into the `backups` volume, keeps `BACKUP_KEEP_DAYS` (30) days. |
@@ -17,7 +17,7 @@ EU hosting keeps the data close to Türkiye and under GDPR.
 ### First start
 
 1. Server: Ubuntu 24.04, then install Docker: `curl -fsSL https://get.docker.com | sh`.
-2. Domain: create an `A` record (e.g. `api.example.com`) pointing at the server's IP. Wait until `ping api.example.com` shows that IP.
+2. Domain: create `A` records for the API (e.g. `api.example.com`) and the web pages (e.g. `hally.example.com`, `SITE_DOMAIN`) pointing at the server's IP. Wait until `ping api.example.com` shows that IP.
 3. Firewall: allow only 22, 80, 443 (`ufw allow OpenSSH && ufw allow 80 && ufw allow 443 && ufw enable`).
 4. Code and settings:
    ```bash

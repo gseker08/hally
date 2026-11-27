@@ -1,11 +1,10 @@
-# Publishes site/ (privacy policy, KVKK text, account deletion page) to GitHub Pages.
+# Optional: publishes site/ (privacy policy, KVKK text, account deletion page) to GitHub Pages.
+# The live pages are served by the API server's Caddy (SITE_DOMAIN, docs/deploy.md), so this runs only by hand.
+# GitHub Pages needs a public repository (or a paid plan for a private one).
 # One-time setup: Settings → Pages → Build and deployment → Source: "GitHub Actions".
 name: Pages
 
 on:
-  push:
-    branches: [main]
-    paths: ["site/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
