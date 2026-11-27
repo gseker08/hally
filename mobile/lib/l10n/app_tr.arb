@@ -532,7 +532,6 @@
   "childEdit": "Çocuğu düzenle",
   "childAddBody": "Her çocuğa bir renk ver; görevleri ve etkinlikleri çocuğa göre ayır.",
   "childName": "Adı ya da takma adı",
-  "childNameHelp": "Soyadı gerekmez.",
   "childNameRequired": "Ad gerekli",
   "childBirthYear": "Doğum yılı (isteğe bağlı)",
   "childBirthYearInvalid": "Geçerli bir doğum yılı yaz",

@@ -288,7 +288,6 @@
   "childEdit": "아이 정보 수정",
   "childAddBody": "아이마다 색을 정하고 아이별로 할 일과 일정을 보세요.",
   "childName": "이름 또는 애칭",
-  "childNameHelp": "성은 필요 없어요.",
   "childNameRequired": "이름을 입력해 주세요",
   "childBirthYear": "출생 연도(선택)",
   "childBirthYearInvalid": "올바른 출생 연도를 입력하세요",

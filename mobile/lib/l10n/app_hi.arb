@@ -288,7 +288,6 @@
   "childEdit": "बच्चे की जानकारी बदलें",
   "childAddBody": "हर बच्चे को एक रंग दें और हर बच्चे के काम और इवेंट अलग देखें।",
   "childName": "पहला नाम या उपनाम",
-  "childNameHelp": "उपनाम (सरनेम) की ज़रूरत नहीं।",
   "childNameRequired": "नाम ज़रूरी है",
   "childBirthYear": "जन्म वर्ष (वैकल्पिक)",
   "childBirthYearInvalid": "सही जन्म वर्ष डालें",

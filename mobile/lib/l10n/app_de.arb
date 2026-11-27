@@ -288,7 +288,6 @@
   "childEdit": "Kind bearbeiten",
   "childAddBody": "Gib jedem Kind eine Farbe und sieh Aufgaben und Termine pro Kind.",
   "childName": "Vorname oder Spitzname",
-  "childNameHelp": "Kein Nachname nötig.",
   "childNameRequired": "Name ist erforderlich",
   "childBirthYear": "Geburtsjahr (optional)",
   "childBirthYearInvalid": "Gib ein gültiges Geburtsjahr ein",

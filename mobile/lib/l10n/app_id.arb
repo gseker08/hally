@@ -288,7 +288,6 @@
   "childEdit": "Ubah data anak",
   "childAddBody": "Beri setiap anak warna dan lihat tugas serta acara per anak.",
   "childName": "Nama depan atau panggilan",
-  "childNameHelp": "Tidak perlu nama keluarga.",
   "childNameRequired": "Nama wajib diisi",
   "childBirthYear": "Tahun lahir (opsional)",
   "childBirthYearInvalid": "Masukkan tahun lahir yang valid",

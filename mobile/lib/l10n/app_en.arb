@@ -295,7 +295,6 @@
   "childEdit": "Edit child",
   "childAddBody": "Give each child a colour and see tasks and events per child.",
   "childName": "First name or nickname",
-  "childNameHelp": "No surname needed.",
   "childNameRequired": "Name is required",
   "childBirthYear": "Birth year (optional)",
   "childBirthYearInvalid": "Enter a valid birth year",

@@ -288,7 +288,6 @@
   "childEdit": "子どもを編集",
   "childAddBody": "子どもごとに色を決めると、タスクや予定を子どもごとに見られます。",
   "childName": "名前またはニックネーム",
-  "childNameHelp": "名字は不要です。",
   "childNameRequired": "名前を入力してください",
   "childBirthYear": "生まれた年（任意）",
   "childBirthYearInvalid": "正しい生まれた年を入力してください",

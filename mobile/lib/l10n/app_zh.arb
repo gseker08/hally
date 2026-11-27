@@ -288,7 +288,6 @@
   "childEdit": "编辑孩子",
   "childAddBody": "给每个孩子一个颜色，按孩子查看任务和日程。",
   "childName": "名字或昵称",
-  "childNameHelp": "不需要填姓。",
   "childNameRequired": "请填写名字",
   "childBirthYear": "出生年份（可选）",
   "childBirthYearInvalid": "请输入有效的出生年份",
