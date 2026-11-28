@@ -1,0 +1,63 @@
+# Codemagic builds the signed iPhone app on a cloud Mac and sends it to TestFlight. No Mac needed.
+# Setup (once): docs/mobile/codemagic.md.
+workflows:
+  ios-testflight:
+    name: iPhone → TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      # Codemagic → Team settings → Integrations → Developer Portal: the App Store Connect API key, saved under this name.
+      app_store_connect: Hally App Store Connect
+    environment:
+      flutter: stable
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        # Profiles for the extensions (app.hally.ShareExtension, app.hally.HallyWidgets) are fetched too.
+        bundle_identifier: app.hally
+      groups:
+        # GOOGLE_SERVICE_INFO_PLIST: base64 of GoogleService-Info.plist.
+        - hally_ios
+      vars:
+        HALLY_API_URL: https://api.lusnikaapps.com
+        HALLY_GOOGLE_SERVER_CLIENT_ID: 450227942754-mv569rbr44i6tlcfejs80p5qe7qke2iu.apps.googleusercontent.com
+        # The iOS OAuth client "Hally iOS" (Google Cloud → Google Auth Platform → Clients). Not secret.
+        HALLY_GOOGLE_IOS_CLIENT_ID: 450227942754-13r23vlinvp9u0nmuq316jsg86g9ol3b.apps.googleusercontent.com
+        GOOGLE_REVERSED_CLIENT_ID: com.googleusercontent.apps.450227942754-13r23vlinvp9u0nmuq316jsg86g9ol3b
+    scripts:
+      - name: Write the secret files
+        script: |
+          set -e
+          echo "$GOOGLE_SERVICE_INFO_PLIST" | base64 --decode > mobile/ios/Runner/GoogleService-Info.plist
+          echo "GOOGLE_REVERSED_CLIENT_ID = $GOOGLE_REVERSED_CLIENT_ID" > mobile/ios/Flutter/Secrets.xcconfig
+          cat > mobile/release.json <<JSON
+          {
+            "HALLY_API_URL": "$HALLY_API_URL",
+            "HALLY_ENV": "production",
+            "HALLY_DEV_SIGN_IN": "false",
+            "HALLY_GOOGLE_SERVER_CLIENT_ID": "$HALLY_GOOGLE_SERVER_CLIENT_ID",
+            "HALLY_GOOGLE_IOS_CLIENT_ID": "$HALLY_GOOGLE_IOS_CLIENT_ID",
+            "SENTRY_DSN": ""
+          }
+          JSON
+      - name: Flutter packages
+        script: |
+          cd mobile
+          flutter pub get
+          flutter gen-l10n
+      - name: Signing profiles
+        script: xcode-project use-profiles
+      - name: Build the signed app
+        script: |
+          cd mobile
+          flutter build ipa --release \
+            --build-number=$((BUILD_NUMBER + 100)) \
+            --dart-define-from-file=release.json \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
