@@ -15,11 +15,11 @@ TestFlight. You start each build by hand from the Codemagic dashboard.
    enter the Issuer ID, Key ID and upload the `.p8`.
 5. **Team settings → Code signing identities → iOS certificates → Generate certificate** (Apple Distribution), using
    that integration. Codemagic keeps the private key; download the `.p12` backup to `C:\src\keys` too.
-6. **App → Environment variables**, group `hally_ios` (all marked Secret):
-   - `GOOGLE_SERVICE_INFO_PLIST`: the plist as base64. PowerShell:
-     `[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\src\keys\GoogleService-Info.plist')) | Set-Clipboard`
-   - `HALLY_GOOGLE_IOS_CLIENT_ID`: the iOS OAuth client id (Google Cloud → Google Auth Platform → Clients → Hally iOS).
-   - `GOOGLE_REVERSED_CLIENT_ID`: that client's "iOS URL scheme" (`com.googleusercontent.apps....`).
+6. **App → Environment variables**, group `hally_ios`, variable `GOOGLE_SERVICE_INFO_PLIST` (marked Secret): the plist
+   as base64. PowerShell:
+   `[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\src\keys\GoogleService-Info.plist')) | Set-Clipboard`
+
+The Google iOS client id and its URL scheme are not secret and sit in `codemagic.yaml` itself.
 
 ## Each build
 

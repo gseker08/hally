@@ -16,12 +16,14 @@ workflows:
         # Profiles for the extensions (app.hally.ShareExtension, app.hally.HallyWidgets) are fetched too.
         bundle_identifier: app.hally
       groups:
-        # GOOGLE_SERVICE_INFO_PLIST (base64 of GoogleService-Info.plist), HALLY_GOOGLE_IOS_CLIENT_ID,
-        # GOOGLE_REVERSED_CLIENT_ID (the "iOS URL scheme").
+        # GOOGLE_SERVICE_INFO_PLIST: base64 of GoogleService-Info.plist.
         - hally_ios
       vars:
         HALLY_API_URL: https://api.lusnikaapps.com
         HALLY_GOOGLE_SERVER_CLIENT_ID: 450227942754-mv569rbr44i6tlcfejs80p5qe7qke2iu.apps.googleusercontent.com
+        # The iOS OAuth client "Hally iOS" (Google Cloud → Google Auth Platform → Clients). Not secret.
+        HALLY_GOOGLE_IOS_CLIENT_ID: 450227942754-13r23vlinvp9u0nmuq316jsg86g9ol3b.apps.googleusercontent.com
+        GOOGLE_REVERSED_CLIENT_ID: com.googleusercontent.apps.450227942754-13r23vlinvp9u0nmuq316jsg86g9ol3b
     scripts:
       - name: Write the secret files
         script: |
