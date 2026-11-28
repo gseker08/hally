@@ -61,6 +61,4 @@ the phone is locked and the tokens never move to another phone.
 ## Building without a Mac
 
 - **CI** proves it compiles but produces no installable app (no signing).
-- **Codemagic** (or another cloud Mac) can sign and upload to TestFlight: connect the repository, add the App Store
-  Connect API key, put `GoogleService-Info.plist` and `Secrets.xcconfig` in as files/environment, and run
-  `flutter build ipa`. TestFlight then installs it on your iPhone.
+- **Codemagic** signs and uploads to TestFlight with `codemagic.yaml`; setup steps are in [codemagic.md](codemagic.md).
